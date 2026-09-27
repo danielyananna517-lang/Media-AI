@@ -1,0 +1,14 @@
+{
+  "name": "media-ai-independent",
+  "version": "7.7.0",
+  "private": true,
+  "type": "module",
+  "description": "Media AI 7.7.0 standalone Creative Studio with provider layer, real image/voice/video adapters, content pipeline, and Book Studio planning.",
+  "scripts": {
+    "start": "node --env-file-if-exists=.env server.mjs",
+    "dev": "node --env-file-if-exists=.env server.mjs"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
