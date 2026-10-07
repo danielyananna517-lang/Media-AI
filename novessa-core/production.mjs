@@ -1,6 +1,6 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 
-const coreDir = process.cwd().replace(/\\\\/g, '/') + '/';
+const coreDir = process.cwd().replace(/\\/g, '/') + '/';
 const srcDir = coreDir + 'src/';
 const uiPath = coreDir + 'public/index.html';
 const appPath = coreDir + 'public/app.js';
@@ -259,38 +259,47 @@ export function buildEpub(input={}){
   ];
   chapters.forEach((chapter,i)=>{
     const heading=xmlEscape(chapter.title||('Chapter '+(i+1)));
-    const paragraphs=text(chapter.text).split(/\\\\n{2,}/).map(p=>'<p>'+xmlEscape(p).replace(/\\\\n/g,'<br/>')+'</p>').join('');
+    const paragraphs=text(chapter.text).split(String.fromCharCode(10)+String.fromCharCode(10)).map(p=>'<p>'+xmlEscape(p).split(String.fromCharCode(10)).join('<br/>')+'</p>').join('');
     files.push({name:'OEBPS/chap'+(i+1)+'.xhtml',data:'<?xml version="1.0" encoding="UTF-8"?><html xmlns="http://www.w3.org/1999/xhtml"><head><title>'+heading+'</title></head><body><h1>'+heading+'</h1>'+paragraphs+'</body></html>'});
   });
   return out('verified',{filename:(title||'book').replace(/[^A-Za-z0-9._-]/g,'_').slice(0,80)+'.epub',content:zipFiles(files),media_type:'application/epub+zip'});
 }
 
-function pdfEscape(v){return String(v??'').replace(/\\\\/g,'\\\\\\\\').replace(/\\\\(/g,'\\\\(').replace(/\\\\)/g,'\\\\)');}
+function pdfEscape(v){const slash=String.fromCharCode(92);return String(v??'').split(slash).join(slash+slash).split('(').join(slash+'(').split(')').join(slash+')');}
 export function buildPdf(input={}){
   const title=text(input.title).trim();const author=text(input.author).trim();const chapters=Array.isArray(input.chapters)?input.chapters:[];
   if(!title||!chapters.length) return out('input_incomplete',{error:'pdf_requires_title_and_chapters'});
   const width=Number(input.page_width_pt)||432;const height=Number(input.page_height_pt)||648;const margin=Number(input.margin_pt)||48;const fontSize=Number(input.font_size_pt)||11;const leading=Number(input.leading_pt)||16;
   const maxChars=Math.max(30,Math.floor((width-2*margin)/(fontSize*0.52)));
   const lines=[title,...(author?['By '+author]:[]),''];
-  for(const chapter of chapters){lines.push(chapter.title||'');lines.push('');for(const paragraph of text(chapter.text).split(/\\\\n{2,}/)){let value=paragraph.trim();while(value.length>maxChars){let cut=value.lastIndexOf(' ',maxChars);if(cut<20)cut=maxChars;lines.push(value.slice(0,cut));value=value.slice(cut).trim();}if(value)lines.push(value);lines.push('');}}
+  const nl=String.fromCharCode(10);
+  for(const chapter of chapters){
+    lines.push(chapter.title||'');lines.push('');
+    for(const paragraph of text(chapter.text).split(nl+nl)){
+      let value=paragraph.trim();
+      while(value.length>maxChars){let cut=value.lastIndexOf(' ',maxChars);if(cut<20)cut=maxChars;lines.push(value.slice(0,cut));value=value.slice(cut).trim();}
+      if(value)lines.push(value);
+      lines.push('');
+    }
+  }
   const perPage=Math.max(1,Math.floor((height-2*margin)/leading));const pages=[];for(let i=0;i<lines.length;i+=perPage)pages.push(lines.slice(i,i+perPage));
   const objects=[];const add=s=>{objects.push(Buffer.from(s,'binary'));return objects.length;};
   const catalog=add(''),pagesObj=add(''),fontObj=add('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>'),pageObjs=[];
   for(const pageLines of pages){
-    let body='BT\\\\n/F1 '+fontSize+' Tf\\\\n'+margin+' '+(height-margin)+' Td\\\\n';
-    pageLines.forEach((line,i)=>{if(i)body+='0 -'+leading+' Td\\\\n';body+='('+pdfEscape(line)+') Tj\\\\n';});
+    let body='BT'+nl+'/F1 '+fontSize+' Tf'+nl+margin+' '+(height-margin)+' Td'+nl;
+    pageLines.forEach((line,i)=>{if(i)body+='0 -'+leading+' Td'+nl;body+='('+pdfEscape(line)+') Tj'+nl;});
     body+='ET';
-    const streamObj=add('<< /Length '+Buffer.byteLength(body,'binary')+' >>\\\\nstream\\\\n'+body+'\\\\nendstream');
+    const streamObj=add('<< /Length '+Buffer.byteLength(body,'binary')+' >>'+nl+'stream'+nl+body+nl+'endstream');
     pageObjs.push({pageObj:add(''),streamObj});
   }
   objects[pagesObj-1]=Buffer.from('<< /Type /Pages /Kids ['+pageObjs.map(p=>p.pageObj+' 0 R').join(' ')+'] /Count '+pageObjs.length+' >>','binary');
   for(const page of pageObjs)objects[page.pageObj-1]=Buffer.from('<< /Type /Page /Parent '+pagesObj+' 0 R /MediaBox [0 0 '+width+' '+height+'] /Resources << /Font << /F1 '+fontObj+' 0 R >> >> /Contents '+page.streamObj+' 0 R >>','binary');
   objects[catalog-1]=Buffer.from('<< /Type /Catalog /Pages '+pagesObj+' 0 R >>','binary');
-  let pdf=Buffer.from('%PDF-1.4\\\\n%\\\\xff\\\\xff\\\\xff\\\\xff\\\\n','binary');const offsets=[0];
-  objects.forEach((obj,i)=>{offsets[i+1]=pdf.length;pdf=Buffer.concat([pdf,Buffer.from((i+1)+' 0 obj\\\\n','binary'),obj,Buffer.from('\\\\nendobj\\\\n','binary')]);});
-  const xref=pdf.length;pdf=Buffer.concat([pdf,Buffer.from('xref\\\\n0 '+(objects.length+1)+'\\\\n0000000000 65535 f \\\\n','binary')]);
-  for(let i=1;i<offsets.length;i++)pdf=Buffer.concat([pdf,Buffer.from(String(offsets[i]).padStart(10,'0')+' 00000 n \\\\n','binary')]);
-  pdf=Buffer.concat([pdf,Buffer.from('trailer\\\\n<< /Size '+(objects.length+1)+' /Root '+catalog+' 0 R >>\\\\nstartxref\\\\n'+xref+'\\\\n%%EOF','binary')]);
+  let pdf=Buffer.concat([Buffer.from('%PDF-1.4','binary'),Buffer.from([10,37,255,255,255,255,10])]);const offsets=[0];
+  objects.forEach((obj,i)=>{offsets[i+1]=pdf.length;pdf=Buffer.concat([pdf,Buffer.from((i+1)+' 0 obj'+nl,'binary'),obj,Buffer.from(nl+'endobj'+nl,'binary')]);});
+  const xref=pdf.length;pdf=Buffer.concat([pdf,Buffer.from('xref'+nl+'0 '+(objects.length+1)+nl+'0000000000 65535 f '+nl,'binary')]);
+  for(let i=1;i<offsets.length;i++)pdf=Buffer.concat([pdf,Buffer.from(String(offsets[i]).padStart(10,'0')+' 00000 n '+nl,'binary')]);
+  pdf=Buffer.concat([pdf,Buffer.from('trailer'+nl+'<< /Size '+(objects.length+1)+' /Root '+catalog+' 0 R >>'+nl+'startxref'+nl+xref+nl+'%%EOF','binary')]);
   return out('verified',{filename:(title||'book').replace(/[^A-Za-z0-9._-]/g,'_').slice(0,80)+'.pdf',content:pdf,media_type:'application/pdf'});
 }
 
@@ -374,7 +383,7 @@ if(!server.includes('__novessaProduction')){
       `;
   server=server.replace("      const out=await runUiAction(actionName,uiInput,{env:process.env,activeRecommendationPolicy});",uiHandlers+"\\n      const out=await runUiAction(actionName,uiInput,{env:process.env,activeRecommendationPolicy});");
   const apiRoutes=String.raw`
-    if(u.pathname==='/api/production/operator') return sendApiResult(res,(await __novessaProduction.operatorRun(input)).status==='provider_unavailable'?503:200,await __novessaProduction.operatorRun(input),requestId);
+    if(u.pathname==='/api/production/operator'){const out=await __novessaProduction.operatorRun(input);return sendApiResult(res,out.status==='provider_unavailable'?503:out.status==='input_incomplete'?400:out.status==='error'?502:200,out,requestId);}
     if(u.pathname==='/api/production/action/approve') return sendApiResult(res,200,__novessaProduction.approveAction(String(input.approval_token||'')),requestId);
     if(u.pathname==='/api/production/action/execute') return sendApiResult(res,200,await __novessaProduction.executeApprovedAction(String(input.approval_token||'')),requestId);
     if(u.pathname==='/api/production/market-research'){const out=await __novessaProduction.marketResearch(input);return sendApiResult(res,out.status==='provider_unavailable'?503:out.status==='input_incomplete'?400:out.status==='error'?502:200,out,requestId);}
