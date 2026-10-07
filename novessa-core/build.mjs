@@ -462,7 +462,7 @@ writeFileSync(indexPath, index);
 const stylePath = 'public/styles.css';
 let style = readFileSync(stylePath, 'utf8');
 style += ` 
-:root{--bg:#050314;--panel:#0d0a1f;--panel2:#151033;--line:#2a2154;--text:#f6f3ff;--muted:#a8a1c4;--accent:#a78bfa;--accent2:#3b82f6;--warn:#f5c96a;--bad:#fb7185;--shadow:0 18px 60px rgba(14,8,46,.42)}
+:root{--novessa-cobalt:#2563eb;--novessa-purple:#6d28d9;--bg:#050314;--panel:#0d0a1f;--panel2:#151033;--line:#2a2154;--text:#f6f3ff;--muted:#a8a1c4;--accent:#a78bfa;--accent2:#3b82f6;--warn:#f5c96a;--bad:#fb7185;--shadow:0 18px 60px rgba(14,8,46,.42)}
 body{background:radial-gradient(circle at 12% 0%,rgba(109,40,217,.24),transparent 32%),radial-gradient(circle at 88% 8%,rgba(37,99,235,.2),transparent 28%),linear-gradient(180deg,#07051a 0%,#050314 100%)}
 .topbar{background:rgba(5,3,20,.88);border-bottom-color:#241d48;box-shadow:0 8px 35px rgba(5,3,20,.4)}
 .brand-mark{background:linear-gradient(135deg,#4c1d95,#1d4ed8);border-color:#6651b5;box-shadow:0 8px 24px rgba(76,29,149,.35)}
