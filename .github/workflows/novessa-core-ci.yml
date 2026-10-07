@@ -33,7 +33,7 @@ jobs:
 
       - name: Verify required Core routes
         run: |
-          node -e "const s=require('fs').readFileSync('novessa-core/server.mjs.template','utf8'); for (const x of ['/ui/api/action/','/api/publishing/kdp/package','/api/publishing/youtube/campaign','/api/connector/wildberries/profit']) if (!s.includes(x)) throw new Error('Missing route: '+x); console.log('Required routes present')"
+          node -e "const s=require('fs').readFileSync('novessa-core/server.mjs.template','utf8'); for (const x of ['/ui/api/action/','/api/publishing/kdp/package','/api/publishing/youtube/campaign','/api/connectors/wildberries/profit']) if (!s.includes(x)) throw new Error('Missing route: '+x); console.log('Required routes present')"
 
       - name: Verify language settings
         run: |
