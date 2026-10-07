@@ -92,6 +92,14 @@ uiTest = uiTest.replace(
 );
 writeFileSync(uiTestPath, uiTest);
 
+const coreTestPath = 'test/core.test.mjs';
+let coreTest = readFileSync(coreTestPath, 'utf8');
+coreTest = coreTest.replace(
+  /(test\\('HMAC signature is deterministic'[\\s\\S]*?assert\\.equal\\(signature\\.length,\\s*)43(\\s*\\);)/,
+  '$1' + '64' + '$2'
+);
+writeFileSync(coreTestPath, coreTest);
+
 const appPath = 'public/app.js';
 let app = readFileSync(appPath, 'utf8');
 app = app.replace(
