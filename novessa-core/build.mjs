@@ -139,6 +139,28 @@ if (!index.includes('<script src="/assets/app.js"')) {
     '<script src="/assets/app.js" defer><\/script></body>'
   );
 }
+const languageSettingsHtml = `
+    <section class="tab-panel" id="tab-settings">
+      <div class="section-title"><div><h2>Կարգավորումներ</h2><p>Յուրաքանչյուր օգտատեր կարող է ընտրել իր ինտերֆեյսի լեզուն։ Ընտրությունը պահպանվում է այս սարքում։</p></div></div>
+      <article class="panel">
+        <h3>Լեզու</h3>
+        <div class="field wide">
+          <label for="languageSelect">Ինտերֆեյսի լեզու</label>
+          <select id="languageSelect" aria-label="Ինտերֆեյսի լեզու">
+            <option value="hy">Հայերեն</option>
+            <option value="ru">Русский</option>
+            <option value="en">English</option>
+          </select>
+        </div>
+      </article>
+    </section>`;
+index = index.replace('</main>', languageSettingsHtml + '</main>');
+index = index.replace(
+  '<button id="refreshBtn" class="ghost">Թարմացնել</button>',
+  '<button id="refreshBtn" class="ghost">Թարմացնել</button><button class="ghost" id="settingsBtn" type="button">Կարգավորումներ</button>'
+);
+index = index.replace('</main>', '</main>');
+
 const localizedRuntimeScript = `
 <script>
 (function(){
@@ -175,8 +197,118 @@ const localizedRuntimeScript = `
   }
   localize();
   new MutationObserver(localize).observe(document.body,{subtree:true,childList:true,characterData:true});
+  const translations = {
+    hy: {},
+    ru: {
+      'ԻՐԱԿԱՆ CORE • ՀԱՇՎԱՐԿԱՅԻՆ • ՍՏՈՒԳԵԼԻ':'REAL CORE • РАСЧЁТНЫЙ • ПРОВЕРЯЕМЫЙ',
+      'Առևտրի վերլուծության Core':'Core бизнес-аналитики',
+      'Core աշխատում է':'Core работает',
+      'Միացումները ստուգված են':'Подключения проверены',
+      'Խանութը ստուգված է':'Магазин проверен',
+      'Կանոնները ստուգված են':'Правила проверены',
+      'Հրապարակումը ստուգված է':'Публикация проверена',
+      'Կարգավորումներ':'Настройки',
+      'Լեզու':'Язык',
+      'Ինտերֆեյսի լեզու':'Язык интерфейса',
+      'Յուրաքանչյուր օգտատեր կարող է ընտրել իր ինտերֆեյսի լեզուն։ Ընտրությունը պահպանվում է այս սարքում։':'Каждый пользователь может выбрать свой язык интерфейса. Выбор сохраняется на этом устройстве.',
+      'Հաշվարկներ':'Расчёты',
+      'Ակնարկ':'Обзор',
+      'Таблицы / Excel':'Таблицы / Excel',
+      'Коммерция':'Коммерция',
+      'Քարտ / SEO':'Карточка / SEO',
+      'Գիրք / YouTube':'Книга / YouTube',
+      'Կանոններ':'Правила',
+      'Google Таблицы / Excel':'Google Таблицы / Excel',
+      'Google Sheets / Excel':'Google Таблицы / Excel',
+      'Ապրանքի անվանում':'Название товара',
+      'Գին':'Цена',
+      'Ինքնարժեք':'Себестоимость',
+      'Քանակ':'Количество',
+      'Վաճառք':'Продажи',
+      'Մնացորդ':'Остаток',
+      'Ավելացնել տող':'Добавить строкա',
+      'Արտահանել CSV':'Экспортировать CSV',
+      'Ներբեռնել ձևանմուշ':'Скачать шаблон',
+      'Ներմուծել CSV':'Импортировать CSV',
+      'Բացել Google Sheets-ը':'Открыть Google Sheets'
+    },
+    en: {
+      'ԻՐԱԿԱՆ CORE • ՀԱՇՎԱՐԿԱՅԻՆ • ՍՏՈՒԳԵԼԻ':'REAL CORE • DETERMINISTIC • AUDITABLE',
+      'Առևտրի վերլուծության Core':'Commerce Analytics Core',
+      'Core աշխատում է':'Core works',
+      'Միացումները ստուգված են':'Connectors verified',
+      'Խանութը ստուգված է':'Store verified',
+      'Կանոնները ստուգված են':'Rules verified',
+      'Հրապարակումը ստուգված է':'Publishing verified',
+      'Կարգավորումներ':'Settings',
+      'Լեզու':'Language',
+      'Ինտերֆեյսի լեզու':'Interface language',
+      'Յուրաքանչյուր օգտատեր կարող է ընտրել իր ինտերֆեյսի լեզուն։ Ընտրությունը պահպանվում է այս սարքում։':'Each user can choose their interface language. The selection is saved on this device.',
+      'Հաշվարկներ':'Calculations',
+      'Ակնարկ':'Overview',
+      'Таблицы / Excel':'Tables / Excel',
+      'Коммерция':'Commerce',
+      'Քարտ / SEO':'Card / SEO',
+      'Գիրք / YouTube':'Book / YouTube',
+      'Կանոններ':'Rules',
+      'Google Таблицы / Excel':'Google Sheets / Excel',
+      'Google Sheets / Excel':'Google Sheets / Excel',
+      'Ապրանքի անվանում':'Product name',
+      'Գին':'Price',
+      'Ինքնարժեք':'Cost',
+      'Քանակ':'Quantity',
+      'Վաճառք':'Sales',
+      'Մնացորդ':'Stock',
+      'Ավելացնել տող':'Add row',
+      'Արտահանել CSV':'Export CSV',
+      'Ներբեռնել ձևանմուշ':'Download template',
+      'Ներմուծել CSV':'Import CSV',
+      'Բացել Google Sheets-ը':'Open Google Sheets'
+    }
+  };
+  function getLang(){ return localStorage.getItem('novessa_ui_language') || 'hy'; }
+  function setLang(lang){
+    localStorage.setItem('novessa_ui_language',lang);
+    document.documentElement.lang=lang;
+    renderLanguage(lang);
+  }
+  function renderLanguage(lang){
+    const dict=translations[lang]||{};
+    const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);
+    const nodes=[];
+    while(walker.nextNode()) nodes.push(walker.currentNode);
+    for(const node of nodes){
+      const parent=node.parentElement;
+      if(!parent || /^(SCRIPT|STYLE|PRE|CODE|OPTION)$/i.test(parent.tagName)) continue;
+      let value=node.nodeValue;
+      if(!node.__novessaBaseText) node.__novessaBaseText=value;
+      let base=node.__novessaBaseText;
+      const currentLang=parent.closest('[data-novessa-language]')?.dataset?.novessaLanguage;
+      if(currentLang && currentLang===lang) continue;
+      node.nodeValue=dict[base] || base;
+    }
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el=>{
+      const key=el.getAttribute('data-i18n-placeholder');
+      if(key && dict[key]) el.placeholder=dict[key];
+    });
+    const select=document.getElementById('languageSelect');
+    if(select) select.value=lang;
+  }
+  function openSettings(){
+    document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+    const panel=document.getElementById('tab-settings');
+    if(panel) panel.classList.add('active');
+  }
+  document.addEventListener('click',event=>{
+    if(event.target?.id==='settingsBtn') openSettings();
+  });
+  document.addEventListener('change',event=>{
+    if(event.target?.id==='languageSelect') setLang(event.target.value);
+  });
+  window.addEventListener('DOMContentLoaded',()=>setTimeout(()=>setLang(getLang()),0));
   setTimeout(localize,250);
-  setTimeout(localize,1000);
+  setTimeout(()=>{ localize(); setLang(getLang()); },1000);
 })();
 </script>`;
 index = index.replace('</body>', localizedRuntimeScript + '</body>');
