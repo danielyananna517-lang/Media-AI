@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="hy">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>NOVESSA Media AI</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <main class="shell">
+    <header>
+      <div class="brand">N</div>
+      <div>
+        <h1>NOVESSA Media AI</h1>
+        <p>Առանձին մեդիա աշխատանքային կենտրոն</p>
+      </div>
+      <button id="healthBtn" class="secondary">Ստուգել կապը</button>
+    </header>
+
+    <section class="statusbar">
+      <span id="statusDot"></span>
+      <strong id="statusText">Կապը չի ստուգվել</strong>
+    </section>
+
+    <nav class="tabs">
+      <button class="tab active" data-mode="chat">Չատ</button>
+      <button class="tab" data-mode="image">Պատկեր</button>
+      <button class="tab" data-mode="book">Գիրք</button>
+      <button class="tab" data-mode="video-clip">Տեսանյութ</button>
+      <button class="tab" data-mode="voice">Ձայն</button>
+      <button class="tab" data-mode="transcribe">Տառադարձում</button>
+    </nav>
+
+    <section class="panel">
+      <h2 id="modeTitle">Չատ</h2>
+      <p id="modeHelp">Գրիր առաջադրանքը բնական լեզվով։</p>
+
+      <label id="mainLabel" for="mainInput">Հաղորդագրություն</label>
+      <textarea id="mainInput" rows="7" placeholder="Օրինակ՝ գրիր մանկական հեքիաթ 6 տարեկան երեխայի համար..."></textarea>
+
+      <div id="extraFields"></div>
+
+      <button id="runBtn" class="primary">Գործարկել</button>
+      <pre id="result" class="result">Արդյունքը այստեղ կհայտնվի։</pre>
+    </section>
+
+    <footer>
+      Media AI 6.1.0 • իրական Worker • առանց mock AI-ի
+    </footer>
+  </main>
+  <script src="/app.js" defer></script>
+</body>
+</html>
