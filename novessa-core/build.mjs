@@ -416,6 +416,11 @@ const localizedRuntimeScript = `
   function canonicalize(value){
     let out=String(value||'');
     for(const pair of canonical) out=out.split(pair[0]).join(pair[1]);
+    for(const dict of Object.values(translations)){
+      for(const [hy,target] of Object.entries(dict)){
+        if(target && target!==hy) out=out.split(target).join(hy);
+      }
+    }
     return out;
   }
   function captureNode(node){
