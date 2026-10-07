@@ -78,7 +78,7 @@ writeFileSync(serverPath, readFileSync('server.mjs.template', 'utf8'));
 const uiTestPath = 'test/ui-pricing.test.mjs';
 let uiTest = readFileSync(uiTestPath, 'utf8');
 uiTest = uiTest.replace(
-  /test\('UI production action requires UI token',[\\s\\S]*?\n\}\);/,
+  /test\('UI production action requires UI token',[\s\S]*?\n\}\);/,
   `test('UI production safe actions are available without a UI token while protected actions still require one',async t=>{
   const port=await freePort(); const child=start(port,{NOVESSA_ENV:'production',NOVESSA_CORE_SHARED_SECRET:'ui-test-core',NOVESSA_UI_TOKEN:'ui-test-token'}); t.after(()=>stop(child)); await waitForHealth(port);
   const pricingBody=JSON.stringify({list_price:200,discount_percent:25});
