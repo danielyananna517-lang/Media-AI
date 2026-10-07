@@ -35,3 +35,37 @@ test('Core build output has premium dashboard styling and multilingual runtime',
   assert.match(html,/Commerce Analytics Core/);
   assert.match(html,/Core бизнес-аналитики/);
 });
+
+test('Core Media client matches the verified Media AI HMAC contract',async()=>{
+  const crypto = await import('node:crypto');
+  const { requestMedia } = await import('../src/mediaClient.mjs');
+  const secret='test-media-secret';
+  let call=null;
+  const out=await requestMedia({
+    operation:'chat',
+    input:{message:'hello'},
+    requestId:'req-test-1',
+    nowMs:1700000000000,
+    fetchImpl:async(url,options)=>{
+      call={url,options};
+      const body=String(options.body);
+      const expected=crypto.createHmac('sha256',secret)
+        .update('1700000000000:req-test-1:'+body)
+        .digest('hex');
+      assert.equal(options.headers['X-Media-Signature'],expected);
+      assert.equal(options.headers['X-Media-Timestamp'],'1700000000000');
+      assert.equal(options.headers['X-Media-Service-Id'],'novessa-core');
+      assert.equal(options.headers['X-Media-Request-Id'],'req-test-1');
+      assert.equal(body,JSON.stringify({operation:'chat',input:{message:'hello'}}));
+      return new Response(JSON.stringify({
+        request_id:'req-test-1',
+        status:'success',
+        operation:'chat',
+        version:'6.1.0-rebuilt'
+      }),{status:200,headers:{'content-type':'application/json'}});
+    }
+  });
+  assert.equal(call.url,'https://example.test/v1/media/request');
+  assert.equal(out.status,'success');
+  assert.equal(out.request_id,'req-test-1');
+});
