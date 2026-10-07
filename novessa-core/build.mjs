@@ -61,6 +61,18 @@ index = index.replace(
 );
 writeFileSync(indexPath, index);
 
+const serverPath = 'server.mjs';
+let server = readFileSync(serverPath, 'utf8');
+server = server.replace(
+  "if(req.method==='POST' && u.pathname.startsWith('/ui/api/action/')) {\n      const auth=verifyUiAccess({headers:req.headers,env:process.env});\n      if(auth.status!=='verified') return send(res,auth.http_status||401,{status:auth.status,error:auth.error||'ui_auth_failed'});",
+  "if(req.method==='POST' && u.pathname.startsWith('/ui/api/action/')) {\n      const actionName=decodeURIComponent(u.pathname.slice('/ui/api/action/'.length));\n      const publicUiActions=new Set(['pricing','unit-economics','profit-guardian','scenario','sales-funnel','business-health','product-card','seo','card-design','infographic','book-validate','kdp-package','youtube-campaign','publishing-capabilities']);\n      if(!publicUiActions.has(actionName)) {\n        const auth=verifyUiAccess({headers:req.headers,env:process.env});\n        if(auth.status!=='verified') return send(res,auth.http_status||401,{status:auth.status,error:auth.error||'ui_auth_failed'});\n      }"
+);
+server = server.replace(
+  "      const actionName=decodeURIComponent(u.pathname.slice('/ui/api/action/'.length));\n      const out=await runUiAction(actionName,input,{env:process.env,activeRecommendationPolicy});",
+  "      const out=await runUiAction(actionName,input,{env:process.env,activeRecommendationPolicy});"
+);
+writeFileSync(serverPath, server);
+
 const appPath = 'public/app.js';
 let app = readFileSync(appPath, 'utf8');
 app = app.replace(
