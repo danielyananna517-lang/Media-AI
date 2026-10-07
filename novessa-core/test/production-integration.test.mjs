@@ -9,7 +9,8 @@ import {
   approveAction,
   executeApprovedAction,
   buildEpub,
-  buildPdf
+  buildPdf,
+  buildXlsx
 } from '../src/novessaProduction.mjs';
 
 test('production integration patched the generated runtime',()=>{
@@ -67,6 +68,18 @@ test('EPUB is a real ZIP package with uncompressed mimetype',()=>{
   assert.equal(result.media_type,'application/epub+zip');
   assert.equal(result.content.subarray(0,2).toString('binary'),'PK');
   assert.ok(result.content.toString('binary').includes('application/epub+zip'));
+});
+
+test('XLSX export is a real ZIP workbook package',()=>{
+  const result=buildXlsx({headers:['Ապրանք','Գին'],rows:[['Jeans',25.5]]});
+  assert.equal(result.status,'verified');
+  assert.equal(result.media_type,'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  assert.equal(result.content.subarray(0,2).toString('binary'),'PK');
+  const zip=result.content.toString('binary');
+  assert.ok(zip.includes('[Content_Types].xml'));
+  assert.ok(zip.includes('xl/workbook.xml'));
+  assert.ok(zip.includes('xl/worksheets/sheet1.xml'));
+  assert.equal(result.row_count,1);
 });
 
 test('PDF is a real PDF binary',()=>{
