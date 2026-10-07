@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, unlink } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 
 const parts = Array.from({length:15}, (_,i) => readFileSync(`core-part-${String(i+1).padStart(2,'0')}.txt`, 'utf8')).join('');
@@ -6,6 +6,7 @@ writeFileSync('core.tar.gz', Buffer.from(parts, 'base64'));
 execFileSync('tar', ['-xzf', 'core.tar.gz', '--strip-components=1'], {stdio:'inherit'});
 // Use the verified Core 0.4.9 server source instead of the stale archive entry.
 writeFileSync('server.mjs', readFileSync('server.mjs.template', 'utf8'));
+try { await unlink('server-core.mjs'); } catch { /* stale archive entry may be absent */ }
 
 const mediaPath = 'src/mediaClient.mjs';
 const media = `import crypto from 'node:crypto';
