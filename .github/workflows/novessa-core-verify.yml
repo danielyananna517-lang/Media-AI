@@ -29,6 +29,29 @@ jobs:
       - name: Build Core
         working-directory: novessa-core
         run: node build.mjs
+      - name: Syntax check generated runtime
+        working-directory: novessa-core
+        run: |
+          node --check server.mjs
+          node --check public/app.js
+          test -s public/index.html
+          test -s public/styles.css
       - name: Run Core tests
         working-directory: novessa-core
         run: npm test -- --test-timeout=15000
+      - name: Production UI action smoke test
+        working-directory: novessa-core
+        env:
+          NOVESSA_ENV: production
+        run: |
+          node server.mjs > /tmp/novessa-core.log 2>&1 &
+          PID=$!
+          trap 'kill $PID 2>/dev/null || true' EXIT
+          for i in $(seq 1 20); do
+            if curl -fsS http://127.0.0.1:8787/health > /tmp/health.json; then break; fi
+            sleep 1
+          done
+          grep -q '"status":"ok"' /tmp/health.json
+          curl -fsS -X POST             -H 'content-type: application/json'             --data '{"price":100,"cost":40,"commission_pct":10,"logistics_per_unit":5,"storage_per_unit":2,"tax_pct":0,"ads_per_unit":3,"sales":10,"buyout_orders":10}'             http://127.0.0.1:8787/ui/api/action/unit-economics > /tmp/unit-economics.json
+          grep -q '"status"' /tmp/unit-economics.json
+          grep -q '"verification_status"' /tmp/unit-economics.json
