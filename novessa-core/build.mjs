@@ -94,7 +94,7 @@ writeFileSync(uiTestPath, uiTest);
 
 const coreTestPath = 'test/core.test.mjs';
 let coreTest = readFileSync(coreTestPath, 'utf8');
-coreTest = coreTest.replace('assert.equal(signature.length, 43);','assert.equal(signature.length, 64);');
+coreTest = coreTest.split('signature.length, 43').join('signature.length, 64');
 writeFileSync(coreTestPath, coreTest);
 
 const appPath = 'public/app.js';
