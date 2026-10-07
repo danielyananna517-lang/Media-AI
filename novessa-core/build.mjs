@@ -219,314 +219,241 @@ index = index.replace('</main>', languageSettingsHtml + '</main>');
 const localizedRuntimeScript = `
 <script>
 (function(){
-  const baseText = new WeakMap();
-  function detectDefaultLanguage(){ const raw=(navigator.language||'').toLowerCase(); if(raw.startsWith('ru')) return 'ru'; if(raw.startsWith('en')) return 'en'; return 'hy'; }
-  let currentLang = localStorage.getItem('novessa_ui_language') || detectDefaultLanguage();
-  let rendering = false;
-
-  function captureBaseText(root=document.body){
-    const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);
-    const nodes=[];
-    while(walker.nextNode()) nodes.push(walker.currentNode);
-    for(const node of nodes){
-      const parent=node.parentElement;
-      if(!parent || /^(SCRIPT|STYLE|PRE|CODE|OPTION)$/i.test(parent.tagName)) continue;
-      if(!baseText.has(node)) baseText.set(node,node.nodeValue);
-    }
-  }
-
+  const canonical = [
+    ['REAL CORE • DETERMINISTIC • AUDITABLE','ԻՐԱԿԱՆ CORE • ՀԱՇՎԱՐԿԱՅԻՆ • ՍՏՈՒԳԵԼԻ'],
+    ['Commerce Intelligence Core','Առևտրի վերլուծության Core'],
+    ['Коммерция Intelligence Core','Առևտրի վերլուծության Core'],
+    ['Commerce','Առևտուր'],
+    ['Коммерция','Առևտուր'],
+    ['Canonical store','Հիմնական տվյալների պահոց'],
+    ['Rule packs','Կանոնների փաթեթներ'],
+    ['Pending cases','Սպասող դեպքեր'],
+    ['Store records','Խանութի գրառումներ'],
+    ['Unit Economics','Յունիտ-էկոնոմիկա'],
+    ['Profit Guardian','Շահույթի վերահսկում'],
+    ['Sales Funnel','Վաճառքի ձագար'],
+    ['Commission, %','Միջնորդավճար, %'],
+    ['Logistics / հատ','Լոգիստիկա / հատ'],
+    ['Storage / հատ','Պահեստավորում / հատ'],
+    ['Tax, %','Հարկ, %'],
+    ['Ads spend','Գովազդի ծախս'],
+    ['Buyout orders','Հետգնման պատվերներ'],
+    ['JSON input','JSON տվյալներ'],
+    ['Product Card / SEO / Creative planning','Ապրանքի քարտ / SEO / Ստեղծարար պլանավորում'],
+    ['Product Card validation','Ապրանքի քարտի ստուգում'],
+    ['SEO optimizer','SEO օպտիմալացում'],
+    ['Card design brief','Քարտի դիզայնի brief'],
+    ['Infographic brief','Ինֆոգրաֆիկայի brief'],
+    ['Product data JSON','Ապրանքի JSON տվյալներ'],
+    ['Input JSON','Մուտքային JSON'],
+    ['Profile','Պրոֆիլ'],
+    ['Generic','Ընդհանուր'],
+    ['Wildberries','Wildberries'],
+    ['Book / Amazon KDP / YouTube','Գիրք / Amazon KDP / YouTube'],
+    ['publishing capabilities','Հրատարակման հնարավորություններ'],
+    ['Publishing capabilities','Հրատարակման հնարավորություններ'],
+    ['Book JSON','Գրքի JSON'],
+    ['Amazon KDP package','Amazon KDP փաթեթ'],
+    ['KDP package JSON','KDP փաթեթի JSON'],
+    ['Book → YouTube campaign','Գիրք → YouTube արշավ'],
+    ['Campaign JSON','Արշավի JSON'],
+    ['Google Intelligence / Rule Governance','Google Intelligence / Կանոնների կառավարում'],
+    ['rule status','կանոնների կարգավիճակ'],
+    ['pending cases','սպասող դեպքեր'],
+    ['Core','Core'],
+    ['Ready','Պատրաստ'],
+    ['Connectors','Միացումներ'],
+    ['Store','Խանութ'],
+    ['Rules','Կանոններ'],
+    ['Publishing','Հրատարակում'],
+    ['implemented','միացված է'],
+    ['implemented_partial','մասամբ միացված է'],
+    ['partial','մասամբ'],
+    ['not_verified','ՉԻ ՀԱՍՏԱՏՎԱԾ'],
+    ['NOT VERIFIED','ՉԻ ՀԱՍՏԱՏՎԱԾ'],
+    ['PARTIAL','ՄԱՍԱՄԲ'],
+    ['verified','ստուգված է'],
+    ['ready','պատրաստ է'],
+    ['ok','աշխատում է'],
+    ['A current system status','Ներկայիս համակարգի վիճակը'],
+    ['Deterministic հաշվարկային բլոկներ','Դետերմինիստական հաշվարկային բլոկներ'],
+    ['server-side calculation engine','server-side հաշվարկային շարժիչ'],
+    ['Handoff-ից առաջ factual validation-ը Core-ի վերահսկողության տակ է։','Գեներացիայից առաջ փաստերի ստուգումը Core-ի վերահսկողության տակ է։'],
+    ['AI handoff-ից առաջ factual validation-ը Core-ի վերահսկողության տակ է։','AI փոխանցումից առաջ փաստերի ստուգումը Core-ի վերահսկողության տակ է։'],
+    ['Օգտագործում է նույն Unit Economics input-ները և ստուգում վտանգները։','Օգտագործում է նույն յունիտ-էկոնոմիկայի տվյալները և ստուգում ռիսկերը։'],
+    ['Ցույց տալ canonical model-ը','Ցուցադրել հիմնական տվյալների մոդելը'],
+    ['Վերլուծել store-ը','Վերլուծել խանութը'],
+    ['Թարմացնել rule status','Թարմացնել կանոնների կարգավիճակը'],
+    ['Ցուցադրել pending cases','Ցուցադրել սպասող դեպքերը'],
+    ['UI token','Մուտքի կոդ'],
+    ['UI token (production)','Մուտքի կոդ (արտադրություն)'],
+    ['Այս գործողությունը Production-ում պաշտպանված է։ Մուտքագրիր NOVESSA UI token-ը վերևի դաշտում, ապա կրկին փորձիր։','Այս գործողությունը պաշտպանված է։ Մուտքագրիր մուտքի կոդը վերևում և կրկին փորձիր։'],
+    ['UI token-ը Vercel Production-ում կարգավորված չէ։','Մուտքի կոդը արտադրությունում կարգավորված չէ։'],
+    ['Աշխատում է…','Աշխատում է…']
+  ];
   const translations = {
-    hy: {
-      'REAL CORE • DETERMINISTIC • AUDITABLE':'ԻՐԱԿԱՆ CORE • ՀԱՇՎԱՐԿԱՅԻՆ • ՍՏՈՒԳԵԼԻ',
-      'Core':'Core',
-      'Ready':'Պատրաստ է',
-      'Connectors':'Միացումներ',
-      'Store':'Խանութ',
-      'Rules':'Կանոններ',
-      'Publishing':'Հրապարակում',
-      'implemented':'միացված է',
-      'partial':'մասամբ',
-      'not_verified':'չի հաստատված',
-      'not_ready':'պատրաստ չէ',
-      'Core աշխատում է':'Core-ը աշխատում է',
-      'Core-ը պահանջում է ստուգում':'Core-ը պահանջում է ստուգում',
-      'Տվյալ չկա':'Տվյալ չկա',
-      'Working…':'Աշխատում է…',
-      'Աշխատում է…':'Աշխատում է…',
-      'JSON input-ի սխալ':'JSON մուտքային տվյալների սխալ',
-      'Rule packs':'Կանոնների փաթեթներ',
-      'Pending cases':'Սպասող դեպքեր',
-      'Store records':'Խանութի գրառումներ',
-      'Status':'Կարգավիճակ',
-      'Settings':'Կարգավորումներ',
-      'Language':'Լեզու',
-      'Access code':'Մուտքի կոդ'
-    },
+    hy: {},
     ru: {
-      'Core':'Core',
-      'Ready':'Готово',
-      'Connectors':'Подключения',
-      'Store':'Магазин',
-      'Rules':'Правила',
-      'Publishing':'Публикация',
-      'implemented':'подключено',
-      'partial':'частично',
-      'not_verified':'не подтверждено',
-      'not_ready':'не готово',
-      'Core-ը աշխատում է':'Core работает',
-      'Core աշխատում է':'Core работает',
-      'Core-ը պահանջում է ստուգում':'Core требует проверки',
-      'Տվյալ չկա':'Нет данных',
-      'Working…':'Выполняется…',
-      'Աշխատում է…':'Выполняется…',
-      'JSON մուտքային տվյալների սխալ':'Ошибка входного JSON',
-      'Rule packs':'Пакеты правил',
-      'Pending cases':'Ожидающие случаи',
-      'Store records':'Записи магазина',
       'ԻՐԱԿԱՆ CORE • ՀԱՇՎԱՐԿԱՅԻՆ • ՍՏՈՒԳԵԼԻ':'REAL CORE • РАСЧЁТНЫЙ • ПРОВЕРЯЕМЫЙ',
-      'ՄԱՍԱՄԲ / ՉԻ ՀԱՍՏԱՏՎԱԾ':'ЧАСТИЧНО / НЕ ПОДТВЕРЖДЕНО',
-      'սերվերային հաշվարկային շարժիչ':'серверный расчётный движок',
+      'Առևտրի վերլուծության Core':'Core бизнес-аналитики',
+      'Առևտուր':'Коммерция',
+      'Հիմնական տվյալների պահոց':'Основное хранилище данных',
+      'Կանոնների փաթեթներ':'Пакеты правил',
+      'Սպասող դեպքեր':'Ожидающие случаи',
+      'Խանութի գրառումներ':'Записи магазина',
       'Յունիտ-էկոնոմիկա':'Юнит-экономика',
       'Շահույթի վերահսկում':'Контроль прибыли',
       'Վաճառքի ձագար':'Воронка продаж',
       'Միջնորդավճար, %':'Комиссия, %',
-      'Լոգիստիկա / միավոր':'Логистика / шт.',
-      'Պահեստավորում / միավոր':'Хранение / шт.',
+      'Լոգիստիկա / հատ':'Логистика / шт.',
+      'Պահեստավորում / հատ':'Хранение / шт.',
       'Հարկ, %':'Налог, %',
       'Գովազդի ծախս':'Расходы на рекламу',
-      'JSON տվյալներ':'JSON-данные',
-      'Գնված պատվերներ':'Выкупленные заказы',
-      'Ապրանքի քարտ / SEO / ստեղծարար պլանավորում':'Карточка товара / SEO / креативное планирование',
-      'AI փոխանցում':'Передача в AI',
-      'փաստային ստուգում':'проверка фактов',
+      'Հետգնման պատվերներ':'Выкупленные заказы',
+      'Ապրանքի քարտ / SEO / Ստեղծարար պլանավորում':'Карточка товара / SEO / Креативное планирование',
       'Ապրանքի քարտի ստուգում':'Проверка карточки товара',
-      'SEO օպտիմիզատոր':'SEO-оптимизатор',
-      'Ապրանքի տվյալների JSON':'JSON данных товара',
+      'SEO օպտիմալացում':'SEO-оптимизация',
       'Քարտի դիզայնի brief':'Бриф дизайна карточки',
-      'Մուտքային JSON':'Входной JSON',
       'Ինֆոգրաֆիկայի brief':'Бриф инфографики',
-      'Գիրք → YouTube արշավ':'Книга → YouTube-кампания',
-      'Հրապարակման հնարավորություններ':'Возможности публикации',
+      'Ապրանքի JSON տվյալներ':'JSON-данные товара',
+      'Մուտքային JSON':'Входной JSON',
+      'Պրոֆիլ':'Профиль',
+      'Գիրք / Amazon KDP / YouTube':'Книга / Amazon KDP / YouTube',
+      'Հրատարակման հնարավորություններ':'Возможности публикации',
+      'Գրքի JSON':'JSON книги',
       'Amazon KDP փաթեթ':'Пакет Amazon KDP',
+      'KDP փաթեթի JSON':'JSON пакета KDP',
+      'Գիրք → YouTube արշավ':'Книга → YouTube кампания',
       'Արշավի JSON':'JSON кампании',
-      'Google Intelligence / կանոնների կառավարում':'Google Intelligence / управление правилами',
-      'Սպասող governance դեպքեր':'Ожидающие случаи governance',
-      'Խանութը ստուգված է':'Магазин проверен',
-      'Կանոնները ստուգված են':'Правила проверены',
-      'Հրապարակումը ստուգված է':'Публикация проверена',
+      'Google Intelligence / Կանոնների կառավարում':'Google Intelligence / Управление правилами',
+      'կանոնների կարգավիճակ':'статус правил',
+      'սպասող դեպքեր':'ожидающие случаи',
+      'Միացումներ':'Подключения',
+      'Խանութ':'Магазин',
+      'Կանոններ':'Правила',
+      'Հրատարակում':'Публикация',
+      'միացված է':'подключено',
+      'մասամբ միացված է':'подключено частично',
+      'մասամբ':'частично',
+      'ՉԻ ՀԱՍՏԱՏՎԱԾ':'НЕ ПОДТВЕРЖДЕНО',
+      'ՄԱՍԱՄԲ':'ЧАСТИЧНО',
+      'ստուգված է':'проверено',
+      'պատրաստ է':'готово',
+      'աշխատում է':'работает',
+      'Դետերմինիստական հաշվարկային բլոկներ':'Детерминированные расчёты',
+      'server-side հաշվարկային շարժիչ':'серверный расчётный модуль',
+      'AI փոխանցումից առաջ փաստերի ստուգումը Core-ի վերահսկողության տակ է։':'Проверка фактов до AI-передачи контролируется Core.',
       'Կարգավորումներ':'Настройки',
       'Լեզու':'Язык',
-      'Մուտքի կոդ':'Код доступа',
       'Ինտերֆեյսի լեզու':'Язык интерфейса',
       'Յուրաքանչյուր օգտատեր կարող է ընտրել իր ինտերֆեյսի լեզուն։ Ընտրությունը պահպանվում է այս սարքում։':'Каждый пользователь может выбрать свой язык интерфейса. Выбор сохраняется на этом устройстве.',
-      'Ակնարկ':'Обзор',
-      'Հաշվարկներ':'Расчёты',
-      'Աղյուսակներ / Excel':'Таблицы / Excel',
-      'Քարտ / SEO':'Карточка / SEO',
-      'Գիրք / YouTube':'Книга / YouTube',
-      'Կանոններ':'Правила',
-      'Հրապարակում':'Публикация',
-      'Գին':'Цена',
-      'Ինքնարժեք / հատ':'Себестоимость / шт.',
-      'Վաճառք':'Продажи',
-      'Ցուցումներ':'Показы',
-      'Անցումներ':'Переходы',
-      'Զամբյուղներ':'Корзины',
-      'Պատվերներ':'Заказы',
-      'Անվանում':'Название',
-      'Նկարագրություն':'Описание',
-      'Profile':'Профиль',
-      'Generic':'Общий',
-      'Ստուգել':'Проверить',
-      'Վերլուծել ձագարը':'Анализировать воронку',
-      'Դետերմինիստիկ հաշվարկային բլոկներ':'Детерминированные расчётные блоки',
-      'Առևտրի վերլուծության Core':'Core бизнес-аналитики',
-      'Միացումներ':'Подключения',
-      'Հիմնական տվյալների պահոց':'Основное хранилище данных',
-      'Վերլուծել store-ը':'Анализировать магазин',
-      'Հաշվել':'Рассчитать',
-      'Հաշվել շահույթը':'Рассчитать прибыль',
-      'Ստուգել քարտը':'Проверить карточку',
-      'Կատարել SEO ստուգում':'Проверить SEO',
-      'Կառուցել brief':'Создать бриф',
-      'Ցուցադրել publishing capabilities-ը':'Показать возможности публикации',
-      'Թարմացնել rule status':'Обновить статус правил',
-      'Ցուցադրել pending cases':'Показать ожидающие случаи',
-      'Գիրք / Amazon KDP / YouTube':'Книга / Amazon KDP / YouTube',
-      'Կարգավիճակները բերվում են հենց Novessa Core-ից, ոչ թե ցուցադրական տվյալներից։':'Статусы загружаются из Novessa Core, а не из демонстрационных данных.',
-      'Novessa-ն միավորում է ապրանքները, վաճառքը, շահույթը, շուկաների տվյալները, SEO-ն և կանոնների վերահսկումը մեկ համակարգում։':'Novessa объединяет товары, продажи, прибыль, данные маркетплейсов, SEO и контроль правил в одной системе.',
-      'Ստուգում…':'Проверка…',
-      'Բիզնեսի որոշումների կենտրոն':'Центр бизнес-решений',
-      'AI-ը չի ստեղծում ֆինանսական թիվ։ Բացակա կամ անորոշ տվյալը մնում է':'AI не создаёт финансовые цифры. Отсутствующие или неопределённые данные остаются',
-      'Ներկայիս համակարգի վիճակը':'Текущее состояние системы',
-      'ապացույց → թեկնածու → թեստեր → ստուգման փուլ':'evidence → candidate → tests → gate',
-      'Commerce մոդել':'Модель Commerce',
-      'Կանոնների կառավարում':'Управление правилами',
-
-      'Ցուցադրել canonical model-ը':'Показать canonical model'
+      'Հայերեն':'Հայский', 'Русский':'Русский', 'English':'Английский'
     },
     en: {
-      'Core':'Core',
-      'Ready':'Ready',
-      'Connectors':'Connectors',
-      'Store':'Store',
-      'Rules':'Rules',
-      'Publishing':'Publishing',
-      'implemented':'connected',
-      'partial':'partial',
-      'not_verified':'not verified',
-      'not_ready':'not ready',
-      'Core-ը աշխատում է':'Core works',
-      'Core աշխատում է':'Core works',
-      'Core-ը պահանջում է ստուգում':'Core requires review',
-      'Տվյալ չկա':'No data',
-      'Working…':'Working…',
-      'Աշխատում է…':'Working…',
-      'JSON մուտքային տվյալների սխալ':'Invalid input JSON',
-      'Rule packs':'Rule packs',
-      'Pending cases':'Pending cases',
-      'Store records':'Store records',
       'ԻՐԱԿԱՆ CORE • ՀԱՇՎԱՐԿԱՅԻՆ • ՍՏՈՒԳԵԼԻ':'REAL CORE • DETERMINISTIC • AUDITABLE',
-      'ՄԱՍԱՄԲ / ՉԻ ՀԱՍՏԱՏՎԱԾ':'PARTIAL / NOT VERIFIED',
-      'սերվերային հաշվարկային շարժիչ':'server-side calculation engine',
+      'Առևտրի վերլուծության Core':'Commerce Analytics Core',
+      'Առևտուր':'Commerce',
+      'Հիմնական տվյալների պահոց':'Canonical data store',
+      'Կանոնների փաթեթներ':'Rule packs',
+      'Սպասող դեպքեր':'Pending cases',
+      'Խանութի գրառումներ':'Store records',
       'Յունիտ-էկոնոմիկա':'Unit Economics',
       'Շահույթի վերահսկում':'Profit Guardian',
       'Վաճառքի ձագար':'Sales Funnel',
       'Միջնորդավճար, %':'Commission, %',
-      'Լոգիստիկա / միավոր':'Logistics / unit',
-      'Պահեստավորում / միավոր':'Storage / unit',
+      'Լոգիստիկա / հատ':'Logistics / unit',
+      'Պահեստավորում / հատ':'Storage / unit',
       'Հարկ, %':'Tax, %',
       'Գովազդի ծախս':'Ad spend',
-      'JSON տվյալներ':'JSON input',
-      'Գնված պատվերներ':'Buyout orders',
-      'Ապրանքի քարտ / SEO / ստեղծարար պլանավորում':'Product Card / SEO / Creative planning',
-      'AI փոխանցում':'AI handoff',
-      'փաստային ստուգում':'factual validation',
+      'Հետգնման պատվերներ':'Buyout orders',
+      'Ապրանքի քարտ / SEO / Ստեղծարար պլանավորում':'Product Card / SEO / Creative planning',
       'Ապրանքի քարտի ստուգում':'Product Card validation',
-      'SEO օպտիմիզատոր':'SEO optimizer',
-      'Ապրանքի տվյալների JSON':'Product data JSON',
+      'SEO օպտիմալացում':'SEO optimizer',
       'Քարտի դիզայնի brief':'Card design brief',
-      'Մուտքային JSON':'Input JSON',
       'Ինֆոգրաֆիկայի brief':'Infographic brief',
-      'Գիրք → YouTube արշավ':'Book → YouTube campaign',
-      'Հրապարակման հնարավորություններ':'Publishing capabilities',
+      'Ապրանքի JSON տվյալներ':'Product data JSON',
+      'Մուտքային JSON':'Input JSON',
+      'Պրոֆիլ':'Profile',
+      'Գիրք / Amazon KDP / YouTube':'Book / Amazon KDP / YouTube',
+      'Հրատարակման հնարավորություններ':'Publishing capabilities',
+      'Գրքի JSON':'Book JSON',
       'Amazon KDP փաթեթ':'Amazon KDP package',
+      'KDP փաթեթի JSON':'KDP package JSON',
+      'Գիրք → YouTube արշավ':'Book → YouTube campaign',
       'Արշավի JSON':'Campaign JSON',
-      'Google Intelligence / կանոնների կառավարում':'Google Intelligence / Rule Governance',
-      'Սպասող governance դեպքեր':'Pending governance cases',
-      'Խանութը ստուգված է':'Store verified',
-      'Կանոնները ստուգված են':'Rules verified',
-      'Հրապարակումը ստուգված է':'Publishing verified',
-      'Միացումները ստուգված են':'Connectors verified',
+      'Google Intelligence / Կանոնների կառավարում':'Google Intelligence / Rule Governance',
+      'կանոնների կարգավիճակ':'rule status',
+      'սպասող դեպքեր':'pending cases',
+      'Միացումներ':'Connectors',
+      'Խանութ':'Store',
+      'Կանոններ':'Rules',
+      'Հրատարակում':'Publishing',
+      'միացված է':'connected',
+      'մասամբ միացված է':'partially connected',
+      'մասամբ':'partial',
+      'ՉԻ ՀԱՍՏԱՏՎԱԾ':'NOT VERIFIED',
+      'ՄԱՍԱՄԲ':'PARTIAL',
+      'ստուգված է':'verified',
+      'պատրաստ է':'ready',
+      'աշխատում է':'works',
+      'Դետերմինիստական հաշվարկային բլոկներ':'Deterministic calculation blocks',
+      'server-side հաշվարկային շարժիչ':'server-side calculation engine',
+      'AI փոխանցումից առաջ փաստերի ստուգումը Core-ի վերահսկողության տակ է։':'Factual validation before AI handoff is controlled by Core.',
       'Կարգավորումներ':'Settings',
       'Լեզու':'Language',
-      'Մուտքի կոդ':'Access code',
       'Ինտերֆեյսի լեզու':'Interface language',
       'Յուրաքանչյուր օգտատեր կարող է ընտրել իր ինտերֆեյսի լեզուն։ Ընտրությունը պահպանվում է այս սարքում։':'Each user can choose their interface language. The selection is saved on this device.',
-      'Ակնարկ':'Overview',
-      'Հաշվարկներ':'Calculations',
-      'Աղյուսակներ / Excel':'Tables / Excel',
-      'Քարտ / SEO':'Card / SEO',
-      'Գիրք / YouTube':'Book / YouTube',
-      'Կանոններ':'Rules',
-      'Հրապարակում':'Publishing',
-      'Գին':'Price',
-      'Ինքնարժեք / հատ':'Cost / unit',
-      'Վաճառք':'Sales',
-      'Ցուցումներ':'Impressions',
-      'Անցումներ':'Clicks',
-      'Զամբյուղներ':'Carts',
-      'Պատվերներ':'Orders',
-      'Անվանում':'Name',
-      'Նկարագրություն':'Description',
-      'Profile':'Profile',
-      'Generic':'Generic',
-      'Ստուգել':'Check',
-      'Վերլուծել ձագարը':'Analyze funnel',
-      'Դետերմինիստիկ հաշվարկային բլոկներ':'Deterministic calculation blocks',
-      'Առևտրի վերլուծության Core':'Commerce Analytics Core',
-      'Միացումներ':'Connectors',
-      'Հիմնական տվյալների պահոց':'Canonical data store',
-      'Ցուցադրել canonical model-ը':'Show canonical model',
-      'Վերլուծել store-ը':'Analyze store',
-      'Հաշվել':'Calculate',
-      'Հաշվել շահույթը':'Calculate profit',
-      'Ստուգել քարտը':'Validate card',
-      'Կատարել SEO ստուգում':'Run SEO check',
-      'Կառուցել brief':'Build brief',
-      'Ցուցադրել publishing capabilities-ը':'Show publishing capabilities',
-      'Թարմացնել rule status':'Refresh rule status',
-      'Ցուցադրել pending cases':'Show pending cases',
-      'Գիրք / Amazon KDP / YouTube':'Book / Amazon KDP / YouTube',
-      'Կարգավիճակները բերվում են հենց Novessa Core-ից, ոչ թե ցուցադրական տվյալներից։':'Statuses are loaded from Novessa Core, not from demo data.',
-      'Novessa-ն միավորում է ապրանքները, վաճառքը, շահույթը, շուկաների տվյալները, SEO-ն և կանոնների վերահսկումը մեկ համակարգում։':'Novessa combines products, sales, profit, marketplace data, SEO, and rule control in one system.',
-      'Ստուգում…':'Checking…',
-      'Բիզնեսի որոշումների կենտրոն':'Business Decision Center',
-      'AI-ը չի ստեղծում ֆինանսական թիվ։ Բացակա կամ անորոշ տվյալը մնում է':'AI does not create financial numbers. Missing or uncertain data remains',
-      'Ներկայիս համակարգի վիճակը':'Current system status',
-      'ապացույց → թեկնածու → թեստեր → ստուգման փուլ':'evidence → candidate → tests → gate',
-      'Commerce մոդել':'Commerce model',
-      'Կանոնների կառավարում':'Rule governance',
-
+      'Հայերեն':'Armenian', 'Русский':'Russian', 'English':'English'
     }
   };
-
+  const baseText = new WeakMap();
+  let currentLang = 'hy';
+  let rendering = false;
+  function canonicalize(value){
+    let out=String(value||'');
+    for(const pair of canonical) out=out.split(pair[0]).join(pair[1]);
+    return out;
+  }
+  function captureNode(node){
+    if(!node || node.nodeType!==Node.TEXT_NODE) return;
+    const parent=node.parentElement;
+    if(!parent || /^(SCRIPT|STYLE|PRE|CODE|OPTION)$/i.test(parent.tagName)) return;
+    if(!baseText.has(node)) baseText.set(node,canonicalize(node.nodeValue));
+  }
+  function captureTree(root=document.body){
+    const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);
+    while(walker.nextNode()) captureNode(walker.currentNode);
+  }
   function applyLanguage(lang){
-    currentLang=translations[lang] ? lang : 'hy';
+    currentLang=translations[lang]?lang:'hy';
     rendering=true;
     document.documentElement.lang=currentLang;
-    captureBaseText();
+    captureTree();
     const dict=translations[currentLang];
     const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);
-    const nodes=[];
-    while(walker.nextNode()) nodes.push(walker.currentNode);
-    for(const node of nodes){
+    while(walker.nextNode()){
+      const node=walker.currentNode;
       const parent=node.parentElement;
       if(!parent || /^(SCRIPT|STYLE|PRE|CODE|OPTION)$/i.test(parent.tagName)) continue;
       const base=baseText.get(node);
-      if(base!=null) node.nodeValue=dict[base] || base;
+      if(base!==undefined) node.nodeValue=dict[base]!==undefined?dict[base]:base;
     }
-    document.querySelectorAll('[data-i18n-placeholder]').forEach(el=>{
-      const key=el.getAttribute('data-i18n-placeholder');
-      if(key && dict[key]) el.placeholder=dict[key];
-    });
-    const token=document.getElementById('uiToken');
-    if(token && currentLang==='ru') token.setAttribute('aria-label','Код доступа');
-    else if(token && currentLang==='en') token.setAttribute('aria-label','Access code');
-    else if(token) token.setAttribute('aria-label','Մուտքի կոդ');
     const select=document.getElementById('languageSelect');
-    if(select) select.value=currentLang;
+    if(select){select.value=currentLang; select.options[0].text=currentLang==='hy'?'Հայերեն':currentLang==='ru'?'Հայский':'Armenian'; select.options[1].text=currentLang==='hy'?'Русский':currentLang==='ru'?'Русский':'Russian'; select.options[2].text=currentLang==='hy'?'English':currentLang==='ru'?'Английский':'English';}
     rendering=false;
   }
-
-  function setLang(lang){
-    localStorage.setItem('novessa_ui_language',lang);
-    applyLanguage(lang);
-  }
-
   const observer=new MutationObserver(mutations=>{
     if(rendering) return;
     for(const m of mutations){
-      if(m.type==='childList'){
-        m.addedNodes.forEach(node=>{
-          if(node.nodeType===Node.TEXT_NODE){
-            if(!baseText.has(node)) baseText.set(node,node.nodeValue);
-          } else if(node.nodeType===Node.ELEMENT_NODE){
-            captureBaseText(node);
-          }
-        });
-      }
+      if(m.type==='childList') m.addedNodes.forEach(n=>{if(n.nodeType===Node.TEXT_NODE)captureNode(n);else if(n.nodeType===Node.ELEMENT_NODE)captureTree(n);});
+      if(m.type==='characterData' && m.target) captureNode(m.target);
     }
     applyLanguage(currentLang);
   });
-  observer.observe(document.body,{subtree:true,childList:true,characterData:false});
-
-  document.addEventListener('change',event=>{
-    if(event.target?.id==='languageSelect') setLang(event.target.value);
-  });
-
-  captureBaseText();
-  applyLanguage(currentLang);
+  observer.observe(document.body,{subtree:true,childList:true,characterData:true});
+  document.addEventListener('change',event=>{if(event.target?.id==='languageSelect'){localStorage.setItem('novessa_ui_language',event.target.value);applyLanguage(event.target.value);}});
+  captureTree();
+  applyLanguage(localStorage.getItem('novessa_ui_language')||'hy');
 })();
 </script>`;
 index = index.replace('</body>', localizedRuntimeScript + '</body>');
@@ -534,6 +461,21 @@ writeFileSync(indexPath, index);
 
 const stylePath = 'public/styles.css';
 let style = readFileSync(stylePath, 'utf8');
-style += ".ui-token{display:block!important;width:100%;max-width:520px;padding:10px 12px}\n.novessa-premium{}\n:root{\n  --novessa-bg:#070713;\n  --novessa-surface:#0f1022;\n  --novessa-surface-2:#161832;\n  --novessa-purple:#6d35c9;\n  --novessa-violet:#8b5cf6;\n  --novessa-cobalt:#315cff;\n  --novessa-text:#f6f4ff;\n  --novessa-muted:#a9a7bc;\n  --novessa-border:rgba(139,92,246,.22);\n}\nbody{\n  background:\n    radial-gradient(circle at 12% 8%, rgba(109,53,201,.23), transparent 34%),\n    radial-gradient(circle at 88% 12%, rgba(49,92,255,.18), transparent 32%),\n    linear-gradient(135deg,#060610 0%,#0a0b19 48%,#0b0c1d 100%);\n  color:var(--novessa-text);\n}\n.panel,.card,article.panel,.metric-card,.status-card{\n  background:linear-gradient(145deg,rgba(22,24,50,.92),rgba(10,11,28,.94));\n  border:1px solid var(--novessa-border);\n  box-shadow:0 18px 45px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.025);\n  backdrop-filter:blur(14px);\n  border-radius:18px;\n}\nbutton,.tab,.secondary,.ghost{\n  border-radius:12px;\n}\nbutton:not(.ghost),.primary{\n  background:linear-gradient(135deg,var(--novessa-cobalt),var(--novessa-purple));\n  border:1px solid rgba(139,92,246,.34);\n  box-shadow:0 8px 24px rgba(49,92,255,.18);\n}\nbutton:hover,.tab:hover{\n  transform:translateY(-1px);\n}\ninput,select,textarea{\n  background:#0c0d1c;\n  color:var(--novessa-text);\n  border:1px solid rgba(139,92,246,.28);\n  border-radius:12px;\n}\ninput:focus,select:focus,textarea:focus{\n  outline:none;\n  border-color:var(--novessa-cobalt);\n  box-shadow:0 0 0 3px rgba(49,92,255,.14);\n}\n.tab.active{\n  background:linear-gradient(135deg,rgba(49,92,255,.22),rgba(109,53,201,.22));\n  border-color:rgba(139,92,246,.45);\n}\n.section-title h1,.section-title h2,.section-title h3{\n  letter-spacing:-.02em;\n}\n.muted{\n  color:var(--novessa-muted);\n}\n.json{\n  background:#090a15;\n  border:1px solid rgba(139,92,246,.16);\n  border-radius:14px;\n  padding:14px;\n  overflow:auto;\n}\ntable{\n  border-collapse:separate;\n  border-spacing:0;\n}\nth,td{\n  border-color:rgba(139,92,246,.13)!important;\n}\n@media (max-width:820px){\n  .grid-2,.grid-3{grid-template-columns:1fr!important}\n  .toolbar{flex-wrap:wrap}\n  .tab{width:100%}\n}";
+style += ` 
+:root{--bg:#050314;--panel:#0d0a1f;--panel2:#151033;--line:#2a2154;--text:#f6f3ff;--muted:#a8a1c4;--accent:#a78bfa;--accent2:#3b82f6;--warn:#f5c96a;--bad:#fb7185;--shadow:0 18px 60px rgba(14,8,46,.42)}
+body{background:radial-gradient(circle at 12% 0%,rgba(109,40,217,.24),transparent 32%),radial-gradient(circle at 88% 8%,rgba(37,99,235,.2),transparent 28%),linear-gradient(180deg,#07051a 0%,#050314 100%)}
+.topbar{background:rgba(5,3,20,.88);border-bottom-color:#241d48;box-shadow:0 8px 35px rgba(5,3,20,.4)}
+.brand-mark{background:linear-gradient(135deg,#4c1d95,#1d4ed8);border-color:#6651b5;box-shadow:0 8px 24px rgba(76,29,149,.35)}
+.truth-card,.panel{background:linear-gradient(145deg,rgba(24,16,54,.92),rgba(10,8,28,.96));border-color:#30245d}
+.truth-title,.eyebrow{color:var(--accent)}
+.tabs{background:rgba(10,7,28,.84);border-color:#2c2352}
+.tab.active{background:linear-gradient(135deg,rgba(109,40,217,.35),rgba(37,99,235,.28));border-color:#6550bd}
+button:hover,.tab:hover,.ghost:hover,.secondary:hover{border-color:#7159cb;transform:translateY(-1px)}
+button{transition:transform .15s ease,border-color .15s ease,background .15s ease}
+.calc-form button{background:linear-gradient(135deg,#5b21b6,#1d4ed8);border-color:#7555d3;color:#fff}
+.status-grid{grid-template-columns:repeat(6,minmax(0,1fr))}
+@media (max-width:1100px){.status-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:720px){.shell{padding:16px}.hero{grid-template-columns:1fr}.grid-2,.calc-form{grid-template-columns:1fr}.status-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.topbar{padding:12px 16px}.top-actions{flex-wrap:wrap}.toolbar input{max-width:100%}}
+`;
 writeFileSync(stylePath, style);
 
