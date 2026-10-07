@@ -185,7 +185,9 @@ export async function operatorRun(input={}){
   }
   const actions=actionList(facts).map(action=>{
     const issued_at=Date.now();
-    return {...action,action_id:'act-'+randomUUID(),issued_at,approval_required:true,approval_token:sign({action_id:action.action_id,type:action.type,payload:action.payload,issued_at,request_id})};
+    const action_id='act-'+randomUUID();
+    const approval_token=sign({action_id,type:action.type,payload:action.payload,issued_at,request_id});
+    return {...action,action_id,issued_at,approval_required:true,approval_token};
   });
   let interpretation=out('input_incomplete',{error:'operator_objective_not_provided'});
   if(configured(input.objective)||Object.keys(facts).length){
