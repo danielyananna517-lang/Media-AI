@@ -621,7 +621,7 @@ const js=String.raw`
 `;
 if(!app.includes('novessa_book_workspace_v2')) app+=newline+js+newline;
 
-const __novessaProductAnalysis=String.raw\`
+const __novessaProductAnalysis=String.raw`
 (function(){
   const el=id=>document.getElementById(id);
   const num=id=>{const v=Number(el(id)?.value);return Number.isFinite(v)?v:null;};
