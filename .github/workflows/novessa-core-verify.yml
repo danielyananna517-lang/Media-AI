@@ -78,6 +78,6 @@ jobs:
             sleep 1
           done
           grep -q '"status":"ok"' /tmp/health.json
-          curl -fsS -X POST -H 'content-type: application/json' --data '{"price":100,"cost":40,"commission_pct":10,"logistics_per_unit":5,"storage_per_unit":2,"tax_pct":0,"ads_per_unit":3,"sales":10,"buyout_orders":10}' http://127.0.0.1:8787/ui/api/action/unit-economics > /tmp/unit-economics.json
+          curl -fsS -X POST -H 'content-type: application/json' --data '{"price":100,"unit_cost":40,"sales":10,"commission_percent":10,"logistics_per_unit":5,"storage_per_unit":2,"tax_percent":0,"ad_spend":30}' http://127.0.0.1:8787/ui/api/action/unit-economics > /tmp/unit-economics.json
           grep -q '"status"' /tmp/unit-economics.json
           grep -q '"verification_status"' /tmp/unit-economics.json
