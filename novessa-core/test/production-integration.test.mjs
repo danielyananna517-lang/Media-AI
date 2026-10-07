@@ -12,12 +12,14 @@ import {
   buildPdf,
   buildXlsx
 } from '../src/novessaProduction.mjs';
+import { persistenceStatus, loadWorkspace, saveWorkspace } from '../src/persistence.mjs';
 
 test('production integration patched the generated runtime',()=>{
   const server=readFileSync(new URL('../server.mjs',import.meta.url),'utf8');
   assert.match(server,/__novessaProduction/);
   assert.match(server,/\/api\/production\/operator/);
   assert.match(server,/\/api\/production\/book\/export/);
+  assert.match(server,/\/ui\/api\/action\/workspace-save/);
   assert.equal(existsSync(new URL('../public/index.html',import.meta.url)),true);
 });
 
@@ -28,6 +30,44 @@ test('production capabilities declare real features and safe action boundary',()
   assert.equal(caps.book.pdf,true);
   assert.equal(caps.operator.approval,true);
   assert.equal(caps.operator.external_write_actions,true);
+  assert.equal(caps.persistence.provider,'supabase-rest');
+  assert.equal(caps.persistence.server_side,true);
+});
+
+test('persistence is explicit when the server database is not configured',()=>{
+  const previousUrl=process.env.NOVESSA_PERSISTENCE_SUPABASE_URL;
+  const previousKey=process.env.NOVESSA_PERSISTENCE_SUPABASE_SERVICE_ROLE_KEY;
+  delete process.env.NOVESSA_PERSISTENCE_SUPABASE_URL;
+  delete process.env.NOVESSA_PERSISTENCE_SUPABASE_SERVICE_ROLE_KEY;
+  const status=persistenceStatus();
+  assert.equal(status.status,'not_configured');
+  assert.equal(status.multi_user_auth,false);
+  if(previousUrl===undefined)delete process.env.NOVESSA_PERSISTENCE_SUPABASE_URL;else process.env.NOVESSA_PERSISTENCE_SUPABASE_URL=previousUrl;
+  if(previousKey===undefined)delete process.env.NOVESSA_PERSISTENCE_SUPABASE_SERVICE_ROLE_KEY;else process.env.NOVESSA_PERSISTENCE_SUPABASE_SERVICE_ROLE_KEY=previousKey;
+});
+
+test('persistence REST adapter loads and saves with server-only auth',async()=>{
+  const previousUrl=process.env.NOVESSA_PERSISTENCE_SUPABASE_URL;
+  const previousKey=process.env.NOVESSA_PERSISTENCE_SUPABASE_SERVICE_ROLE_KEY;
+  process.env.NOVESSA_PERSISTENCE_SUPABASE_URL='https://example.supabase.co';
+  process.env.NOVESSA_PERSISTENCE_SUPABASE_SERVICE_ROLE_KEY='server-only-test-key';
+  const calls=[];
+  const fetchImpl=async(url,options)=>{
+    calls.push({url,options});
+    if(options.method==='GET')return new Response(JSON.stringify([{workspace_id:'owner',kind:'book',state:{title:'Persisted'},version:4,updated_at:'2026-10-07T00:00:00.000Z'}]),{status:200,headers:{'content-type':'application/json'}});
+    return new Response(JSON.stringify([{workspace_id:'owner',kind:'book',version:5,updated_at:'2026-10-07T00:00:01.000Z'}]),{status:201,headers:{'content-type':'application/json'}});
+  };
+  const loaded=await loadWorkspace({kind:'book'},{fetchImpl});
+  assert.equal(loaded.status,'verified');
+  assert.equal(loaded.state.title,'Persisted');
+  const saved=await saveWorkspace({kind:'book',state:{title:'New'}},{fetchImpl});
+  assert.equal(saved.status,'verified');
+  assert.equal(saved.version,5);
+  assert.match(calls[0].url,/novessa_workspaces\?workspace_id=eq.owner&kind=eq.book/);
+  assert.equal(calls[1].options.headers.authorization,'Bearer server-only-test-key');
+  assert.equal(calls[1].options.body.includes('server-only-test-key'),false);
+  if(previousUrl===undefined)delete process.env.NOVESSA_PERSISTENCE_SUPABASE_URL;else process.env.NOVESSA_PERSISTENCE_SUPABASE_URL=previousUrl;
+  if(previousKey===undefined)delete process.env.NOVESSA_PERSISTENCE_SUPABASE_SERVICE_ROLE_KEY;else process.env.NOVESSA_PERSISTENCE_SUPABASE_SERVICE_ROLE_KEY=previousKey;
 });
 
 test('RNP is deterministic and auditable',()=>{
