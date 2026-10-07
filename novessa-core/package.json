@@ -7,6 +7,6 @@
   "scripts":{
     "test":"node --test --test-concurrency=1",
     "start":"node server.mjs",
-    "vercel-build":"node build.mjs"
+    "vercel-build":"node build.mjs && node production.mjs"
   }
 }
