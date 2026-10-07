@@ -24,7 +24,8 @@ jobs:
       - name: Validate JavaScript syntax
         run: |
           node --check novessa-core/build.mjs
-          node --check novessa-core/server.mjs.template
+          cp novessa-core/server.mjs.template /tmp/server-template.mjs
+          node --check /tmp/server-template.mjs
 
       - name: Validate package and Vercel configuration
         run: |
