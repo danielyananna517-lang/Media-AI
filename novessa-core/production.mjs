@@ -463,6 +463,32 @@ if(!server.includes('__novessaProduction')){
   writeFileSync(serverPath,server);
 }
 
+
+// === NOVESSA PERSISTENCE SERVER PATCH ===
+if(server.includes('__novessaProduction') && !server.includes('/ui/api/action/workspace-save')){
+  const persistenceUiHandlers=String.raw`
+      const persistenceUiActions=['workspace-load','workspace-save'];
+      if(persistenceUiActions.includes(actionName)){
+        const access=verifyUiAccess({headers:req.headers,env:process.env});
+        if(access.status!=='verified') return send(res,access.http_status||401,{status:access.status,error:access.error||'ui_auth_failed'});
+        let uiInput;
+        try{uiInput=await readJson(req);}catch(error){return send(res,error.statusCode||400,{status:'error',error:String(error.message||error)});}
+        const out=actionName==='workspace-load'
+          ? await __novessaProduction.workspaceLoad(uiInput)
+          : await __novessaProduction.workspaceSave(uiInput);
+        const httpStatus=out.status==='invalid_data'||out.status==='input_incomplete'?400:out.status==='provider_unavailable'?503:out.status==='error'?502:200;
+        return send(res,httpStatus,out);
+      }
+      `;
+  server=server.replace("      const out=await runUiAction(actionName,uiInput,{env:process.env,activeRecommendationPolicy});",persistenceUiHandlers+newline+"      const out=await runUiAction(actionName,uiInput,{env:process.env,activeRecommendationPolicy});");
+  const persistenceApiRoutes=String.raw`
+    if(u.pathname==='/api/production/workspace/load') return sendApiResult(res,200,await __novessaProduction.workspaceLoad(input),requestId);
+    if(u.pathname==='/api/production/workspace/save') return sendApiResult(res,200,await __novessaProduction.workspaceSave(input),requestId);
+`;
+  server=server.replace("    if(u.pathname.startsWith('/api/connectors/shopify/'))",persistenceApiRoutes+newline+"    if(u.pathname.startsWith('/api/connectors/shopify/'))");
+  writeFileSync(serverPath,server);
+}
+
 let index=readFileSync(uiPath,'utf8');
 const ui=String.raw`
 <section class="novessa-production-layer" id="novessa-production-layer">
