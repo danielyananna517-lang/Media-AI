@@ -660,7 +660,8 @@ const __novessaProductAnalysis=String.raw`
         evidence.length?evidence.map(e=>'<div><a href="'+escapeHtml(e.url)+'" target="_blank" rel="noopener noreferrer">'+escapeHtml(e.title||e.url||'Evidence')+'</a><p>'+escapeHtml(e.snippet||'')+'</p></div>').join('')
         :'<p>Evidence չի վերադարձվել։ NOVESSA-ն տվյալ չի հորինում։</p>'
       )+'</div>':'<p class="cc-analysis-note">Շուկայի հարցումը լրացված չէ․ միայն Economics-ն է հաշվարկվել։</p>')+
-      '<details class="cc-analysis-details"><summary>Core հաշվարկի տվյալներ</summary><pre>'+escapeHtml(JSON.stringify(econ,null,2))+'</pre></details>';
+      '<details class="cc-analysis-details"><summary>Core հաշվարկի տվյալներ</summary><pre>'+escapeHtml(JSON.stringify(econ,null,2))+'</pre></details>'+
+      '<button id="ccAnalysisHandoff" type="button" class="secondary">Ուղարկել Decision Center / AI Operator</button>';
   };
   el('ccAnalyzeProduct')?.addEventListener('click',async()=>{
     const out=el('ccProductAnalysis');if(out)out.textContent='Վերլուծությունը կատարվում է…';
@@ -669,6 +670,12 @@ const __novessaProductAnalysis=String.raw`
       const raw=await r.text();let body={};try{body=JSON.parse(raw)}catch{}
       if(!r.ok){if(out)out.textContent=body.error||'Ապրանքի վերլուծությունը չհաջողվեց։';return;}
       render(body);
+      el('ccAnalysisHandoff')?.addEventListener('click',()=>{
+        const map={dcProduct:'ccProductName',dcPrice:'ccProductPrice',dcCost:'ccProductCost',dcSales:'ccProductSales',dcCommission:'ccProductCommission',dcLogistics:'ccProductLogistics',dcStorage:'ccProductStorage',dcTax:'ccProductTax',dcAds:'ccProductAds',npPrice:'ccProductPrice',npCost:'ccProductCost',npSales:'ccProductSales',npCommission:'ccProductCommission',npLogistics:'ccProductLogistics',npStorage:'ccProductStorage',npTax:'ccProductTax',npAds:'ccProductAds',npStock:'ccProductStock'};
+        for(const [to,from] of Object.entries(map)){const target=el(to),source=el(from);if(target&&source)target.value=source.value||'';}
+        const q=el('ccProductMarketQuery')?.value||'';if(el('npMarketQuery'))el('npMarketQuery').value=q;
+        document.getElementById('novessa-decision-center')?.scrollIntoView({behavior:'smooth',block:'start'});
+      });
     }catch(error){if(out)out.textContent=error.message||'Ապրանքի վերլուծությունը ՉԻ ՀԱՍՏԱՏՎԱԾ։';}
   });
 })();
