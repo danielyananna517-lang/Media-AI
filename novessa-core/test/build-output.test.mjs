@@ -40,6 +40,12 @@ test('Core Media client matches the verified Media AI HMAC contract',async()=>{
   const crypto = await import('node:crypto');
   const { requestMedia } = await import('../src/mediaClient.mjs');
   const secret='test-media-secret';
+  const oldBase=process.env.NOVESSA_GATEWAY_BASE_URL;
+  const oldSecret=process.env.NOVESSA_GATEWAY_SHARED_SECRET;
+  const oldEnv=process.env.NOVESSA_ENV;
+  process.env.NOVESSA_GATEWAY_BASE_URL='https://example.test';
+  process.env.NOVESSA_GATEWAY_SHARED_SECRET=secret;
+  process.env.NOVESSA_ENV='development';
   let call=null;
   const out=await requestMedia({
     operation:'chat',
@@ -68,4 +74,7 @@ test('Core Media client matches the verified Media AI HMAC contract',async()=>{
   assert.equal(call.url,'https://example.test/v1/media/request');
   assert.equal(out.status,'success');
   assert.equal(out.request_id,'req-test-1');
+  if(oldBase===undefined) delete process.env.NOVESSA_GATEWAY_BASE_URL; else process.env.NOVESSA_GATEWAY_BASE_URL=oldBase;
+  if(oldSecret===undefined) delete process.env.NOVESSA_GATEWAY_SHARED_SECRET; else process.env.NOVESSA_GATEWAY_SHARED_SECRET=oldSecret;
+  if(oldEnv===undefined) delete process.env.NOVESSA_ENV; else process.env.NOVESSA_ENV=oldEnv;
 });
