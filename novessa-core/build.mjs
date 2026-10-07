@@ -194,7 +194,7 @@ const languageSettingsHtml = `
         </div>
         <div class="field wide">
           <label for="uiToken">Մուտքի կոդ</label>
-          <input id="uiToken" class="ui-token" type="password" placeholder="Մուտքի կոդ" autocomplete="off">
+          <input id="uiToken" class="ui-token" type="password" placeholder="Մուտքի կոդ" data-i18n-placeholder="Մուտքի կոդ" autocomplete="off">
         </div>
       </article>
     </section>`;
@@ -260,6 +260,7 @@ const localizedRuntimeScript = `
       'Հրապարակումը ստուգված է':'Публикация проверена',
       'Կարգավորումներ':'Настройки',
       'Լեզու':'Язык',
+      'Մուտքի կոդ':'Код доступа',
       'Ինտերֆեյսի լեզու':'Язык интерфейса',
       'Յուրաքանչյուր օգտատեր կարող է ընտրել իր ինտերֆեյսի լեզուն։ Ընտրությունը պահպանվում է այս սարքում։':'Каждый пользователь может выбрать свой язык интерфейса. Выбор сохраняется на этом устройстве.',
       'Ակնարկ':'Обзор',
@@ -351,6 +352,7 @@ const localizedRuntimeScript = `
       'Միացումները ստուգված են':'Connectors verified',
       'Կարգավորումներ':'Settings',
       'Լեզու':'Language',
+      'Մուտքի կոդ':'Access code',
       'Ինտերֆեյսի լեզու':'Interface language',
       'Յուրաքանչյուր օգտատեր կարող է ընտրել իր ինտերֆեյսի լեզուն։ Ընտրությունը պահպանվում է այս սարքում։':'Each user can choose their interface language. The selection is saved on this device.',
       'Ակնարկ':'Overview',
