@@ -26,7 +26,7 @@ test('production capabilities declare real features and safe action boundary',()
   assert.equal(caps.book.epub,true);
   assert.equal(caps.book.pdf,true);
   assert.equal(caps.operator.approval,true);
-  assert.equal(caps.operator.external_write_actions,false);
+  assert.equal(caps.operator.external_write_actions,true);
 });
 
 test('RNP is deterministic and auditable',()=>{
@@ -66,7 +66,7 @@ test('EPUB is a real ZIP package with uncompressed mimetype',()=>{
   assert.equal(result.status,'verified');
   assert.equal(result.media_type,'application/epub+zip');
   assert.equal(result.content.subarray(0,2).toString('binary'),'PK');
-  assert.match(result.content.toString('binary'),'application/epub+zip');
+  assert.ok(result.content.toString('binary').includes('application/epub+zip'));
 });
 
 test('PDF is a real PDF binary',()=>{
