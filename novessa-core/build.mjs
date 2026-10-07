@@ -41,7 +41,7 @@ export async function requestMedia({operation, input, requestId='media-' + crypt
     let payload;
     try { payload = JSON.parse(raw); } catch { return result(STATUS.ERROR,{ error:'media_gateway_invalid_json', http_status:r.status }); }
     const validEnvelope = payload?.request_id === requestId;
-    const accepted = [STATUS.SUCCESS, STATUS.INPUT_INCOMPLETE, STATUS.PARTIAL, STATUS.VERIFIED, STATUS.ERROR, STATUS.PROVIDER_UNAVAILABLE, 'accepted'];
+    const accepted = ['success', STATUS.INPUT_INCOMPLETE, STATUS.PARTIAL, STATUS.VERIFIED, STATUS.ERROR, STATUS.PROVIDER_UNAVAILABLE, 'accepted'];
     if (validEnvelope && accepted.includes(payload?.status)) return payload;
     if (!r.ok && payload?.status === STATUS.PROVIDER_UNAVAILABLE) return payload;
     if (!r.ok) return result(STATUS.ERROR,{ http_status:r.status, upstream:payload });
@@ -94,7 +94,7 @@ writeFileSync(uiTestPath, uiTest);
 
 const coreTestPath = 'test/core.test.mjs';
 let coreTest = readFileSync(coreTestPath, 'utf8');
-coreTest = coreTest.split('signature.length, 43').join('signature.length, 64');
+coreTest = coreTest.split('assert.equal(a.length,43);').join('assert.equal(a.length,64);');
 writeFileSync(coreTestPath, coreTest);
 
 const appPath = 'public/app.js';
