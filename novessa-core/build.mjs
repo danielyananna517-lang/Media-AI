@@ -14,7 +14,7 @@ import { STATUS, result } from './status.mjs';
 import { validateGatewayUrl } from './connectors/config.mjs';
 
 function sha256(s){ return crypto.createHash('sha256').update(s).digest('hex'); }
-function base64url(buffer){ return buffer.toString('base64').replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_'); }
+function base64url(buffer){ return buffer.toString('base64').replace(/=/g,'').replace(/\\+/g,'-').replace(/\\\//g,'_'); }
 function signature(secret, timestamp, requestId, body){
   const payload = timestamp + '.' + requestId + '.' + sha256(body);
   return base64url(crypto.createHmac('sha256', secret).update(payload).digest());
