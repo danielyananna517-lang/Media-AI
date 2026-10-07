@@ -220,7 +220,8 @@ const localizedRuntimeScript = `
 <script>
 (function(){
   const baseText = new WeakMap();
-  let currentLang = localStorage.getItem('novessa_ui_language') || 'hy';
+  function detectDefaultLanguage(){ const raw=(navigator.language||'').toLowerCase(); if(raw.startsWith('ru')) return 'ru'; if(raw.startsWith('en')) return 'en'; return 'hy'; }
+  let currentLang = localStorage.getItem('novessa_ui_language') || detectDefaultLanguage();
   let rendering = false;
 
   function captureBaseText(root=document.body){
