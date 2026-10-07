@@ -555,6 +555,17 @@ const decisionCenterHtml = `
           <div><span>✓</span><p data-dc="truth4">AI-ը մեկնաբանում է տվյալը, բայց չի դառնում հաշվապահական truth source։</p></div>
         </div>
       </article>
+      <article class="dc-panel dc-price-panel">
+        <div class="dc-section-tag" data-dc="priceTag">4 • ԳԻՆ ԵՎ ԶԵՂՉ</div>
+        <h3 data-dc="priceTitle">Գին և զեղչ</h3>
+        <p class="dc-price-help" data-dc="priceHelp">Մուտքագրիր գինը և զեղչի տոկոսը։ Հաշվարկը կատարվում է գործող Core pricing route-ով։</p>
+        <div class="dc-price-fields">
+          <label><span data-dc="listPrice">Գին</span><input id="dcListPrice" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0"></label>
+          <label><span data-dc="discountPercent">Զեղչ, %</span><input id="dcDiscountPercent" type="number" inputmode="decimal" step="0.01" min="0" max="100" placeholder="0"></label>
+        </div>
+        <button id="dcPriceCalculate" type="button" data-dc="calculateDiscount">Հաշվել</button>
+        <div id="dcPriceResult" class="dc-price-result" aria-live="polite"></div>
+      </article>
     </div>
   </div>
 </section>`;
@@ -589,7 +600,9 @@ const decisionCenterScript = `
       coreReady:'Core OK',liveConnected:'Live կապ կա',notConnected:'Կապ չկա',loading:'Ստուգում…',
       invalid:'Լրացրու բոլոր անհրաժեշտ թվերը՝ Core հաշվարկը ճիշտ ստանալու համար.',
       failed:'Core հաշվարկը չհաջողվեց. արդյունքը չեմ փոխարինում հորինված թվով.',
-      resultTitle:'Core հաշվարկի արդյունք',source:'Source: NOVESSA Core'
+      resultTitle:'Core հաշվարկի արդյունք',source:'Source: NOVESSA Core',
+      priceTag:'4 • ԳԻՆ ԵՎ ԶԵՂՉ',priceTitle:'Գին և զեղչ',priceHelp:'Մուտքագրիր գինը և զեղչի տոկոսը։ Հաշվարկը կատարվում է գործող Core pricing route-ով.',
+      listPrice:'Գին',discountPercent:'Զեղչ, %',calculateDiscount:'Հաշվել'
     },
     ru:{
       eyebrow:'NOVESSA • ЦЕНТР БИЗНЕС-РЕШЕНИЙ',title:'Решения, а не просто dashboard',
@@ -611,7 +624,9 @@ const decisionCenterScript = `
       coreReady:'Core OK',liveConnected:'Live подключён',notConnected:'Нет подключения',loading:'Проверка…',
       invalid:'Заполни необходимые числовые поля для корректного Core-расчёта.',
       failed:'Расчёт Core не выполнен. Я не заменяю его выдуманными цифрами.',
-      resultTitle:'Результат расчёта Core',source:'Source: NOVESSA Core'
+      resultTitle:'Результат расчёта Core',source:'Source: NOVESSA Core',
+      priceTag:'4 • ЦЕНА И СКИДКА',priceTitle:'Цена и скидка',priceHelp:'Введи цену и процент скидки. Расчёт выполняется через рабочий Core pricing route.',
+      listPrice:'Цена',discountPercent:'Скидка, %',calculateDiscount:'Рассчитать'
     },
     en:{
       eyebrow:'NOVESSA • BUSINESS DECISION CENTER',title:'Decisions, not just a dashboard',
@@ -633,7 +648,9 @@ const decisionCenterScript = `
       coreReady:'Core OK',liveConnected:'Live connected',notConnected:'Not connected',loading:'Checking…',
       invalid:'Fill in the required numeric fields for a valid Core calculation.',
       failed:'Core calculation failed. I will not replace it with invented numbers.',
-      resultTitle:'Core calculation result',source:'Source: NOVESSA Core'
+      resultTitle:'Core calculation result',source:'Source: NOVESSA Core',
+      priceTag:'4 • PRICE & DISCOUNT',priceTitle:'Price & discount',priceHelp:'Enter the price and discount percentage. The calculation uses the working Core pricing route.',
+      listPrice:'Price',discountPercent:'Discount, %',calculateDiscount:'Calculate'
     }
   };
   const lang=()=>document.documentElement.lang==='ru'?'ru':document.documentElement.lang==='en'?'en':'hy';
@@ -698,6 +715,23 @@ const decisionCenterScript = `
       byId('dcResultJson').outerHTML='<div class="dc-metrics">'+(cards||'<div class="dc-result-message">Core-ը վերադարձրել է արդյունքը, բայց ֆինանսական դաշտերը ճանաչելի չեն ցուցադրման համար։</div>')+'</div>'+status+(details?'<div class="dc-details">'+details+'</div>':'');
     }catch{showMessage(m.failed,'bad');}
   };
+  const priceNum=id=>{const v=Number(byId(id)?.value);return Number.isFinite(v)?v:null;};
+  const calculatePriceDiscount=async()=>{
+    const m=textMap[lang()],price=priceNum('dcListPrice'),discount=priceNum('dcDiscountPercent'),out=byId('dcPriceResult');
+    if(price===null||discount===null||price<0||discount<0||discount>100){out.textContent=m.invalid;return;}
+    out.textContent='…';
+    try{
+      const r=await fetch('/ui/api/action/pricing',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({list_price:price,discount_percent:discount})});
+      const body=await r.json();
+      if(!r.ok){out.textContent=body?.error||m.failed;return;}
+      const source=body?.data??body?.result??body;
+      const flat={}; const visit=(obj,prefix='')=>{if(!obj||typeof obj!=='object')return;for(const [k,v] of Object.entries(obj)){const key=prefix?prefix+'.'+k:k;if(v&&typeof v==='object')visit(v,key);else if(v!==undefined&&v!==null)flat[key]=v;}};
+      visit(source);
+      const rows=Object.entries(flat).filter(([k])=>/price|discount/i.test(k)).slice(0,8).map(([k,v])=>'<div class="dc-price-row"><span>'+k+'</span><strong>'+String(v)+'</strong></div>').join('');
+      out.innerHTML=rows||'<div class="dc-price-row"><span>Core</span><strong>'+JSON.stringify(source)+'</strong></div>';
+    }catch{out.textContent=m.failed;}
+  };
+  byId('dcPriceCalculate')?.addEventListener('click',calculatePriceDiscount);
   const clickTab=name=>document.querySelector('.tab[data-tab="'+name+'"]')?.click();
   byId('dcCalculate')?.addEventListener('click',calculate);
   byId('dcFinance')?.addEventListener('click',()=>clickTab('finance'));
@@ -721,8 +755,7 @@ style += `
 .dc-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:20px 0}.dc-kpi{padding:15px 16px;border:1px solid #2f2559;border-radius:17px;background:rgba(14,10,33,.8)}.dc-kpi span{display:block;color:#a39bbf;font-size:12px;margin-bottom:7px}.dc-kpi strong{font-size:16px;color:#f7f3ff}.dc-kpi strong[data-status=ok]{color:#86efac}.dc-kpi strong[data-status=partial]{color:#fde68a}.dc-kpi strong[data-status=bad]{color:#fda4af}
 .dc-grid{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(320px,.85fr);gap:16px}.dc-side{display:grid;gap:16px}.dc-panel{border:1px solid #2f2559;border-radius:20px;background:linear-gradient(145deg,rgba(18,13,39,.94),rgba(9,7,26,.96));padding:20px}.dc-panel-primary{min-width:0}.dc-panel-head h3{margin:7px 0 6px;font-size:22px}.dc-panel-head p{margin:0;color:#a9a2c0;line-height:1.5}
 .dc-fields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:18px}.dc-fields label{display:grid;gap:7px;color:#c6bfdc;font-size:12px;font-weight:650}.dc-fields input{width:100%;box-sizing:border-box;padding:11px 12px;border-radius:12px;border:1px solid #342b5b;background:#09071b;color:#f7f3ff;outline:none}.dc-fields input:focus{border-color:#7257d0;box-shadow:0 0 0 3px rgba(109,40,217,.16)}
-.dc-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}.dc-actions button{min-height:42px}.dc-result{margin-top:16px;padding:16px;border-radius:15px;border:1px dashed #3a2e69;background:#08061a;min-height:92px}.dc-result-empty{color:#89819f;font-size:13px;padding-top:18px}.dc-result-head{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:10px}.dc-result-head strong{font-size:15px}.dc-result-head span{font-size:11px;color:#9289ad}.dc-result pre{margin:0;max-height:310px;overflow:auto;white-space:pre-wrap;color:#d9d3ef;font-size:11px;line-height:1.45}.dc-result-message{font-size:13px;line-height:1.5}.dc-result-message[data-kind=bad]{color:#fda4af}
-.dc-next-list{display:grid;gap:8px;margin-top:12px}.dc-next{display:grid;grid-template-columns:34px 1fr 20px;gap:10px;align-items:center;text-align:left;border:1px solid #2c2450;border-radius:14px;padding:11px 12px;background:#0b081f;color:#eee9ff;cursor:pointer}.dc-next:hover{border-color:#634bbd}.dc-next b{font-size:11px;color:#8f83b4}.dc-next strong{display:block;font-size:13px}.dc-next small{display:block;color:#9088a8;line-height:1.35;margin-top:3px}.dc-next i{font-style:normal;color:#a78bfa}
+.dc-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}.dc-actions button{min-height:42px}.dc-result{margin-top:16px;padding:16px;border-radius:15px;border:1px dashed #3a2e69;background:#08061a;min-height:92px}.dc-result-empty{color:#89819f;font-size:13px;padding-top:18px}.dc-result-head{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:10px}.dc-result-head strong{font-size:15px}.dc-result-head span{font-size:11px;color:#9289ad}.dc-result pre{margin:0;max-height:310px;overflow:auto;white-space:pre-wrap;color:#d9d3ef;font-size:11px;line-height:1.45}.dc-result-message{font-size:13px;line-height:1.5}.dc-result-message[data-kind=bad]{color:#fda4af}.dc-price-help{font-size:12px;color:#a9a2c0;line-height:1.45;margin:0 0 12px}.dc-price-fields{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0}.dc-price-fields label{display:grid;gap:7px;color:#c6bfdc;font-size:12px;font-weight:650}.dc-price-fields input{width:100%;box-sizing:border-box;padding:11px 12px;border-radius:12px;border:1px solid #342b5b;background:#09071b;color:#f7f3ff;outline:none}.dc-price-fields input:focus{border-color:#7257d0;box-shadow:0 0 0 3px rgba(109,40,217,.16)}.dc-price-result{margin-top:12px;padding:11px;border-radius:12px;border:1px dashed #3a2e69;background:#08061a;color:#ddd6ef;font-size:12px;min-height:18px}.dc-price-row{display:flex;justify-content:space-between;gap:12px;padding:5px 0;border-bottom:1px solid rgba(83,68,128,.25)}.dc-price-row:last-child{border-bottom:0}.dc-price-row span{color:#9991b3}.dc-price-row strong{color:#f7f3ff;text-align:right}.dc-next-list{display:grid;gap:8px;margin-top:12px}.dc-next{display:grid;grid-template-columns:34px 1fr 20px;gap:10px;align-items:center;text-align:left;border:1px solid #2c2450;border-radius:14px;padding:11px 12px;background:#0b081f;color:#eee9ff;cursor:pointer}.dc-next:hover{border-color:#634bbd}.dc-next b{font-size:11px;color:#8f83b4}.dc-next strong{display:block;font-size:13px}.dc-next small{display:block;color:#9088a8;line-height:1.35;margin-top:3px}.dc-next i{font-style:normal;color:#a78bfa}
 .dc-truth-list{display:grid;gap:9px;margin-top:13px}.dc-truth-list div{display:flex;gap:9px;align-items:flex-start}.dc-truth-list span{color:#86efac;font-weight:900}.dc-truth-list p{margin:0;color:#aca5bf;font-size:12px;line-height:1.45}
 @media (max-width:950px){.dc-grid{grid-template-columns:1fr}.dc-fields{grid-template-columns:repeat(2,minmax(0,1fr))}}@media (max-width:650px){.novessa-decision-center{padding:16px;border-radius:18px}.dc-hero{flex-direction:column}.dc-truth{white-space:normal}.dc-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.dc-fields{grid-template-columns:1fr}.dc-actions{flex-direction:column}.dc-actions button{width:100%}}
 `;
