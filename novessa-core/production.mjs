@@ -388,6 +388,7 @@ if(!server.includes('__novessaProduction')){
         }
         const httpStatus=out.status==='invalid_data'||out.status==='input_incomplete'?400:out.status==='provider_unavailable'?503:out.status==='error'?502:200;
         return send(res,httpStatus,out);
+      }
       `;
   server=server.replace("      const out=await runUiAction(actionName,uiInput,{env:process.env,activeRecommendationPolicy});",uiHandlers+newline+"      const out=await runUiAction(actionName,uiInput,{env:process.env,activeRecommendationPolicy});");
   const apiRoutes=String.raw`
