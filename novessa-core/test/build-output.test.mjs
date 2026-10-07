@@ -21,7 +21,7 @@ test('Core build output keeps access code inside Settings',()=>{
 
 test('Core build output uses the production-safe UI action route',()=>{
   const server=fs.readFileSync('server.mjs','utf8');
-  assert.match(server,//ui/api/action//);
+  assert.match(server,/\/ui\/api\/action\//);
   assert.match(server,/verifyUiAccess/);
   assert.doesNotMatch(server,/publicUiActions/);
 });
