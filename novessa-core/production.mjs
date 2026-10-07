@@ -340,10 +340,38 @@ export async function bookWrite(input={}){
   return out('verified',{book:{title:text(input.title),author:text(input.author),language:text(input.language||'en'),chapters:book.chapters},provider:ai.provider,model:ai.model});
 }
 
+function xlsxColumn(index){
+  let n=index+1,s='';
+  while(n>0){const r=(n-1)%26;s=String.fromCharCode(65+r)+s;n=Math.floor((n-1)/26);}
+  return s;
+}
+function xlsxCell(value,ref){
+  if(typeof value==='number'&&Number.isFinite(value)) return '<c r="'+ref+'"><v>'+value+'</v></c>';
+  return '<c r="'+ref+'" t="inlineStr"><is><t xml:space="preserve">'+xmlEscape(value)+'</t></is></c>';
+}
+export function buildXlsx(input={}){
+  const headers=Array.isArray(input.headers)&&input.headers.length?input.headers.map(v=>text(v,200)):['Ապրանք','Գին','Ինքնարժեք','Քանակ','Վաճառք','Մնացորդ'];
+  const rows=Array.isArray(input.rows)?input.rows.slice(0,5000):[];
+  const all=[headers,...rows.map(r=>Array.from({length:headers.length},(_,i)=>r?.[i]??''))];
+  const sheetRows=all.map((row,ri)=>{
+    const cells=row.map((value,ci)=>xlsxCell(value,xlsxColumn(ci)+(ri+1))).join('');
+    return '<row r="'+(ri+1)+'">'+cells+'</row>';
+  }).join('');
+  const files=[
+    {name:'[Content_Types].xml',data:'<?xml version="1.0" encoding="UTF-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>'},
+    {name:'_rels/.rels',data:'<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>'},
+    {name:'xl/workbook.xml',data:'<?xml version="1.0" encoding="UTF-8"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="NOVESSA" sheetId="1" r:id="rId1"/></sheets></workbook>'},
+    {name:'xl/_rels/workbook.xml.rels',data:'<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/></Relationships>'},
+    {name:'xl/worksheets/sheet1.xml',data:'<?xml version="1.0" encoding="UTF-8"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>'+sheetRows+'</sheetData></worksheet>'}
+  ];
+  return out('verified',{filename:'novessa-sheets.xlsx',content:zipFiles(files),media_type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',row_count:rows.length});
+}
+
 export function bookExport(input={}){
   const format=String(input.format||'epub').toLowerCase();
   if(format==='epub') return buildEpub(input);
   if(format==='pdf') return buildPdf(input);
+  if(format==='xlsx') return buildXlsx(input);
   if(format==='kdp') return out('verified',{package:buildKdpPackage(input)});
   return out('invalid_data',{error:'unsupported_book_export_format'});
 }
@@ -354,6 +382,7 @@ export function productionCapabilities(){
     operator:{ai_provider:'google-gemini',deterministic_metrics:['unit_economics','rnp'],approval:true,external_write_actions:true},
     market_research:{provider:'NOVESSA discovery service',real_evidence_only:true},
     book:{workspace:true,plan:true,write:true,epub:true,pdf:true,kdp_package:true},
+    sheets:{xlsx_export:true,maximum_rows:5000},
     safety:{invented_financial_numbers:false,market_metrics_without_source:false}
   };
 }
@@ -367,7 +396,7 @@ if(!server.includes('__novessaProduction')){
   server=server.replace("const rateLimiter = createRateLimiter","const __novessaProduction = await import('./src/novessaProduction.mjs');"+newline+"const rateLimiter = createRateLimiter");
   server=server.replace("    if(req.method==='GET'&&u.pathname==='/api/product/plans')","    if(req.method==='GET'&&u.pathname==='/api/production/capabilities') return send(res,200,__novessaProduction.productionCapabilities());"+newline+"    if(req.method==='GET'&&u.pathname==='/api/product/plans')");
   const uiHandlers=String.raw`
-      const productionUiActions=['production-operator','production-approve','production-execute','book-plan','book-write','book-export'];
+      const productionUiActions=['production-operator','production-approve','production-execute','book-plan','book-write','book-export','sheets-xlsx'];
       if(productionUiActions.includes(actionName)){
         let uiInput;
         try{uiInput=await readJson(req);}catch(error){return send(res,error.statusCode||400,{status:'error',error:String(error.message||error)});}
@@ -377,6 +406,14 @@ if(!server.includes('__novessaProduction')){
         else if(actionName==='production-execute') out=await __novessaProduction.executeApprovedAction(String(uiInput.approval_token||''));
         else if(actionName==='book-plan') out=await __novessaProduction.bookPlan(uiInput);
         else if(actionName==='book-write') out=await __novessaProduction.bookWrite(uiInput);
+        else if(actionName==='sheets-xlsx') {
+          const generated=__novessaProduction.buildXlsx(uiInput);
+          if(generated?.status==='verified'&&generated.content){
+            res.writeHead(200,{'content-type':generated.media_type,'content-disposition':'attachment; filename="'+generated.filename+'"','cache-control':'no-store','x-content-type-options':'nosniff'});
+            return res.end(generated.content);
+          }
+          out=generated;
+        }
         else {
           const generated=__novessaProduction.bookExport(uiInput);
           if(generated?.status==='verified'&&generated.content){
@@ -399,6 +436,7 @@ if(!server.includes('__novessaProduction')){
     if(u.pathname==='/api/production/rnp') return sendApiResult(res,200,__novessaProduction.rnp(input),requestId);
     if(u.pathname==='/api/production/book/plan'){const out=await __novessaProduction.bookPlan(input);return sendApiResult(res,out.status==='provider_unavailable'?503:out.status==='input_incomplete'?400:out.status==='error'?502:200,out,requestId);}
     if(u.pathname==='/api/production/book/write'){const out=await __novessaProduction.bookWrite(input);return sendApiResult(res,out.status==='provider_unavailable'?503:out.status==='input_incomplete'?400:out.status==='error'?502:200,out,requestId);}
+    if(u.pathname==='/api/production/sheets/export'){const generated=__novessaProduction.buildXlsx(input);if(generated.status!=='verified')return sendApiResult(res,400,generated,requestId);res.writeHead(200,{'content-type':generated.media_type,'content-disposition':'attachment; filename="'+generated.filename+'"','cache-control':'no-store','x-content-type-options':'nosniff','x-request-id':requestId});return res.end(generated.content);}
     if(u.pathname==='/api/production/book/export'){const generated=__novessaProduction.bookExport(input);if(generated.status!=='verified')return sendApiResult(res,generated.status==='input_incomplete'?400:400,generated,requestId);if(input.format==='kdp')return sendApiResult(res,200,generated,requestId);res.writeHead(200,{'content-type':generated.media_type,'content-disposition':'attachment; filename="'+String(generated.filename).replace(/[^A-Za-z0-9._-]/g,'_')+'"','cache-control':'no-store','x-content-type-options':'nosniff','x-request-id':requestId});return res.end(generated.content);}
 `;
   server=server.replace("    if(u.pathname.startsWith('/api/connectors/shopify/'))",apiRoutes+newline+"    if(u.pathname.startsWith('/api/connectors/shopify/'))");
