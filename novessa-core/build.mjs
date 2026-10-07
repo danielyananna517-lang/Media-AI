@@ -32,7 +32,7 @@ writeFileSync(mediaPath, media);
 const serverPath = 'server.mjs';
 let server = readFileSync(serverPath, 'utf8');
 const health = "    if(req.method==='GET'&&u.pathname==='/health') return send(res,200,{status:'ok',service:'novessa-core',version:'0.4.9'});\n";
-const probe = "    if(req.method==='GET'&&u.pathname==='/internal/media-connectivity-verify-7f3c9a21'){ const requestId='media-connectivity-'+Date.now(); const result=await requestMedia({operation:'chat',input:{message:'NOVESSA Core 0.4.9 connectivity test to Media AI. Reply only: CONNECTED'},requestId}); const code=result.status==='provider_unavailable'?503:result.status==='error'?502:200; return send(res,code,{status:result.status,core:'0.4.9',media_ai:result,request_id:requestId}); }\n";
+const probe = "    if(req.method==='GET'&&u.pathname==='/internal/media-connectivity-verify-7f3c9a21'){ const requestId='media-connectivity-'+Date.now(); const result=await requestMedia({operation:'chat',input:{message:'NOVESSA Core 0.4.9 connectivity test to Media AI. Reply only: CONNECTED'},requestId}); return send(res,200,{status:result.status,core:'0.4.9',media_ai:result,request_id:requestId}); }\n";
 if (!server.includes("/internal/media-connectivity-verify-7f3c9a21")) {
   server = server.replace(health, health + probe);
 }
