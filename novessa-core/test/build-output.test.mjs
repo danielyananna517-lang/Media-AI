@@ -43,7 +43,7 @@ test('Core Media client matches the verified Media AI HMAC contract',async()=>{
   const oldBase=process.env.NOVESSA_GATEWAY_BASE_URL;
   const oldSecret=process.env.NOVESSA_GATEWAY_SHARED_SECRET;
   const oldEnv=process.env.NOVESSA_ENV;
-  process.env.NOVESSA_GATEWAY_BASE_URL='https://example.test';
+  process.env.NOVESSA_GATEWAY_BASE_URL='https://falling-cake-118b.danielyananna517.workers.dev';
   process.env.NOVESSA_GATEWAY_SHARED_SECRET=secret;
   process.env.NOVESSA_ENV='development';
   let call=null;
@@ -72,7 +72,7 @@ test('Core Media client matches the verified Media AI HMAC contract',async()=>{
       }),{status:200,headers:{'content-type':'application/json'}});
     }
   });
-  assert.equal(call.url,'https://example.test/v1/media/request');
+  assert.equal(call.url,'https://falling-cake-118b.danielyananna517.workers.dev/v1/media/request');
   assert.equal(out.status,'success');
   assert.equal(out.request_id,'req-test-1');
   } finally {
