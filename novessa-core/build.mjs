@@ -199,7 +199,7 @@ const persistenceEnhancer = String.raw`
   window.__novessaPersistence={enabled:()=>enabled,saveBook,saveSheets,loadBook,loadSheets};
 })();
 `;
-app += '\\n' + persistenceEnhancer;
+app += '\n' + persistenceEnhancer;
 writeFileSync(appPath, app);
 
 const uiTranslations = [
