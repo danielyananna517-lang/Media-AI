@@ -95,37 +95,45 @@ app += '\n' + sheetsAppCode;
 writeFileSync(appPath, app);
 
 const uiTranslations = [
-  ['Unit Economics','Юнит-экономика'],
-  ['Profit Guardian','Контроль прибыли'],
-  ['Sales Funnel','Воронка продаж'],
-  ['Commission, %','Комиссия, %'],
-  ['Logistics / հատ','Логистика / шт.'],
-  ['Storage / հատ','Хранение / шт.'],
-  ['Tax, %','Налог, %'],
-  ['Ads spend','Расходы на рекламу'],
-  ['JSON input','JSON-данные'],
-  ['Buyout orders','Выкупленные заказы'],
-  ['UI token','Код доступа'],
-  ['Commerce','Коммерция'],
-  ['Card / SEO','Карточка / SEO'],
-  ['Book / YouTube','Книга / YouTube'],
-  ['Rules','Правила'],
-  ['Overview','Обзор'],
-  ['Calculations','Расчёты'],
-  ['Publishing','Публикация'],
-  ['Sheets / Excel','Таблицы / Excel'],
-  ['Google Sheets / Excel','Google Таблицы / Excel'],
-  ['Google Sheets','Google Таблицы'],
+  ['Unit Economics','Յունիտ-էկոնոմիկա'],
+  ['Profit Guardian','Շահույթի վերահսկում'],
+  ['Sales Funnel','Վաճառքի ձագար'],
+  ['Commission, %','Միջնորդավճար, %'],
+  ['Logistics / հատ','Լոգիստիկա / միավոր'],
+  ['Storage / հատ','Պահեստավորում / միավոր'],
+  ['Tax, %','Հարկ, %'],
+  ['Ads spend','Գովազդի ծախս'],
+  ['JSON input','JSON տվյալներ'],
+  ['Buyout orders','Վերցված պատվերներ'],
+  ['UI token','Մուտքի կոդ'],
+  ['Commerce','Առևտուր'],
+  ['Card / SEO','Քարտ / SEO'],
+  ['Book / YouTube','Գիրք / YouTube'],
+  ['Rules','Կանոններ'],
+  ['Overview','Ակնարկ'],
+  ['Calculations','Հաշվարկներ'],
+  ['Publishing','Հրապարակում'],
+  ['Sheets / Excel','Աղյուսակներ / Excel'],
+  ['Google Sheets / Excel','Google Sheets / Excel'],
+  ['Google Sheets','Google Sheets'],
   ['Excel / CSV','Excel / CSV'],
-  ['Product card','Карточка товара'],
-  ['Card Design','Дизайн карточки'],
-  ['Infographic','Инфографика'],
-  ['Core ok','Core работает'],
-  ['Ready','Готово'],
-  ['Connectors verified','Подключения проверены'],
-  ['Store verified','Магазин проверен'],
-  ['Rules verified','Правила проверены'],
-  ['Publishing verified','Публикация проверена']
+  ['Product card','Ապրանքի քարտ'],
+  ['Card Design','Քարտի դիզայն'],
+  ['Infographic','Ինֆոգրաֆիկա'],
+  ['Core ok','Core-ը աշխատում է'],
+  ['Ready','Պատրաստ է'],
+  ['Connectors verified','Միացումները ստուգված են'],
+  ['Store verified','Խանութը ստուգված է'],
+  ['Rules verified','Կանոնները ստուգված են'],
+  ['Publishing verified','Հրապարակումը ստուգված է'],
+  ['Публикация capabilities','Հրապարակման հնարավորություններ'],
+  ['Публикация capabilities','Հրապարակման հնարավորություններ'],
+  ['Проверить книгу','Ստուգել գիրքը'],
+  ['Подготовить KDP пакет','Պատրաստել KDP փաթեթ'],
+  ['Построить YouTube кампанию','Կառուցել YouTube արշավ'],
+  ['Книга / Amazon KDP / YouTube','Գիրք / Amazon KDP / YouTube'],
+  ['Status','Կարգավիճակ'],
+  ['Settings','Կարգավորումներ']
 ];
 for (const [from,to] of uiTranslations) index = index.split(from).join(to);
 
@@ -313,6 +321,6 @@ writeFileSync(indexPath, index);
 
 const stylePath = 'public/styles.css';
 let style = readFileSync(stylePath, 'utf8');
-style += '.ui-token{width:180px!important;max-width:180px!important;padding:8px 10px!important}.ui-token::placeholder{color:#6f7d98}';
+style += ".novessa-premium{}\n:root{\n  --novessa-bg:#070713;\n  --novessa-surface:#0f1022;\n  --novessa-surface-2:#161832;\n  --novessa-purple:#6d35c9;\n  --novessa-violet:#8b5cf6;\n  --novessa-cobalt:#315cff;\n  --novessa-text:#f6f4ff;\n  --novessa-muted:#a9a7bc;\n  --novessa-border:rgba(139,92,246,.22);\n}\nbody{\n  background:\n    radial-gradient(circle at 12% 8%, rgba(109,53,201,.23), transparent 34%),\n    radial-gradient(circle at 88% 12%, rgba(49,92,255,.18), transparent 32%),\n    linear-gradient(135deg,#060610 0%,#0a0b19 48%,#0b0c1d 100%);\n  color:var(--novessa-text);\n}\n.panel,.card,article.panel,.metric-card,.status-card{\n  background:linear-gradient(145deg,rgba(22,24,50,.92),rgba(10,11,28,.94));\n  border:1px solid var(--novessa-border);\n  box-shadow:0 18px 45px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.025);\n  backdrop-filter:blur(14px);\n  border-radius:18px;\n}\nbutton,.tab,.secondary,.ghost{\n  border-radius:12px;\n}\nbutton:not(.ghost),.primary{\n  background:linear-gradient(135deg,var(--novessa-cobalt),var(--novessa-purple));\n  border:1px solid rgba(139,92,246,.34);\n  box-shadow:0 8px 24px rgba(49,92,255,.18);\n}\nbutton:hover,.tab:hover{\n  transform:translateY(-1px);\n}\ninput,select,textarea{\n  background:#0c0d1c;\n  color:var(--novessa-text);\n  border:1px solid rgba(139,92,246,.28);\n  border-radius:12px;\n}\ninput:focus,select:focus,textarea:focus{\n  outline:none;\n  border-color:var(--novessa-cobalt);\n  box-shadow:0 0 0 3px rgba(49,92,255,.14);\n}\n.tab.active{\n  background:linear-gradient(135deg,rgba(49,92,255,.22),rgba(109,53,201,.22));\n  border-color:rgba(139,92,246,.45);\n}\n.section-title h1,.section-title h2,.section-title h3{\n  letter-spacing:-.02em;\n}\n.muted{\n  color:var(--novessa-muted);\n}\n.json{\n  background:#090a15;\n  border:1px solid rgba(139,92,246,.16);\n  border-radius:14px;\n  padding:14px;\n  overflow:auto;\n}\ntable{\n  border-collapse:separate;\n  border-spacing:0;\n}\nth,td{\n  border-color:rgba(139,92,246,.13)!important;\n}\n@media (max-width:820px){\n  .grid-2,.grid-3{grid-template-columns:1fr!important}\n  .toolbar{flex-wrap:wrap}\n  .tab{width:100%}\n}";
 writeFileSync(stylePath, style);
 
