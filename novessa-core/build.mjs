@@ -562,6 +562,177 @@ const localizedRuntimeScript = `
 index = index.replace('</body>', localizedRuntimeScript + '</body>');
 writeFileSync(indexPath, index);
 
+
+/* === NOVESSA COMMAND CENTER v2 === */
+const commandCenterHtml = String.raw\`
+<section class="novessa-command-center" id="novessa-command-center" data-novessa-command-center>
+  <div class="cc-hero">
+    <div class="cc-hero-copy">
+      <div class="cc-eyebrow">NOVESSA • COMMAND CENTER</div>
+      <h1>Բիզնեսը մեկ հայացքով</h1>
+      <p>Մի տեղում՝ ինչ է կատարվում, որտեղ է ռիսկը, և որն է հաջորդ լավագույն քայլը։ NOVESSA-ն չի լրացնում բաց տվյալները հորինված թվերով։</p>
+      <div class="cc-hero-actions">
+        <button id="ccOpenDecision" type="button">Բացել Decision Center</button>
+        <button id="ccOpenOperator" type="button" class="secondary">Բացել AI Operator</button>
+      </div>
+    </div>
+    <div class="cc-health">
+      <span class="cc-health-dot" id="ccHealthDot"></span>
+      <div><small>Համակարգի վիճակ</small><strong id="ccHealthText">Ստուգում…</strong></div>
+    </div>
+  </div>
+
+  <div class="cc-kpis" aria-label="NOVESSA status">
+    <article class="cc-kpi"><span>Core</span><strong id="ccCore">—</strong><small id="ccCoreMeta">—</small></article>
+    <article class="cc-kpi"><span>Տվյալների պահոց</span><strong id="ccPersistence">—</strong><small id="ccPersistenceMeta">—</small></article>
+    <article class="cc-kpi"><span>Wildberries</span><strong id="ccWB">—</strong><small id="ccWBMeta">—</small></article>
+    <article class="cc-kpi"><span>Workspace տվյալներ</span><strong id="ccRows">—</strong><small id="ccRowsMeta">—</small></article>
+  </div>
+
+  <div class="cc-grid">
+    <article class="cc-card cc-focus-card">
+      <div class="cc-card-head">
+        <div><span class="cc-tag">TODAY</span><h2>Ուշադրության կենտրոնում</h2></div>
+        <button id="ccRefresh" class="ghost" type="button">Թարմացնել</button>
+      </div>
+      <div id="ccAttention" class="cc-attention">
+        <div class="cc-skeleton"></div><div class="cc-skeleton"></div><div class="cc-skeleton"></div>
+      </div>
+    </article>
+
+    <article class="cc-card">
+      <div class="cc-card-head">
+        <div><span class="cc-tag">WORKFLOW</span><h2>Մեկ աշխատանքային շղթա</h2></div>
+      </div>
+      <div class="cc-flow">
+        <button class="cc-flow-step" data-cc-scroll="novessa-decision-center"><b>01</b><strong>Research</strong><small>Շուկա • մրցակից • keyword</small></button>
+        <span class="cc-flow-arrow">→</span>
+        <button class="cc-flow-step" data-cc-scroll="novessa-decision-center"><b>02</b><strong>Economics</strong><small>Գին • ծախս • profit</small></button>
+        <span class="cc-flow-arrow">→</span>
+        <button class="cc-flow-step" data-cc-scroll="novessa-production-layer"><b>03</b><strong>Decision</strong><small>AI Operator • guardrails</small></button>
+        <span class="cc-flow-arrow">→</span>
+        <button class="cc-flow-step" data-cc-tab="sheets"><b>04</b><strong>Data</strong><small>Sheets • Excel</small></button>
+      </div>
+    </article>
+  </div>
+
+  <div class="cc-bottom-grid">
+    <article class="cc-card">
+      <div class="cc-card-head"><div><span class="cc-tag">NEXT BEST ACTION</span><h2 id="ccNextTitle">Սկսել ապրանքի տվյալներից</h2></div></div>
+      <p id="ccNextText">Մուտքագրիր առաջին ապրանքը, որպեսզի NOVESSA-ն կարողանա կառուցել հաշվարկների հիմքը։</p>
+      <button id="ccNextBtn" type="button">Ավելացնել ապրանք</button>
+    </article>
+
+    <article class="cc-card">
+      <div class="cc-card-head"><div><span class="cc-tag">MODULES</span><h2>Գործիքները մեկ միջավայրում</h2></div></div>
+      <div class="cc-modules">
+        <button data-cc-tab="commerce"><b>Market</b><span>Research</span></button>
+        <button data-cc-tab="finance"><b>Profit</b><span>Calculations</span></button>
+        <button data-cc-tab="content"><b>Card</b><span>SEO</span></button>
+        <button data-cc-tab="publishing"><b>Book</b><span>Publishing</span></button>
+        <button data-cc-tab="sheets"><b>Sheets</b><span>Excel</span></button>
+        <button data-cc-scroll="novessa-production-layer"><b>AI</b><span>Operator</span></button>
+      </div>
+    </article>
+  </div>
+
+  <div class="cc-note">
+    <span>✓</span>
+    <p><strong>NOVESSA principle:</strong> Evidence → Calculation → Decision → Approval → Action → History.</p>
+  </div>
+</section>\`;
+
+if(!index.includes('data-novessa-command-center')) index=index.replace('<main>','<main>'+commandCenterHtml);
+
+const commandCenterScript = String.raw\`
+<script data-novessa-command-center-script>
+(function(){
+  const root=document.querySelector('[data-novessa-command-center]'); if(!root)return;
+  const byId=id=>document.getElementById(id);
+  const scrollToId=id=>document.getElementById(id)?.scrollIntoView({behavior:'smooth',block:'start'});
+  const clickTab=name=>document.querySelector('.tab[data-tab="'+name+'"]')?.click();
+  const statusText=value=>value==='configured'||value===true?'Միացված':'ՉԻ ՀԱՍՏԱՏՎԱԾ';
+  const setStatus=(id,value,state)=>{
+    const n=byId(id);if(!n)return;n.textContent=value;n.dataset.state=state||'';
+  };
+  const renderAttention=(items)=>{
+    const box=byId('ccAttention');if(!box)return;
+    box.innerHTML=items.map(item=>'<div class="cc-attention-item '+(item.level||'info')+'"><div class="cc-attention-icon">'+(item.level==='warn'?'!':item.level==='good'?'✓':'•')+'</div><div><strong>'+item.title+'</strong><p>'+item.text+'</p></div><button type="button" data-cc-action="'+(item.action||'decision')+'">'+(item.button||'Բացել')+'</button></div>').join('');
+    box.querySelectorAll('[data-cc-action]').forEach(button=>{
+      button.addEventListener('click',()=>{
+        const action=button.getAttribute('data-cc-action');
+        if(action==='sheets')clickTab('sheets');
+        else if(action==='finance')clickTab('finance');
+        else if(action==='commerce')clickTab('commerce');
+        else if(action==='content')clickTab('content');
+        else if(action==='publishing')clickTab('publishing');
+        else if(action==='operator')scrollToId('novessa-production-layer');
+        else if(action==='settings')clickTab('settings');
+        else scrollToId('novessa-decision-center');
+      });
+    });
+  };
+  const refresh=async()=>{
+    setStatus('ccCore','Ստուգում…','loading');
+    setStatus('ccPersistence','Ստուգում…','loading');
+    setStatus('ccWB','Ստուգում…','loading');
+    setStatus('ccRows','—','loading');
+    try{
+      const responses=await Promise.all([
+        fetch('/api/ui/status'),
+        fetch('/api/connectors/status'),
+        fetch('/api/connectors/wildberries/status'),
+        fetch('/api/production/capabilities')
+      ]);
+      const ui=await responses[0].json(),conn=await responses[1].json(),wb=await responses[2].json(),caps=await responses[3].json();
+      const coreOk=ui?.status==='verified'||ui?.status==='ready'||ui?.status==='ok';
+      const persisted=caps?.persistence?.status==='configured';
+      const liveWb=wb?.configured===true;
+      const rows=(()=>{try{const v=JSON.parse(localStorage.getItem('novessa_sheet_rows_v2')||'[]');return Array.isArray(v)?v.length:0}catch{return 0}})();
+      setStatus('ccCore',coreOk?'Core OK':'Partial',coreOk?'ok':'warn');
+      byId('ccCoreMeta').textContent='Core status';
+      setStatus('ccPersistence',persisted?'Միացված':'ՉԻ ՀԱՍՏԱՏՎԱԾ',persisted?'ok':'warn');
+      byId('ccPersistenceMeta').textContent= persisted?'server-side':'browser fallback';
+      setStatus('ccWB',liveWb?'Live':'Կապ չկա',liveWb?'ok':'warn');
+      byId('ccWBMeta').textContent=liveWb?'Wildberries API':'integration';
+      setStatus('ccRows',String(rows),rows>0?'ok':'warn');
+      byId('ccRowsMeta').textContent='Sheets workspace տող';
+      const healthy=coreOk&&(persisted||rows>0);
+      byId('ccHealthText').textContent=healthy?'Աշխատանքային վիճակ':'Ուշադրություն է պետք';
+      byId('ccHealthDot').dataset.state=healthy?'ok':'warn';
+
+      const items=[];
+      if(!persisted)items.push({level:'warn',title:'Տվյալների մշտական պահպանումը դեռ միացված չէ',text:'Արդյունքները հիմա կարող են մնալ միայն այս browser-ում։ Backend persistence-ը պետք է կարգավորվի։',button:'Տեսնել',action:'settings'});
+      if(rows===0)items.push({level:'warn',title:'Ապրանքի տվյալներ դեռ չկան',text:'Առաջին ապրանքը ավելացրու Sheets / Excel workspace-ում, հետո անցիր հաշվարկին։',button:'Ավելացնել',action:'sheets'});
+      if(!liveWb)items.push({level:'info',title:'Wildberries live կապ չկա',text:'NOVESSA-ն չի ներկայացնում marketplace-ը որպես live data, քանի դեռ connector-ը չի հաստատվել։',button:'Marketplace',action:'commerce'});
+      if(rows>0)items.push({level:'good',title:'Տվյալների աշխատանքային հիմքը պատրաստ է',text:'Հաջորդ քայլը՝ անցնել Unit Economics և ստուգել ապրանքի շահույթը։',button:'Հաշվել',action:'finance'});
+      if(!items.length)items.push({level:'good',title:'Հիմնական ստուգված շերտերը պատրաստ են',text:'Հիմա կարելի է անցնել Decision Center → Operator workflow-ին։',button:'Բացել',action:'operator'});
+      renderAttention(items.slice(0,4));
+      const next=rows===0
+        ? {title:'Սկսել ապրանքի տվյալներից',text:'Ավելացրու առաջին ապրանքը Sheets / Excel workspace-ում։',button:'Ավելացնել ապրանք',action:'sheets'}
+        : !persisted
+        ? {title:'Միացնել մշտական պահպանումը',text:'Backend persistence-ը դեռ չի կարգավորվել, ու տվյալները կարող են մնալ browser fallback-ում։',button:'Տեսնել կարգավորումները',action:'settings'}
+        : !liveWb
+        ? {title:'Ստուգել marketplace կապը',text:'Wildberries connector-ը live դեռ հաստատված չէ։',button:'Marketplace',action:'commerce'}
+        : {title:'Անցնել որոշման շղթային',text:'Տվյալների հիմքը կա․ հաջորդը Economics → Decision → Action։',button:'Բացել Decision Center',action:'decision'};
+      byId('ccNextTitle').textContent=next.title;byId('ccNextText').textContent=next.text;
+      const nb=byId('ccNextBtn');nb.textContent=next.button;nb.onclick=()=>next.action==='sheets'?clickTab('sheets'):next.action==='settings'?clickTab('settings'):next.action==='commerce'?clickTab('commerce'):scrollToId('novessa-decision-center');
+    }catch{
+      setStatus('ccCore','ՉԻ ՀԱՍՏԱՏՎԱԾ','bad');setStatus('ccPersistence','ՉԻ ՀԱՍՏԱՏՎԱԾ','bad');setStatus('ccWB','ՉԻ ՀԱՍՏԱՏՎԱԾ','bad');setStatus('ccRows','—','bad');
+      byId('ccHealthText').textContent='ՉԻ ՀԱՍՏԱՏՎԱԾ';byId('ccHealthDot').dataset.state='bad';
+      renderAttention([{level:'warn',title:'Status API-ները հասանելի չեն',text:'NOVESSA-ն չի հորինում համակարգի վիճակը։',button:'Թարմացնել',action:'decision'}]);
+    }
+  };
+  byId('ccOpenDecision')?.addEventListener('click',()=>scrollToId('novessa-decision-center'));
+  byId('ccOpenOperator')?.addEventListener('click',()=>scrollToId('novessa-production-layer'));
+  byId('ccRefresh')?.addEventListener('click',refresh);
+  root.querySelectorAll('[data-cc-scroll]').forEach(b=>b.addEventListener('click',()=>scrollToId(b.getAttribute('data-cc-scroll'))));
+  root.querySelectorAll('[data-cc-tab]').forEach(b=>b.addEventListener('click',()=>clickTab(b.getAttribute('data-cc-tab'))));
+  refresh();
+})();
+</script>\`;
+if(!index.includes('data-novessa-command-center-script')) index=index.replace('</body>',commandCenterScript+'</body>');
+
 const stylePath = 'public/styles.css';
 let style = readFileSync(stylePath, 'utf8');
 style += ` 
@@ -842,6 +1013,17 @@ if(!index.includes('data-novessa-decision-center-script')){
 }
 
 style += `
+
+/* NOVESSA Command Center v2 */
+.novessa-command-center{margin:18px 0 26px;padding:24px;border:1px solid #30245f;border-radius:26px;background:linear-gradient(145deg,rgba(15,10,37,.98),rgba(6,5,20,.98));box-shadow:0 22px 75px rgba(8,5,30,.45)}
+.cc-hero{display:flex;justify-content:space-between;gap:24px;align-items:flex-start}.cc-hero-copy{max-width:820px}.cc-eyebrow,.cc-tag{font-size:10px;letter-spacing:.14em;font-weight:850;color:#a78bfa}.cc-hero h1{margin:8px 0 8px;font-size:clamp(28px,4vw,46px);line-height:1.02}.cc-hero p{margin:0;color:#aaa2c4;line-height:1.55;font-size:14px}.cc-hero-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}.cc-health{display:flex;gap:10px;align-items:center;padding:12px 14px;border:1px solid #352a66;border-radius:16px;background:rgba(109,40,217,.11);min-width:170px}.cc-health small{display:block;color:#948cae;font-size:10px;margin-bottom:3px}.cc-health strong{font-size:12px}.cc-health-dot{width:9px;height:9px;border-radius:50%;background:#c4b5fd;box-shadow:0 0 0 4px rgba(167,139,250,.1)}.cc-health-dot[data-state=ok]{background:#86efac}.cc-health-dot[data-state=warn]{background:#fde68a}.cc-health-dot[data-state=bad]{background:#fda4af}
+.cc-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:11px;margin:20px 0}.cc-kpi{padding:14px 15px;border:1px solid #2d2454;border-radius:16px;background:rgba(10,8,27,.8)}.cc-kpi span{display:block;color:#928aa8;font-size:11px;margin-bottom:7px}.cc-kpi strong{display:block;font-size:18px}.cc-kpi strong[data-state=ok]{color:#86efac}.cc-kpi strong[data-state=warn]{color:#fde68a}.cc-kpi strong[data-state=bad]{color:#fda4af}.cc-kpi strong[data-state=loading]{color:#d8d3e8}.cc-kpi small{display:block;color:#756d8d;margin-top:4px;font-size:10px}
+.cc-grid,.cc-bottom-grid{display:grid;grid-template-columns:1.25fr .95fr;gap:12px}.cc-bottom-grid{margin-top:12px}.cc-card{padding:18px;border:1px solid #2d2454;border-radius:20px;background:linear-gradient(145deg,rgba(17,12,39,.95),rgba(8,6,23,.98));min-width:0}.cc-card-head{display:flex;justify-content:space-between;gap:14px;align-items:flex-start}.cc-card h2{margin:6px 0 0;font-size:19px}.cc-focus-card{min-height:260px}.cc-attention{display:grid;gap:8px;margin-top:14px}.cc-attention-item{display:grid;grid-template-columns:28px 1fr auto;gap:10px;align-items:start;padding:11px 12px;border:1px solid #2d2454;border-radius:14px;background:rgba(8,6,22,.72)}.cc-attention-item.warn{border-color:#5a4822}.cc-attention-item.good{border-color:#24452f}.cc-attention-icon{width:25px;height:25px;border-radius:9px;display:grid;place-items:center;background:#18112f;color:#bdaef0;font-weight:900}.cc-attention-item.warn .cc-attention-icon{color:#fde68a;background:rgba(245,201,106,.08)}.cc-attention-item.good .cc-attention-icon{color:#86efac;background:rgba(134,239,172,.08)}.cc-attention-item strong{font-size:12px}.cc-attention-item p{margin:3px 0 0;color:#9189a8;font-size:11px;line-height:1.4}.cc-attention-item button{min-height:32px;padding:7px 10px;font-size:11px}.cc-skeleton{height:48px;border-radius:12px;background:linear-gradient(90deg,#100d25,#181334,#100d25);background-size:200% 100%;animation:ccpulse 1.4s ease-in-out infinite}.cc-skeleton:nth-child(2){opacity:.7}.cc-skeleton:nth-child(3){opacity:.45}@keyframes ccpulse{0%,100%{background-position:0 0}50%{background-position:100% 0}}
+.cc-flow{display:grid;grid-template-columns:1fr auto 1fr auto 1fr auto 1fr;align-items:center;gap:7px;margin-top:14px}.cc-flow-step{padding:12px;border:1px solid #2d2454;border-radius:14px;background:#0a071d;color:#eeeaff;text-align:left}.cc-flow-step b{display:block;color:#847aa0;font-size:10px;margin-bottom:4px}.cc-flow-step strong{display:block;font-size:12px}.cc-flow-step small{display:block;color:#8f87a8;font-size:10px;line-height:1.35;margin-top:4px}.cc-flow-step:hover{border-color:#664dbe}.cc-flow-arrow{color:#706793;font-size:14px}
+.cc-next-card{}.cc-card>p{color:#958da9;font-size:12px;line-height:1.5;margin:8px 0 14px}.cc-modules{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}.cc-modules button{padding:11px 10px;text-align:left;border:1px solid #2d2454;border-radius:13px;background:#0a071d}.cc-modules b{display:block;font-size:11px}.cc-modules span{display:block;color:#817996;font-size:10px;margin-top:2px}.cc-note{display:flex;gap:9px;align-items:flex-start;margin-top:12px;padding:11px 13px;border:1px dashed #3a2e69;border-radius:14px;background:rgba(109,40,217,.06)}.cc-note span{color:#86efac}.cc-note p{margin:0;color:#8e86a6;font-size:10px;line-height:1.45}.cc-note strong{color:#d9d2ee}
+@media(max-width:1000px){.cc-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.cc-grid,.cc-bottom-grid{grid-template-columns:1fr}.cc-flow{grid-template-columns:1fr 20px 1fr}.cc-flow-step:nth-of-type(7),.cc-flow-arrow:nth-of-type(6){display:none}}
+@media(max-width:650px){.novessa-command-center{padding:16px;border-radius:18px}.cc-hero{flex-direction:column}.cc-health{width:100%;box-sizing:border-box}.cc-kpis{grid-template-columns:1fr}.cc-attention-item{grid-template-columns:26px 1fr}.cc-attention-item button{grid-column:2;justify-self:start}.cc-flow{grid-template-columns:1fr}.cc-flow-arrow{display:none}.cc-modules{grid-template-columns:1fr 1fr}}
+
 /* NOVESSA Decision Center v1 */
 .dc-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:8px}.dc-metric{padding:14px 15px;border:1px solid #34286a;border-radius:14px;background:rgba(21,15,48,.72)}.dc-metric span{display:block;font-size:11px;color:#aaa2c5;margin-bottom:5px}.dc-metric strong{font-size:20px;line-height:1.1}.dc-result-status{margin-top:10px;font-size:11px;color:#aaa2c5}.dc-details{margin-top:10px;border-top:1px solid #2a2254;padding-top:10px}.dc-detail{display:flex;justify-content:space-between;gap:12px;font-size:12px;color:#aaa2c5;padding:5px 0}.dc-detail b{color:#e8e5f1;font-weight:600;text-align:right}@media(max-width:700px){.dc-metrics{grid-template-columns:1fr}}
 .novessa-decision-center{margin:26px 0 34px;padding:24px;border:1px solid #34286a;border-radius:26px;background:linear-gradient(145deg,rgba(16,10,40,.96),rgba(7,6,23,.98));box-shadow:0 20px 70px rgba(11,7,40,.45)}
