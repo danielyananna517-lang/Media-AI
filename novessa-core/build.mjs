@@ -54,6 +54,13 @@ writeFileSync(mediaPath, media);
 
 const indexPath = 'public/index.html';
 let index = readFileSync(indexPath, 'utf8');
+index = index.replace(
+  '<button class="tab" data-tab="finance">Հաշվարկներ</button>',
+  '<button class="tab" data-tab="finance">Հաշվարկներ</button><button class="tab" data-tab="sheets">Sheets / Excel</button>'
+);
+const sheetsSection = "\n    <section class=\"tab-panel\" id=\"tab-sheets\">\n      <div class=\"section-title\"><div><h2>Google Sheets / Excel</h2><p>Վաճառքի, ապրանքի, ինքնարժեքի, մնացորդի և վերլուծության տվյալների միասնական աղյուսակ։</p></div></div>\n      <div class=\"grid-2\">\n        <article class=\"panel\">\n          <h3>Google Sheets</h3>\n          <p id=\"sheetsStatus\" class=\"muted\">Live Google account կապը դեռ միացված չէ։</p>\n          <div class=\"field wide\"><label>Google Sheets հղում</label><input id=\"sheetUrl\" type=\"url\" placeholder=\"https://docs.google.com/spreadsheets/...\"></div>\n          <div class=\"toolbar\"><button id=\"sheetLinkBtn\" class=\"secondary\" type=\"button\">Բացել Google Sheets-ը</button></div>\n          <p class=\"muted\">Կարող ես տվյալները արտահանել CSV և բացել Google Sheets-ում։</p>\n        </article>\n        <article class=\"panel\">\n          <h3>Excel / CSV</h3>\n          <div class=\"toolbar\"><button id=\"csvTemplateBtn\" class=\"secondary\" type=\"button\">Ներբեռնել ձևանմուշ</button><label class=\"secondary\" style=\"display:inline-flex;align-items:center;gap:8px;cursor:pointer\">Ներմուծել CSV<input id=\"csvFile\" type=\"file\" accept=\".csv,text/csv\" hidden></label></div>\n          <pre id=\"out-sheets\" class=\"json\"></pre>\n        </article>\n      </div>\n      <article class=\"panel\">\n        <h3>Հաշվարկային տվյալների աղյուսակ</h3>\n        <div class=\"grid-3\">\n          <div class=\"field\"><label>Ապրանք</label><input id=\"sheetProduct\" placeholder=\"Ապրանքի անվանում\"></div>\n          <div class=\"field\"><label>Գին</label><input id=\"sheetPrice\" inputmode=\"decimal\" placeholder=\"0\"></div>\n          <div class=\"field\"><label>Ինքնարժեք</label><input id=\"sheetCost\" inputmode=\"decimal\" placeholder=\"0\"></div>\n          <div class=\"field\"><label>Քանակ</label><input id=\"sheetQty\" inputmode=\"numeric\" placeholder=\"0\"></div>\n          <div class=\"field\"><label>Վաճառք</label><input id=\"sheetSales\" inputmode=\"numeric\" placeholder=\"0\"></div>\n          <div class=\"field\"><label>Մնացորդ</label><input id=\"sheetStock\" inputmode=\"numeric\" placeholder=\"0\"></div>\n        </div>\n        <div class=\"toolbar\"><button id=\"addSheetRowBtn\" type=\"button\">Ավելացնել տող</button><button id=\"exportSheetBtn\" class=\"secondary\" type=\"button\">Արտահանել CSV</button></div>\n        <div style=\"overflow:auto\"><table id=\"sheetsTable\"><thead><tr><th>Ապրանք</th><th>Գին</th><th>Ինքնարժեք</th><th>Քանակ</th><th>Վաճառք</th><th>Մնացորդ</th></tr></thead><tbody></tbody></table></div>\n      </article>\n    </section>";
+index = index.replace('</main>', sheetsSection + '</main>');
+
 index = index.replace(/<input id="uiToken"[^>]*>/, '');
 index = index.replace(
   '<button id="refreshBtn" class="ghost">Թարմացնել</button>',
@@ -80,6 +87,45 @@ app = app.replace(
   "catch(err){ if(out){ const body=err.body||{}; if(body.error==='ui_auth_required') out.textContent='Այս գործողությունը Production-ում պաշտպանված է։ Մուտքագրիր NOVESSA UI token-ը վերևի դաշտում, ապա կրկին փորձիր։'; else if(body.error==='ui_token_not_configured') out.textContent='UI token-ը Vercel Production-ում կարգավորված չէ։'; else out.textContent=pretty(body||{status:'error',error:err.message}); } }"
 );
 writeFileSync(appPath, app);
+const sheetRows=[];
+function csvEscape(v){const s=String(v??'');return '"' + s.replace(/"/g,'""') + '"';}
+function renderSheetRows(){
+  const body=$('#sheetsTable tbody'); if(!body) return;
+  body.innerHTML=sheetRows.map(r=>'<tr>'+r.map(v=>'<td>'+String(v).replace(/[&<>]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]))+'</td>').join('')+'</tr>').join('');
+}
+$('#addSheetRowBtn')?.addEventListener('click',()=>{
+  const r=[$('#sheetProduct')?.value||'', $('#sheetPrice')?.value||'', $('#sheetCost')?.value||'', $('#sheetQty')?.value||'', $('#sheetSales')?.value||'', $('#sheetStock')?.value||''];
+  if(!r[0]) return;
+  sheetRows.push(r); renderSheetRows();
+  ['sheetProduct','sheetPrice','sheetCost','sheetQty','sheetSales','sheetStock'].forEach(id=>{const e=$('#'+id);if(e)e.value='';});
+  const out=$('#out-sheets'); if(out) out.textContent='Տողը ավելացվեց։';
+});
+$('#exportSheetBtn')?.addEventListener('click',()=>{
+  const rows=[['Ապրանք','Գին','Ինքնարժեք','Քանակ','Վաճառք','Մնացորդ'],...sheetRows];
+  const csv='\ufeff'+rows.map(r=>r.map(csvEscape).join(',')).join('\n');
+  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})); a.download='novessa-sheets.csv'; a.click();
+});
+$('#csvTemplateBtn')?.addEventListener('click',()=>{
+  const csv='\ufeffАպրանք,Цена,Себестоимость,Количество,Продажи,Остаток\n';
+  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})); a.download='novessa-sheets-template.csv'; a.click();
+});
+$('#csvFile')?.addEventListener('change',async(e)=>{
+  const file=e.target.files?.[0]; if(!file) return;
+  const raw=await file.text();
+  const lines=raw.replace(/^\ufeff/,'').split(/\r?\n/).filter(Boolean);
+  const parsed=lines.slice(1).map(line=>line.split(',').map(v=>v.replace(/^"|"$/g,'').replace(/""/g,'"'))).filter(r=>r.length>=6);
+  sheetRows.push(...parsed.map(r=>r.slice(0,6))); renderSheetRows();
+  const out=$('#out-sheets'); if(out) out.textContent='Ներմուծված տողեր՝ '+parsed.length;
+});
+$('#sheetLinkBtn')?.addEventListener('click',()=>{
+  const url=$('#sheetUrl')?.value?.trim(), out=$('#out-sheets');
+  if(!url){if(out)out.textContent='Մուտքագրիր Google Sheets-ի հղումը։';return;}
+  try{
+    const u=new URL(url);
+    if(!/^(docs\.google\.com|drive\.google\.com)$/.test(u.hostname)){if(out)out.textContent='Թույլատրվում է միայն Google հղումը։';return;}
+    window.open(u.href,'_blank','noopener');
+  }catch{if(out)out.textContent='Google Sheets-ի հղումը ճիշտ չէ։';}
+});
 
 const uiTranslations = [
   ['Unit Economics','Юнит-экономика'],
