@@ -642,7 +642,7 @@ const commandCenterHtml = String.raw`
   </div>
 </section>`;
 
-if(!index.includes('data-novessa-command-center')) index=index.replace('<main>','<main>'+commandCenterHtml);
+if(!index.includes('data-novessa-command-center')) index=index.replace(/(<main\b[^>]*>)/,match=>match+commandCenterHtml);
 
 const commandCenterScript = String.raw`
 <script data-novessa-command-center-script>
@@ -835,7 +835,7 @@ const decisionCenterHtml = `
   </div>
 </section>`;
 if(!index.includes('data-novessa-decision-center')) {
-  index = index.replace('<main>', '<main>' + decisionCenterHtml);
+  index = index.replace(/(<main\b[^>]*>)/, match => match + decisionCenterHtml);
 }
 
 const decisionCenterScript = `
