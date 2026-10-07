@@ -4,6 +4,7 @@ import { existsSync, readFileSync } from 'node:fs';
 
 import {
   productionCapabilities,
+  analyzeProduct,
   rnp,
   operatorRun,
   approveAction,
@@ -20,6 +21,8 @@ test('production integration patched the generated runtime',()=>{
   assert.match(server,/\/api\/production\/operator/);
   assert.match(server,/\/api\/production\/book\/export/);
   assert.match(server,/workspace-save/);
+  assert.match(server,/\/api\/production\/product-analysis/);
+  assert.match(server,/product-analysis/);
   const index=readFileSync(new URL('../public/index.html',import.meta.url),'utf8');
   assert.match(index,/data-novessa-command-center/);
   assert.match(index,/NOVESSA • COMMAND CENTER/);
@@ -74,6 +77,36 @@ test('persistence REST adapter loads and saves with server-only auth',async()=>{
   if(previousKey===undefined)delete process.env.NOVESSA_PERSISTENCE_SUPABASE_SERVICE_ROLE_KEY;else process.env.NOVESSA_PERSISTENCE_SUPABASE_SERVICE_ROLE_KEY=previousKey;
 });
 
+
+test('unified product analysis joins deterministic economics and sourced market evidence',async()=>{
+  const result=await analyzeProduct({
+    market_query:'women jeans marketplace competitors',
+    product:{name:'Jeans',sku:'JNS-001',price:100,cost:40,sales:10,commission:10,logistics:3,storage:1,tax:5,ads:50}
+  },{
+    researchRunner:async input=>({status:'verified',query:input.query,evidence:[{title:'Competitor evidence',url:'https://example.com/competitor',snippet:'Sourced competitor evidence'}]})
+  });
+  assert.equal(result.status,'verified');
+  assert.equal(result.product.name,'Jeans');
+  assert.equal(result.economics.status,'verified');
+  assert.equal(result.market_research.status,'verified');
+  assert.equal(result.market_research.evidence.length,1);
+  assert.equal(result.decision.profit_signal,'positive');
+  assert.equal(result.note,'Missing financial or market data is not invented.');
+});
+
+test('unified product analysis does not call research when no query is supplied',async()=>{
+  let calls=0;
+  const result=await analyzeProduct({
+    product:{name:'Jeans',price:100,cost:40,sales:10,commission:10,logistics:3,storage:1,tax:5,ads:50}
+  },{
+    researchRunner:async()=>{calls++;return {status:'verified',evidence:[]};}
+  });
+  assert.equal(result.status,'verified');
+  assert.equal(calls,0);
+  assert.equal(result.market_research,null);
+  assert.equal(result.decision.research_status,'not_requested');
+});
+ 
 test('RNP is deterministic and auditable',()=>{
   const result=rnp({stock:20,sales_history:90,period_days:30,lead_time_days:7,safety_stock_days:2,target_cover_days:14});
   assert.equal(result.status,'verified');
