@@ -102,7 +102,27 @@ const uiTranslations = [
   ['Ads spend','Расходы на рекламу'],
   ['JSON input','JSON-данные'],
   ['Buyout orders','Выкупленные заказы'],
-  ['UI token','Код доступа']
+  ['UI token','Код доступа'],
+  ['Commerce','Коммерция'],
+  ['Card / SEO','Карточка / SEO'],
+  ['Book / YouTube','Книга / YouTube'],
+  ['Rules','Правила'],
+  ['Overview','Обзор'],
+  ['Calculations','Расчёты'],
+  ['Publishing','Публикация'],
+  ['Sheets / Excel','Таблицы / Excel'],
+  ['Google Sheets / Excel','Google Таблицы / Excel'],
+  ['Google Sheets','Google Таблицы'],
+  ['Excel / CSV','Excel / CSV'],
+  ['Product card','Карточка товара'],
+  ['Card Design','Дизайн карточки'],
+  ['Infographic','Инфографика'],
+  ['Core ok','Core работает'],
+  ['Ready','Готово'],
+  ['Connectors verified','Подключения проверены'],
+  ['Store verified','Магазин проверен'],
+  ['Rules verified','Правила проверены'],
+  ['Publishing verified','Публикация проверена']
 ];
 for (const [from,to] of uiTranslations) index = index.split(from).join(to);
 
