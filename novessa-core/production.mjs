@@ -114,6 +114,53 @@ export async function marketResearch(input={}){
   });
 }
 
+
+export async function analyzeProduct(input={},deps={}){
+  const product=input?.product&&typeof input.product==='object'?input.product:input;
+  const name=text(product?.name||product?.product).trim();
+  const sku=text(product?.sku).trim();
+  const marketQuery=text(input?.market_query||product?.market_query).trim();
+  const numbers={
+    price:Number(product?.price),
+    unit_cost:Number(product?.cost??product?.unit_cost),
+    sales:Number(product?.sales),
+    commission_percent:Number(product?.commission??product?.commission_percent),
+    logistics_per_unit:Number(product?.logistics??product?.logistics_per_unit),
+    storage_per_unit:Number(product?.storage??product?.storage_per_unit),
+    tax_percent:Number(product?.tax??product?.tax_percent),
+    ad_spend:Number(product?.ads??product?.ad_spend)
+  };
+  const economicsInputOk=Object.values(numbers).every(Number.isFinite);
+  const economics=economicsInputOk
+    ? unitEconomics(numbers)
+    : out('input_incomplete',{error:'product_analysis_requires_economics_fields',missing:Object.entries(numbers).filter(([,v])=>!Number.isFinite(v)).map(([k])=>k)});
+  let market_research=null;
+  if(marketQuery){
+    const runner=typeof deps.researchRunner==='function'?deps.researchRunner:marketResearch;
+    market_research=await runner({query:marketQuery,limit:Math.min(20,Math.max(3,Number(input.research_limit)||8))});
+  }
+  const profit=firstNumber(economics,['unit_profit','profit_per_unit','net_profit','profit']);
+  const margin=firstNumber(economics,['profit_margin','margin']);
+  const profitSignal=Number.isFinite(profit)?(profit<0?'loss_making':'positive'):Number.isFinite(margin)?(margin<0?'loss_making':'positive'):'unknown';
+  const researchStatus=marketQuery?(market_research?.status||'unknown'):'not_requested';
+  const complete=economics.status==='verified'&&(researchStatus==='verified'||researchStatus==='not_requested');
+  const status=complete?'verified':(economics.status==='provider_unavailable'||market_research?.status==='provider_unavailable')?'provider_unavailable':'partial';
+  return out(status,{
+    product:{name,sku},
+    economics,
+    market_research,
+    decision:{
+      profit_signal:profitSignal,
+      profit,
+      margin,
+      research_status:researchStatus,
+      next_action:profitSignal==='loss_making'?'Վերանայել գինը և ինքնարժեքը':'Տեղեկությունները բավարար են հաջորդ որոշման քայլի համար'
+    },
+    provenance:'NOVESSA Core product analysis: deterministic economics + provider evidence',
+    note:'Missing financial or market data is not invented.'
+  });
+}
+
 function actionSecret(){
   return String(process.env.NOVESSA_OPERATOR_ACTION_SECRET||process.env.NOVESSA_CORE_SHARED_SECRET||'').trim();
 }
@@ -391,6 +438,7 @@ export function productionCapabilities(){
   return {
     status:'verified',
     operator:{ai_provider:'google-gemini',deterministic_metrics:['unit_economics','rnp'],approval:true,external_write_actions:true},
+    product_analysis:{unified_workspace:true,deterministic_economics:true,market_evidence:true},
     market_research:{provider:'NOVESSA discovery service',real_evidence_only:true},
     book:{workspace:true,plan:true,write:true,epub:true,pdf:true,kdp_package:true},
     sheets:{xlsx_export:true,maximum_rows:5000},
@@ -409,7 +457,7 @@ if(!server.includes('__novessaProduction')){
   server=server.replace("const rateLimiter = createRateLimiter","const __novessaProduction = await import('./src/novessaProduction.mjs');"+newline+"const rateLimiter = createRateLimiter");
   server=server.replace("    if(req.method==='GET'&&u.pathname==='/api/product/plans')","    if(req.method==='GET'&&u.pathname==='/api/production/capabilities') return send(res,200,__novessaProduction.productionCapabilities());"+newline+"    if(req.method==='GET'&&u.pathname==='/api/product/plans')");
   const uiHandlers=String.raw`
-      const productionUiActions=['production-operator','production-approve','production-execute','book-plan','book-write','book-export','sheets-xlsx','workspace-load','workspace-save'];
+      const productionUiActions=['production-operator','production-approve','production-execute','book-plan','book-write','book-export','sheets-xlsx','workspace-load','workspace-save','product-analysis'];
       if(productionUiActions.includes(actionName)){
         if(actionName==='workspace-load'||actionName==='workspace-save'){
           const access=verifyUiAccess({headers:req.headers,env:process.env});
@@ -419,6 +467,7 @@ if(!server.includes('__novessaProduction')){
         try{uiInput=await readJson(req);}catch(error){return send(res,error.statusCode||400,{status:'error',error:String(error.message||error)});}
         let out;
         if(actionName==='production-operator') out=await __novessaProduction.operatorRun(uiInput);
+        else if(actionName==='product-analysis') out=await __novessaProduction.analyzeProduct(uiInput);
         else if(actionName==='workspace-load') out=await __novessaProduction.workspaceLoad(uiInput);
         else if(actionName==='workspace-save') out=await __novessaProduction.workspaceSave(uiInput);
         else if(actionName==='production-approve') out=__novessaProduction.approveAction(String(uiInput.approval_token||''));
@@ -448,6 +497,7 @@ if(!server.includes('__novessaProduction')){
       `;
   server=server.replace("      const out=await runUiAction(actionName,uiInput,{env:process.env,activeRecommendationPolicy});",uiHandlers+newline+"      const out=await runUiAction(actionName,uiInput,{env:process.env,activeRecommendationPolicy});");
   const apiRoutes=String.raw`
+    if(u.pathname==='/api/production/product-analysis'){const out=await __novessaProduction.analyzeProduct(input);return sendApiResult(res,out.status==='provider_unavailable'?503:out.status==='input_incomplete'?400:out.status==='error'?502:200,out,requestId);}
     if(u.pathname==='/api/production/workspace/load') return sendApiResult(res,200,await __novessaProduction.workspaceLoad(input),requestId);
     if(u.pathname==='/api/production/workspace/save') return sendApiResult(res,200,await __novessaProduction.workspaceSave(input),requestId);
     if(u.pathname==='/api/production/operator'){const out=await __novessaProduction.operatorRun(input);return sendApiResult(res,out.status==='provider_unavailable'?503:out.status==='input_incomplete'?400:out.status==='error'?502:200,out,requestId);}
@@ -528,7 +578,23 @@ const ui=String.raw`
   </div>
 </section>`;
 if(!index.includes('id="novessa-production-layer"')) index=index.replace('<main>','<main>'+ui);
-writeFileSync(uiPath,index);
+
+/* === NOVESSA ACTIVE PRODUCT ANALYSIS UI === */
+let activeProductIndex=readFileSync(uiPath,'utf8');
+activeProductIndex=activeProductIndex.replace(
+  /(<button id="ccUseProduct"[^>]*>[^<]*<\/button>)/,
+  '$1<button id="ccAnalyzeProduct" type="button">Վերլուծել ապրանքը</button>'
+);
+activeProductIndex=activeProductIndex.replace(
+  /(<div class="cc-product-fields">)/,
+  '$1<label><span>Շուկայի հարցում</span><input id="ccProductMarketQuery" placeholder="օր.՝ կանացի jeans Wildberries մրցակիցներ"></label>'
+);
+activeProductIndex=activeProductIndex.replace(
+  /(<div id="ccProductMessage"[^>]*><\/div>)/,
+  '$1<div id="ccProductAnalysis" class="cc-product-analysis" aria-live="polite"></div>'
+);
+writeFileSync(uiPath,activeProductIndex);
+
 
 let app=readFileSync(appPath,'utf8');
 const js=String.raw`
@@ -554,6 +620,61 @@ const js=String.raw`
 })();
 `;
 if(!app.includes('novessa_book_workspace_v2')) app+=newline+js+newline;
+
+const __novessaProductAnalysis=String.raw\`
+(function(){
+  const el=id=>document.getElementById(id);
+  const num=id=>{const v=Number(el(id)?.value);return Number.isFinite(v)?v:null;};
+  const productPayload=()=>({
+    product:{
+      name:String(el('ccProductName')?.value||''),
+      sku:String(el('ccProductSku')?.value||''),
+      price:num('ccProductPrice'),
+      cost:num('ccProductCost'),
+      stock:num('ccProductStock'),
+      sales:num('ccProductSales'),
+      commission:num('ccProductCommission'),
+      logistics:num('ccProductLogistics'),
+      storage:num('ccProductStorage'),
+      tax:num('ccProductTax'),
+      ads:num('ccProductAds')
+    },
+    market_query:String(el('ccProductMarketQuery')?.value||'')
+  });
+  const escapeHtml=v=>String(v??'').replace(/[&<>"]/g,s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[s]));
+  const render=(body)=>{
+    const out=el('ccProductAnalysis');if(!out)return;
+    const d=body?.decision||{},econ=body?.economics||{},research=body?.market_research;
+    const signal=d.profit_signal==='loss_making'?'Շահույթի ռիսկ':d.profit_signal==='positive'?'Դրական շահույթ':'Տվյալը բավարար չէ';
+    const status=body?.status||'partial';
+    const evidence=Array.isArray(research?.evidence)?research.evidence.slice(0,5):[];
+    out.innerHTML='<div class="cc-analysis-head"><strong>Ապրանքի վերլուծություն</strong><span>'+escapeHtml(status)+'</span></div>'+
+      '<div class="cc-analysis-grid">'+
+      '<div><small>Profit signal</small><b>'+escapeHtml(signal)+'</b></div>'+
+      '<div><small>Unit profit</small><b>'+escapeHtml(d.profit===undefined?'—':d.profit)+'</b></div>'+
+      '<div><small>Margin</small><b>'+escapeHtml(d.margin===undefined?'—':d.margin)+'</b></div>'+
+      '<div><small>Market evidence</small><b>'+escapeHtml(research?String(evidence.length):'Չի հարցվել')+'</b></div>'+
+      '</div>'+
+      '<p class="cc-analysis-next">'+escapeHtml(d.next_action||'')+'</p>'+
+      (research?'<div class="cc-analysis-evidence"><strong>Market evidence</strong>'+(
+        evidence.length?evidence.map(e=>'<div><a href="'+escapeHtml(e.url)+'" target="_blank" rel="noopener noreferrer">'+escapeHtml(e.title||e.url||'Evidence')+'</a><p>'+escapeHtml(e.snippet||'')+'</p></div>').join('')
+        :'<p>Evidence չի վերադարձվել։ NOVESSA-ն տվյալ չի հորինում։</p>'
+      )+'</div>':'<p class="cc-analysis-note">Շուկայի հարցումը լրացված չէ․ միայն Economics-ն է հաշվարկվել։</p>')+
+      '<details class="cc-analysis-details"><summary>Core հաշվարկի տվյալներ</summary><pre>'+escapeHtml(JSON.stringify(econ,null,2))+'</pre></details>';
+  };
+  el('ccAnalyzeProduct')?.addEventListener('click',async()=>{
+    const out=el('ccProductAnalysis');if(out)out.textContent='Վերլուծությունը կատարվում է…';
+    try{
+      const r=await fetch('/ui/api/action/product-analysis',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(productPayload())});
+      const raw=await r.text();let body={};try{body=JSON.parse(raw)}catch{}
+      if(!r.ok){if(out)out.textContent=body.error||'Ապրանքի վերլուծությունը չհաջողվեց։';return;}
+      render(body);
+    }catch(error){if(out)out.textContent=error.message||'Ապրանքի վերլուծությունը ՉԻ ՀԱՍՏԱՏՎԱԾ։';}
+  });
+})();
+\`;
+
+app += newline + __novessaProductAnalysis + newline;
 writeFileSync(appPath,app);
 
 let style=readFileSync(stylePath,'utf8');
