@@ -100,7 +100,7 @@ async function serveStatic(res, fileSpec) {
   res.end(body);
 }
 
-async function readJson(req){
+async function readJson(req,{withRaw=false}={}){
   const contentType=String(req.headers['content-type']||'').split(';',1)[0].trim().toLowerCase();
   if (contentType !== 'application/json') throw Object.assign(new Error('content-type must be application/json'),{statusCode:415});
   const chunks=[]; let size=0;
@@ -111,11 +111,10 @@ async function readJson(req){
   }
   const raw=Buffer.concat(chunks).toString('utf8');
   if(!raw.trim()) throw Object.assign(new Error('request body is required'),{statusCode:400});
-  try {
-    return JSON.parse(raw);
-  } catch {
-    throw Object.assign(new Error('invalid JSON'),{statusCode:400});
-  }
+  let input;
+  try { input=JSON.parse(raw); } catch { throw Object.assign(new Error('invalid JSON'),{statusCode:400}); }
+  if(input===null || typeof input!=='object' || Array.isArray(input)) throw Object.assign(new Error('request body must be an object'),{statusCode:400});
+  return withRaw ? {input,rawBody:raw} : input;
 }
 const routes = {
   '/api/data-quality': dataQuality,
@@ -148,81 +147,146 @@ const server=http.createServer(async(req,res)=>{
     if(req.method==='GET'&&u.pathname==='/api/commerce/store/status') return send(res,200,await getCommerceStoreStatus({env:process.env}));
     if(req.method==='GET'&&u.pathname==='/api/rules/intelligence/cases') return send(res,200,await listRuleChangeCases({env:process.env,state:u.searchParams.get('state')||'pending',ruleId:u.searchParams.get('rule_id')||null}));
     if(req.method==='GET'&&u.pathname==='/api/rules/status') return send(res,200,await getRuleStatus());
-    if(req.method==='GET'&&u.pathname==='/api/rules/algorithms') return send(res,200,{status:'verified',algorithms:listAlgorithms()});
-    if(req.method==='GET'&&u.pathname==='/api/evolution/status') return send(res,200,await getEvolutionStatus());
-    if(req.method==='GET'&&u.pathname==='/api/usage/summary') return send(res,200,await usageSummary());
+    if(req.method==='GET'&&u.pathname==='/api/rules/algorithms') return send(res,200,{status:'verified',algorithms:listAlgorithms(),deterministic_formula_mutation:false,accounting_truth_mutation:false});
+    if(req.method==='GET'&&u.pathname==='/api/evolution/status'){
+      const adminToken=String(process.env.NOVESSA_EVOLUTION_ADMIN_TOKEN||'');
+      const supplied=String(req.headers['x-admin-token']||'');
+      if(!adminToken) return send(res,503,{status:'not_ready',error:'evolution_admin_not_configured'});
+      const a=Buffer.from(supplied),b=Buffer.from(adminToken);
+      if(a.length!==b.length||!crypto.timingSafeEqual(a,b)) return send(res,401,{status:'error',error:'admin_auth_required'});
+      return send(res,200,await getEvolutionStatus());
+    }
+    if(req.method==='GET'&&u.pathname==='/ready'){
+      const production=String(process.env.NOVESSA_ENV||'').toLowerCase()==='production';
+      if(production && !String(process.env.NOVESSA_CORE_SHARED_SECRET||'')) return send(res,503,{status:'not_ready',service:'novessa-core',version:'0.4.9',error:'core_auth_not_configured'});
+      return send(res,200,{status:'ready',service:'novessa-core',version:'0.4.9'});
+    }
+    if(req.method==='GET'&&u.pathname==='/api/ui/status'){
+      const { uiSnapshot } = await import('./src/ui/service.mjs');
+      return send(res,200,await uiSnapshot({env:process.env}));
+    }
+    if(req.method==='GET'&&u.pathname==='/api/usage/summary'){
+      const adminToken=String(process.env.NOVESSA_USAGE_ADMIN_TOKEN||'');
+      const supplied=String(req.headers['x-admin-token']||'');
+      if(!adminToken) return send(res,503,{status:'not_ready',error:'usage_summary_admin_not_configured'});
+      const a=Buffer.from(supplied),b=Buffer.from(adminToken);
+      if(a.length!==b.length||!crypto.timingSafeEqual(a,b)) return send(res,401,{status:'error',error:'admin_auth_required'});
+      return send(res,200,await usageSummary());
+    }
 
     const requestId=crypto.randomUUID();
     if(req.method==='GET'&&STATIC_FILES[u.pathname]) return serveStatic(res,STATIC_FILES[u.pathname]);
-    if(req.method!=='POST') return send(res,404,{status:'error',error:'not_found'});
-    const production=String(process.env.NOVESSA_ENV||'').toLowerCase()==='production';
-    const token=String(req.headers['x-novessa-ui-token']||'');
-    if(req.method==='POST' && u.pathname.startsWith('/ui/api/action/')){
-      const auth=verifyUiAccess({headers:req.headers,env:process.env});
-      if(auth.status!=='verified') return send(res,auth.http_status||401,{status:auth.status,error:auth.error||'ui_auth_failed'});
-      const actionName=decodeURIComponent(u.pathname.slice('/ui/api/action/'.length));
-      let uiInput;
-      try { uiInput=await readJson(req); } catch (error) { return send(res,error.statusCode||400,{status:'error',error:String(error.message||error)}); }
-      if(uiInput===null || typeof uiInput!=='object' || Array.isArray(uiInput)) return send(res,400,{status:'invalid_data',error:'request body must be an object'});
-      const out=await runUiAction(actionName,uiInput,{env:process.env,activeRecommendationPolicy});
-      const httpStatus=out.status==='invalid_data'||out.status==='input_incomplete'?400:out.status==='provider_unavailable'?503:out.status==='error'?502:200;
-      return send(res,httpStatus,out);
+    if(req.method!=='POST') return send(res,405,{status:'error',error:'method_not_allowed'});
+    const {input,rawBody}=await readJson(req,{withRaw:true});
+    const requestId=String(req.headers['x-request-id']||'');
+    if(!/^[A-Za-z0-9._:-]{8,128}$/.test(requestId)) return send(res,400,{status:'invalid_data',error:'x-request-id is invalid'});
+    const auth=verifyCoreRequest({headers:req.headers,rawBody,env:process.env});
+    if(auth.status!=='verified') return send(res,auth.http_status||401,{status:'error',error:auth.error||'core_auth_failed'});
+    if(!replayGuard.accept(requestId)) return send(res,409,{status:'error',error:'AUTH_REPLAY_DETECTED'});
+    const rate=rateLimiter.allow(req.socket.remoteAddress||'unknown');
+    if(!rate.allowed){
+      res.setHeader('retry-after',String(Math.ceil(rate.retryAfterMs/1000)));
+      return send(res,429,{status:'error',error:'RATE_LIMITED'});
     }
-    const input=await readJson(req);
-    const coreAuthRequired=production;
-    if(coreAuthRequired){
-      const rawBody=JSON.stringify(input);
-      const auth=await verifyCoreRequest(req,rawBody,{env:process.env});
-      if(!auth.valid) return send(res,401,{status:'error',error:auth.error||'unauthorized'});
+
+    if(u.pathname.startsWith('/api/connectors/shopify/')){
+      const adapter=createConnectorAdapter({descriptor:{name:'shopify',contract_version:'1.0',auth_type:'shop_access_token'}});
+      let out;
+      if(u.pathname.endsWith('/ping')) out=await adapter.pull({operation:'ping'});
+      else if(u.pathname.endsWith('/products')) out=await adapter.pull({operation:'products',input});
+      else if(u.pathname.endsWith('/orders')) out=await adapter.pull({operation:'orders',input});
+      else return send(res,404,{status:'error',error:'shopify_route_not_found'});
+      return sendApiResult(res,out.status==='provider_unavailable'?503:out.status==='invalid_data'||out.status==='input_incomplete'?400:200,out,requestId);
     }
-    if(u.pathname==='/api/report') {
-      const out=buildReport(input);
-      return sendApiResult(res,200,out,requestId);
+    if(u.pathname.startsWith('/api/connectors/etsy/')){
+      const adapter=createConnectorAdapter({descriptor:{name:'etsy',contract_version:'1.0',auth_type:'oauth2'}});
+      let out;
+      if(u.pathname.endsWith('/ping')) out=await adapter.pull({operation:'ping'});
+      else if(u.pathname.endsWith('/listings')) out=await adapter.pull({operation:'listings',input});
+      else if(u.pathname.endsWith('/inventory')) out=await adapter.pull({operation:'inventory',input});
+      else if(u.pathname.endsWith('/receipts')) out=await adapter.pull({operation:'receipts',input});
+      else return send(res,404,{status:'error',error:'etsy_route_not_found'});
+      return sendApiResult(res,out.status==='provider_unavailable'?503:out.status==='invalid_data'||out.status==='input_incomplete'?400:200,out,requestId);
     }
-    if(u.pathname==='/api/report.csv') {
-      const out=buildReportCsv(input);
-      return sendCsv(res,200,out,requestId);
+    if(u.pathname.startsWith('/api/connectors/amazon/')){
+      const adapter=createConnectorAdapter({descriptor:{name:'amazon',contract_version:'1.0',auth_type:'lwa_plus_sigv4'}});
+      let out;
+      if(u.pathname.endsWith('/orders')) out=await adapter.pull({operation:'orders',input});
+      else if(u.pathname.endsWith('/catalog')) out=await adapter.pull({operation:'catalog',input});
+      else if(u.pathname.endsWith('/finances')) out=await adapter.pull({operation:'finances',input});
+      else return send(res,404,{status:'error',error:'amazon_route_not_found'});
+      return sendApiResult(res,out.status==='provider_unavailable'?503:out.status==='invalid_data'||out.status==='input_incomplete'?400:200,out,requestId);
     }
-    if(u.pathname==='/api/connector/ping'){
-      const connector=String(input.connector||'').trim().toLowerCase();
-      const adapter=createConnectorAdapter({env:process.env});
-      const out=await adapter.ping({connector,input});
-      return sendApiResult(res,out.status==='provider_unavailable'?503:out.status==='invalid_data'?400:200,out,requestId);
+    if(u.pathname.startsWith('/api/connectors/ozon/')){
+      const adapter=createConnectorAdapter({descriptor:{name:'ozon',contract_version:'1.0',auth_type:'client_id_api_key'}});
+      let out;
+      if(u.pathname.endsWith('/stocks')) out=await adapter.pull({operation:'stocks',input});
+      else if(u.pathname.endsWith('/analytics')) out=await adapter.pull({operation:'analytics',input});
+      else if(u.pathname.endsWith('/postings')) out=await adapter.pull({operation:'postings',input});
+      else return send(res,404,{status:'error',error:'ozon_route_not_found'});
+      return sendApiResult(res,out.status==='provider_unavailable'?503:out.status==='invalid_data'||out.status==='input_incomplete'?400:200,out,requestId);
     }
-    if(u.pathname==='/api/connector/query'){
-      const connector=String(input.connector||'').trim().toLowerCase();
-      const adapter=createConnectorAdapter({env:process.env});
-      const out=await adapter.query({connector,operation:input.operation,input});
-      return sendApiResult(res,out.status==='provider_unavailable'?503:out.status==='invalid_data'?400:200,out,requestId);
+    if(u.pathname.startsWith('/api/connectors/wildberries/')){
+      const wb=createWildberriesConnector();
+      let out;
+      if(u.pathname==='/api/connectors/wildberries/ping') out=await wb.ping();
+      else if(u.pathname==='/api/connectors/wildberries/seller-info') out=await wb.sellerInfo();
+      else if(u.pathname==='/api/connectors/wildberries/cards') out=await wb.cards({limit:input.limit,textSearch:input.text_search,withPhoto:input.with_photo});
+      else if(u.pathname==='/api/connectors/wildberries/cards/all') out=await wb.cardsAll({limit:input.limit,maxPages:input.max_pages,textSearch:input.text_search,withPhoto:input.with_photo});
+      else if(u.pathname==='/api/connectors/wildberries/orders') out=await wb.orders({dateFrom:input.date_from});
+      else if(u.pathname==='/api/connectors/wildberries/orders/all') out=await wb.ordersAll({dateFrom:input.date_from,maxPages:input.max_pages});
+      else if(u.pathname==='/api/connectors/wildberries/sales') out=await wb.sales({dateFrom:input.date_from});
+      else if(u.pathname==='/api/connectors/wildberries/sales/all') out=await wb.salesAll({dateFrom:input.date_from,maxPages:input.max_pages});
+      else if(u.pathname==='/api/connectors/wildberries/funnel') out=await wb.salesFunnel({selectedPeriod:input.selected_period,pastPeriod:input.past_period,nmIds:input.nm_ids,brandNames:input.brand_names,subjectIds:input.subject_ids,tagIds:input.tag_ids,limit:input.limit,offset:input.offset});
+      else if(u.pathname==='/api/connectors/wildberries/realization-details') out=await wb.realizationDetails({dateFrom:input.date_from,dateTo:input.date_to});
+      else if(u.pathname==='/api/connectors/wildberries/reconciliation'){
+        const realization=await wb.realizationDetails({dateFrom:input.date_from,dateTo:input.date_to});
+        out=realization.status==="verified"?reconcileWildberriesRealization({records:realization.data.records,expected:input.expected,tolerance:input.tolerance}):realization;
+      }
+      else if(u.pathname==='/api/connectors/wildberries/analyze') out=await analyzeWildberriesOperational({dateFrom:input.date_from,selectedPeriod:input.selected_period});
+      else if(u.pathname==='/api/connectors/wildberries/profit'){
+        const realization=await wb.realizationDetails({dateFrom:input.date_from,dateTo:input.date_to});
+        out=realization.status==='verified'?analyzeWildberriesProfit({records:realization.data.records,currency:input.currency,costInputs:input.cost_inputs}):realization;
+      }
+      else if(u.pathname==='/api/connectors/wildberries/sync') out=await wb.sync({dateFrom:input.date_from,selectedPeriod:input.selected_period,include:input.include});
+      else if(u.pathname==='/api/connectors/wildberries/status') out=await wb.status();
+      else return send(res,404,{status:'error',error:'wildberries_route_not_found'});
+      await recordUsage({operation:u.pathname,status:out.status,request_id:requestId});
+      const httpStatus=out.status==='provider_unavailable'?503:out.status==='invalid_data'||out.status==='input_incomplete'?400:out.status==='error'?502:200;
+      return sendApiResult(res,httpStatus,out,requestId);
     }
-    if(u.pathname==='/api/connector/wildberries/orders'){
-      const connector=createWildberriesConnector({env:process.env});
-      const out=await connector.orders({dateFrom:input.dateFrom,dateTo:input.dateTo,limit:input.limit});
-      return sendApiResult(res,out.status==='provider_unavailable'?503:out.status==='invalid_data'?400:200,out,requestId);
+    if(u.pathname==='/api/analyze/business-health'){
+      const result=businessHealth(input,{recommendationPolicy:activeRecommendationPolicy});
+      await recordUsage({operation:u.pathname,status:result.status,request_id:requestId});
+      return sendApiResult(res,200,result,requestId);
     }
-    if(u.pathname==='/api/connector/wildberries/cards'){
-      const connector=createWildberriesConnector({env:process.env});
-      const out=await connector.cardsAll({updatedAt:input.updatedAt,nmID:input.nmID,locale:input.locale});
-      return sendApiResult(res,out.status==='provider_unavailable'?503:out.status==='invalid_data'?400:200,out,requestId);
+    if(u.pathname==='/api/customer/workflow'){
+      const workflow=await customerWorkflowAsync(input);
+      await recordUsage({operation:u.pathname,status:workflow.status,request_id:requestId});
+      const httpStatus=workflow.status==='provider_unavailable'?503:workflow.status==='invalid_data'?400:200;
+      return sendApiResult(res,httpStatus,workflow,requestId);
     }
-    if(u.pathname==='/api/connector/wildberries/analytics'){
-      const connector=createWildberriesConnector({env:process.env});
-      const out=await connector.salesFunnel({selectedPeriod:input.selectedPeriod,skip:input.skip,limit:input.limit});
-      return sendApiResult(res,out.status==='provider_unavailable'?503:out.status==='invalid_data'?400:200,out,requestId);
+    if(u.pathname==='/api/report'){
+      const analysisPath=String(input.analysis_path||'');
+      const fn=routes[analysisPath];
+      if(!fn) return send(res,400,{status:'invalid_data',error:'analysis_path is required and must reference an analysis route'});
+      const analysis=fn(input.data??input);
+      await recordUsage({operation:u.pathname,status:analysis.status,request_id:requestId});
+      return sendApiResult(res,200,buildReport({analysis}),requestId);
     }
-    if(u.pathname==='/api/connector/wildberries/profit'){
-      const connector=createWildberriesConnector({env:process.env});
-      const out=await analyzeWildberriesProfit({dateFrom:input.dateFrom,dateTo:input.dateTo},{env:process.env,connector});
-      return sendApiResult(res,out.status==='provider_unavailable'?503:out.status==='invalid_data'?400:out.status==='error'?502:200,out,requestId);
+    if(u.pathname==='/api/report/export'){
+      const analysisPath=String(input.analysis_path||'');
+      const fn=routes[analysisPath];
+      if(!fn) return send(res,400,{status:'invalid_data',error:'analysis_path is required and must reference an analysis route'});
+      const format=String(input.format||'csv').trim().toLowerCase();
+      if(format!=='csv'&&format!=='json') return send(res,400,{status:'invalid_data',error:'unsupported_report_export_format'});
+      const analysis=fn(input.data??input);
+      const report=buildReport({analysis});
+      await recordUsage({operation:u.pathname,status:analysis.status,request_id:requestId});
+      if(format==='json') return sendApiResult(res,200,{...report,export_format:'json'},requestId);
+      return sendCsv(res,200,buildReportCsv(report),requestId);
     }
-    if(u.pathname==='/api/connector/wildberries/analyze-operational'){
-      const out=await analyzeWildberriesOperational({connector:createWildberriesConnector({env:process.env}),dateFrom:input.dateFrom,dateTo:input.dateTo},{env:process.env});
-      return sendApiResult(res,out.status==='provider_unavailable'?503:out.status==='invalid_data'?400:200,out,requestId);
-    }
-    if(u.pathname==='/api/connector/wildberries/reconcile'){
-      const out=await reconcileWildberriesRealization({connector:createWildberriesConnector({env:process.env}),dateFrom:input.dateFrom,dateTo:input.dateTo,expected:input.expected},{env:process.env});
-      return sendApiResult(res,out.status==='provider_unavailable'?503:out.status==='invalid_data'?400:out.status==='error'?502:200,out,requestId);
-    }
+    if(u.pathname==='/api/content/seo/optimize') return sendApiResult(res,200,optimizeSeo(input),requestId);
     if(u.pathname==='/api/content/seo'){
       const out=optimizeSeo(input);
       return sendApiResult(res,out.status==='invalid_data'?400:200,out,requestId);
