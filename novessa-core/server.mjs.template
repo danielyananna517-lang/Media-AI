@@ -159,11 +159,8 @@ const server=http.createServer(async(req,res)=>{
     const token=String(req.headers['x-novessa-ui-token']||'');
     if(req.method==='POST' && u.pathname.startsWith('/ui/api/action/')){
       const auth=verifyUiAccess({headers:req.headers,env:process.env});
+      if(auth.status!=='verified') return send(res,auth.http_status||401,{status:auth.status,error:auth.error||'ui_auth_failed'});
       const actionName=decodeURIComponent(u.pathname.slice('/ui/api/action/'.length));
-      const safeActions=['pricing','unit-economics','profit-guardian','scenario','sales-funnel','business-health','product-card','seo','card-design','infographic','book-validate','kdp-package','youtube-campaign','publishing-capabilities'];
-      if(auth.status!=='verified' && !(production && !token && safeActions.includes(actionName))) {
-        return send(res,auth.http_status||401,{status:auth.status,error:auth.error||'ui_auth_failed'});
-      }
       let uiInput;
       try { uiInput=await readJson(req); } catch (error) { return send(res,error.statusCode||400,{status:'error',error:String(error.message||error)}); }
       if(uiInput===null || typeof uiInput!=='object' || Array.isArray(uiInput)) return send(res,400,{status:'invalid_data',error:'request body must be an object'});
