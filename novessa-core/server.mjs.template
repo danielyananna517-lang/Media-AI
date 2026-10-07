@@ -174,7 +174,6 @@ const server=http.createServer(async(req,res)=>{
       return send(res,200,await usageSummary());
     }
 
-    const requestId=crypto.randomUUID();
     if(req.method==='GET'&&STATIC_FILES[u.pathname]) return serveStatic(res,STATIC_FILES[u.pathname]);
     if(req.method!=='POST') return send(res,405,{status:'error',error:'method_not_allowed'});
     const {input,rawBody}=await readJson(req,{withRaw:true});
