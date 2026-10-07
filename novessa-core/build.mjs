@@ -87,45 +87,9 @@ app = app.replace(
   "catch(err){ if(out){ const body=err.body||{}; if(body.error==='ui_auth_required') out.textContent='Այս գործողությունը Production-ում պաշտպանված է։ Մուտքագրիր NOVESSA UI token-ը վերևի դաշտում, ապա կրկին փորձիր։'; else if(body.error==='ui_token_not_configured') out.textContent='UI token-ը Vercel Production-ում կարգավորված չէ։'; else out.textContent=pretty(body||{status:'error',error:err.message}); } }"
 );
 writeFileSync(appPath, app);
-const sheetRows=[];
-function csvEscape(v){const s=String(v??'');return '"' + s.replace(/"/g,'""') + '"';}
-function renderSheetRows(){
-  const body=$('#sheetsTable tbody'); if(!body) return;
-  body.innerHTML=sheetRows.map(r=>'<tr>'+r.map(v=>'<td>'+String(v).replace(/[&<>]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]))+'</td>').join('')+'</tr>').join('');
-}
-$('#addSheetRowBtn')?.addEventListener('click',()=>{
-  const r=[$('#sheetProduct')?.value||'', $('#sheetPrice')?.value||'', $('#sheetCost')?.value||'', $('#sheetQty')?.value||'', $('#sheetSales')?.value||'', $('#sheetStock')?.value||''];
-  if(!r[0]) return;
-  sheetRows.push(r); renderSheetRows();
-  ['sheetProduct','sheetPrice','sheetCost','sheetQty','sheetSales','sheetStock'].forEach(id=>{const e=$('#'+id);if(e)e.value='';});
-  const out=$('#out-sheets'); if(out) out.textContent='Տողը ավելացվեց։';
-});
-$('#exportSheetBtn')?.addEventListener('click',()=>{
-  const rows=[['Ապրանք','Գին','Ինքնարժեք','Քանակ','Վաճառք','Մնացորդ'],...sheetRows];
-  const csv='\ufeff'+rows.map(r=>r.map(csvEscape).join(',')).join('\n');
-  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})); a.download='novessa-sheets.csv'; a.click();
-});
-$('#csvTemplateBtn')?.addEventListener('click',()=>{
-  const csv='\ufeffАպրանք,Цена,Себестоимость,Количество,Продажи,Остаток\n';
-  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})); a.download='novessa-sheets-template.csv'; a.click();
-});
-$('#csvFile')?.addEventListener('change',async(e)=>{
-  const file=e.target.files?.[0]; if(!file) return;
-  const raw=await file.text();
-  const lines=raw.replace(/^\ufeff/,'').split(/\r?\n/).filter(Boolean);
-  const parsed=lines.slice(1).map(line=>line.split(',').map(v=>v.replace(/^"|"$/g,'').replace(/""/g,'"'))).filter(r=>r.length>=6);
-  sheetRows.push(...parsed.map(r=>r.slice(0,6))); renderSheetRows();
-  const out=$('#out-sheets'); if(out) out.textContent='Ներմուծված տողեր՝ '+parsed.length;
-});
-$('#sheetLinkBtn')?.addEventListener('click',()=>{
-  const url=$('#sheetUrl')?.value?.trim(), out=$('#out-sheets');
-  if(!url){if(out)out.textContent='Մուտքագրիր Google Sheets-ի հղումը։';return;}
-  try{
-    const u=new URL(url);
-    if(!/^(docs\.google\.com|drive\.google\.com)$/.test(u.hostname)){if(out)out.textContent='Թույլատրվում է միայն Google հղումը։';return;}
-    window.open(u.href,'_blank','noopener');
-  }catch{if(out)out.textContent='Google Sheets-ի հղումը ճիշտ չէ։';}
-});
+const sheetsAppCode = "const sheetRows=[];\nfunction csvEscape(v){const s=String(v??'');return '\"' + s.replace(/\"/g,'\"\"') + '\"';}\nfunction renderSheetRows(){\n  const body=$('#sheetsTable tbody'); if(!body) return;\n  body.innerHTML=sheetRows.map(r=>'<tr>'+r.map(v=>'<td>'+String(v).replace(/[&<>]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]))+'</td>').join('')+'</tr>').join('');\n}\n$('#addSheetRowBtn')?.addEventListener('click',()=>{\n  const r=[$('#sheetProduct')?.value||'', $('#sheetPrice')?.value||'', $('#sheetCost')?.value||'', $('#sheetQty')?.value||'', $('#sheetSales')?.value||'', $('#sheetStock')?.value||''];\n  if(!r[0]) return;\n  sheetRows.push(r); renderSheetRows();\n  ['sheetProduct','sheetPrice','sheetCost','sheetQty','sheetSales','sheetStock'].forEach(id=>{const e=$('#'+id);if(e)e.value='';});\n  const out=$('#out-sheets'); if(out) out.textContent='Տողը ավելացվեց։';\n});\n$('#exportSheetBtn')?.addEventListener('click',()=>{\n  const rows=[['Ապրանք','Գին','Ինքնարժեք','Քանակ','Վաճառք','Մնացորդ'],...sheetRows];\n  const csv='\\ufeff'+rows.map(r=>r.map(csvEscape).join(',')).join('\\n');\n  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})); a.download='novessa-sheets.csv'; a.click();\n});\n$('#csvTemplateBtn')?.addEventListener('click',()=>{\n  const csv='\\ufeffАպրանք,Цена,Себестоимость,Количество,Продажи,Остаток\\n';\n  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})); a.download='novessa-sheets-template.csv'; a.click();\n});\n$('#csvFile')?.addEventListener('change',async(e)=>{\n  const file=e.target.files?.[0]; if(!file) return;\n  const raw=await file.text();\n  const lines=raw.replace(/^\\ufeff/,'').split(/\\r?\\n/).filter(Boolean);\n  const parsed=lines.slice(1).map(line=>line.split(',').map(v=>v.replace(/^\"|\"$/g,'').replace(/\"\"/g,'\"'))).filter(r=>r.length>=6);\n  sheetRows.push(...parsed.map(r=>r.slice(0,6))); renderSheetRows();\n  const out=$('#out-sheets'); if(out) out.textContent='Ներմուծված տողեր՝ '+parsed.length;\n});\n$('#sheetLinkBtn')?.addEventListener('click',()=>{\n  const url=$('#sheetUrl')?.value?.trim(), out=$('#out-sheets');\n  if(!url){if(out)out.textContent='Մուտքագրիր Google Sheets-ի հղումը։';return;}\n  try{\n    const u=new URL(url);\n    if(!/^(docs\\.google\\.com|drive\\.google\\.com)$/.test(u.hostname)){if(out)out.textContent='Թույլատրվում է միայն Google հղումը։';return;}\n    window.open(u.href,'_blank','noopener');\n  }catch{if(out)out.textContent='Google Sheets-ի հղումը ճիշտ չէ։';}\n});\n\n";
+app += '\n' + sheetsAppCode;
+writeFileSync(appPath, app);
 
 const uiTranslations = [
   ['Unit Economics','Юнит-экономика'],
