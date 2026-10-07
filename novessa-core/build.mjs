@@ -616,6 +616,33 @@ const commandCenterHtml = String.raw`
     </article>
   </div>
 
+
+  <article class="cc-card cc-product-card">
+    <div class="cc-card-head">
+      <div><span class="cc-tag">ACTIVE PRODUCT</span><h2>Ապրանքի միասնական պրոֆիլ</h2></div>
+      <span id="ccProductState" class="cc-product-state">Դեռ չկա</span>
+    </div>
+    <p>Ապրանքի հիմնական տվյալները պահվում են մեկ workspace-ում և փոխանցվում են NOVESSA-ի հաշվարկներին։</p>
+    <div class="cc-product-fields">
+      <label><span>Ապրանք</span><input id="ccProductName" placeholder="օր.՝ Jeans"></label>
+      <label><span>SKU / Артикул</span><input id="ccProductSku" placeholder="օր.՝ JNS-001"></label>
+      <label><span>Գին</span><input id="ccProductPrice" type="number" inputmode="decimal" step="0.01" min="0"></label>
+      <label><span>Ինքնարժեք</span><input id="ccProductCost" type="number" inputmode="decimal" step="0.01" min="0"></label>
+      <label><span>Մնացորդ</span><input id="ccProductStock" type="number" inputmode="numeric" step="1" min="0"></label>
+      <label><span>Վաճառք</span><input id="ccProductSales" type="number" inputmode="numeric" step="1" min="0"></label>
+      <label><span>Միջնորդավճար %</span><input id="ccProductCommission" type="number" inputmode="decimal" step="0.01" min="0"></label>
+      <label><span>Լոգիստիկա / միավոր</span><input id="ccProductLogistics" type="number" inputmode="decimal" step="0.01" min="0"></label>
+      <label><span>Պահեստավորում / միավոր</span><input id="ccProductStorage" type="number" inputmode="decimal" step="0.01" min="0"></label>
+      <label><span>Հարկ %</span><input id="ccProductTax" type="number" inputmode="decimal" step="0.01" min="0"></label>
+      <label><span>Գովազդի ծախս</span><input id="ccProductAds" type="number" inputmode="decimal" step="0.01" min="0"></label>
+    </div>
+    <div class="cc-hero-actions">
+      <button id="ccSaveProduct" type="button">Պահպանել ապրանքը</button>
+      <button id="ccUseProduct" type="button" class="secondary">Ուղարկել հաշվարկին</button>
+    </div>
+    <div id="ccProductMessage" class="cc-product-message" aria-live="polite"></div>
+  </article>
+
   <div class="cc-bottom-grid">
     <article class="cc-card">
       <div class="cc-card-head"><div><span class="cc-tag">NEXT BEST ACTION</span><h2 id="ccNextTitle">Սկսել ապրանքի տվյալներից</h2></div></div>
@@ -677,6 +704,62 @@ const commandCenterScript = String.raw`
       });
     });
   };
+
+  const productKey='novessa_active_product_v1';
+  const productIds=['Name','Sku','Price','Cost','Stock','Sales','Commission','Logistics','Storage','Tax','Ads'];
+  const productNode=s=>byId('ccProduct'+s);
+  const readProduct=()=>{
+    const obj={name:String(productNode('Name')?.value||''),sku:String(productNode('Sku')?.value||'')};
+    for(const key of productIds.slice(2)){const v=Number(productNode(key)?.value);obj[key.toLowerCase()]=Number.isFinite(v)?v:null;}
+    return obj;
+  };
+  const applyProduct=p=>{
+    if(!p||typeof p!=='object')return;
+    const map={Name:p.name,Sku:p.sku,Price:p.price,Cost:p.cost,Stock:p.stock,Sales:p.sales,Commission:p.commission,Logistics:p.logistics,Storage:p.storage,Tax:p.tax,Ads:p.ads};
+    for(const [key,value] of Object.entries(map)){const n=productNode(key);if(n&&value!==undefined&&value!==null)n.value=value;}
+    const state=byId('ccProductState');if(state)state.textContent=p.name?'Պատրաստ է':'Դեռ չկա';
+  };
+  const productMsg=m=>{const n=byId('ccProductMessage');if(n)n.textContent=m;};
+  const productToken=()=>String(byId('uiToken')?.value||sessionStorage.getItem('novessa_ui_token')||'');
+  const persistenceCall=async(action,payload)=>{
+    const h={'content-type':'application/json'},t=productToken();if(t)h['x-novessa-ui-token']=t;
+    const r=await fetch('/ui/api/action/'+action,{method:'POST',headers:h,body:JSON.stringify(payload)});
+    const raw=await r.text();let body={};try{body=JSON.parse(raw)}catch{}
+    if(!r.ok)throw Object.assign(new Error(body.error||'request_failed'),{body,status:r.status});
+    return body;
+  };
+  const loadProduct=async()=>{
+    let local=null;try{local=JSON.parse(localStorage.getItem(productKey)||'null')}catch{}
+    try{
+      const caps=await fetch('/api/production/capabilities').then(r=>r.json());
+      if(caps?.persistence?.status==='configured'){
+        const result=await persistenceCall('workspace-load',{kind:'commerce'});
+        if(result.status==='verified'&&result.state){applyProduct(result.state);localStorage.setItem(productKey,JSON.stringify(result.state));productMsg('Ապրանքի պրոֆիլը բեռնված է backend-ից։');return;}
+      }
+    }catch{}
+    if(local){applyProduct(local);productMsg('Ապրանքի պրոֆիլը բեռնված է այս դիտարկիչից։');}
+  };
+  const saveProduct=async()=>{
+    const product=readProduct();if(!product.name){productMsg('Ապրանքի անունը պարտադիր է։');return;}
+    localStorage.setItem(productKey,JSON.stringify(product));
+    try{
+      const result=await persistenceCall('workspace-save',{kind:'commerce',state:product});
+      if(result.status==='verified'){productMsg('Ապրանքի պրոֆիլը պահպանված է backend-ում։');return;}
+    }catch(error){
+      if(error.status===401){productMsg('Backend-ը պաշտպանված է։ Ապրանքը պահվել է այս դիտարկիչում։');return;}
+    }
+    productMsg('Backend պահպանումը ՉԻ ՀԱՍՏԱՏՎԱԾ․ օգտագործվում է browser fallback։');
+  };
+  const useProduct=()=>{
+    const p=readProduct();
+    const map={dcProduct:'name',dcPrice:'price',dcCost:'cost',dcSales:'sales',dcCommission:'commission',dcLogistics:'logistics',dcStorage:'storage',dcTax:'tax',dcAds:'ads',npPrice:'price',npCost:'cost',npSales:'sales',npCommission:'commission',npLogistics:'logistics',npStorage:'storage',npTax:'tax',npAds:'ads',npStock:'stock'};
+    for(const [id,key] of Object.entries(map)){const n=byId(id);if(n&&p[key]!==null&&p[key]!==undefined)n.value=p[key];}
+    scrollToId('novessa-decision-center');
+  };
+  byId('ccSaveProduct')?.addEventListener('click',()=>saveProduct().catch(()=>productMsg('Ապրանքի պահպանումը ՉԻ ՀԱՍՏԱՏՎԱԾ։')));
+  byId('ccUseProduct')?.addEventListener('click',useProduct);
+  loadProduct();
+
   const refresh=async()=>{
     setStatus('ccCore','Ստուգում…','loading');
     setStatus('ccPersistence','Ստուգում…','loading');
@@ -1018,6 +1101,10 @@ if(!index.includes('data-novessa-decision-center-script')){
 }
 
 style += `
+
+
+.cc-product-card{margin-top:12px}.cc-product-fields{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin-top:12px}.cc-product-fields label{display:grid;gap:6px;color:#c0b8d6;font-size:11px}.cc-product-fields input{width:100%;box-sizing:border-box;padding:10px 11px;border-radius:11px;border:1px solid #342b5b;background:#09071b;color:#f7f3ff;outline:none}.cc-product-fields input:focus{border-color:#7257d0;box-shadow:0 0 0 3px rgba(109,40,217,.14)}.cc-product-state{padding:6px 9px;border-radius:999px;background:rgba(109,40,217,.1);border:1px solid #3b2e6e;color:#bbb0db;font-size:10px}.cc-product-message{margin-top:8px;min-height:18px;color:#928aa9;font-size:11px}
+@media(max-width:1000px){.cc-product-fields{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:650px){.cc-product-fields{grid-template-columns:1fr 1fr}}@media(max-width:450px){.cc-product-fields{grid-template-columns:1fr}}
 
 /* NOVESSA Command Center v2 */
 .novessa-command-center{margin:18px 0 26px;padding:24px;border:1px solid #30245f;border-radius:26px;background:linear-gradient(145deg,rgba(15,10,37,.98),rgba(6,5,20,.98));box-shadow:0 22px 75px rgba(8,5,30,.45)}
