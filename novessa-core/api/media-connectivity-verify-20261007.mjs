@@ -3,11 +3,15 @@ import { requestMedia } from '../src/mediaClient.mjs';
 const PROBE = 'novessa-core-media-verify-20261007-7f3c9a21';
 
 export default async function handler(req, res) {
-  if (req.method !== 'GET') {
-    res.status(405).json({ ok: false, error: 'method_not_allowed' });
+  const method = String(req?.method || 'GET').toUpperCase();
+  const url = new URL(req?.url || 'https://probe.invalid/');
+  const probe = url.searchParams.get('probe') || String(req?.query?.probe || '');
+
+  if (method !== 'GET') {
+    res.status(405).json({ ok: false, error: 'method_not_allowed', method });
     return;
   }
-  if (String(req.query?.probe || '') !== PROBE) {
+  if (probe !== PROBE) {
     res.status(404).json({ ok: false, error: 'not_found' });
     return;
   }
