@@ -136,6 +136,47 @@ if (!index.includes('<script src="/assets/app.js"')) {
     '<script src="/assets/app.js" defer><\/script></body>'
   );
 }
+const localizedRuntimeScript = `
+<script>
+(function(){
+  const map = [
+    ['REAL CORE • DETERMINISTIC • AUDITABLE','ԻՐԱԿԱՆ CORE • ՀԱՇՎԱՐԿԱՅԻՆ • ՍՏՈՒԳԵԼԻ'],
+    ['Коммерция Intelligence Core','Առևտրի վերլուծության Core'],
+    ['Core ok','Core աշխատում է'],
+    ['Connectors verified','Միացումները ստուգված են'],
+    ['Store verified','Խանութը ստուգված է'],
+    ['Rules verified','Կանոնները ստուգված են'],
+    ['Publishing verified','Հրապարակումը ստուգված է'],
+    ['Canonical store','Հիմնական տվյալների պահոց'],
+    ['Rule packs','Կանոնների փաթեթներ'],
+    ['Pending cases','Սպասող դեպքեր'],
+    ['Store records','Խանութի գրառումներ'],
+    ['implemented_partial','մասամբ միացված է'],
+    ['implemented','միացված է'],
+    ['NOT VERIFIED','ՉԻ ՀԱՍՏԱՏՎԱԾ'],
+    ['PARTIAL','ՄԱՍԱՄԲ'],
+    ['verified','ստուգված է'],
+    ['ready','պատրաստ է']
+  ];
+  function localize(){
+    const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);
+    const nodes=[];
+    while(walker.nextNode()) nodes.push(walker.currentNode);
+    for(const node of nodes){
+      const parent=node.parentElement;
+      if(!parent || /^(SCRIPT|STYLE|PRE|CODE)$/i.test(parent.tagName)) continue;
+      let value=node.nodeValue;
+      for(const [from,to] of map) value=value.split(from).join(to);
+      node.nodeValue=value;
+    }
+  }
+  localize();
+  new MutationObserver(localize).observe(document.body,{subtree:true,childList:true,characterData:true});
+  setTimeout(localize,250);
+  setTimeout(localize,1000);
+})();
+</script>`;
+index = index.replace('</body>', localizedRuntimeScript + '</body>');
 writeFileSync(indexPath, index);
 
 const stylePath = 'public/styles.css';
