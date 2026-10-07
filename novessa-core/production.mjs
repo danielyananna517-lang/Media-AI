@@ -13,6 +13,7 @@ import { deflateRawSync } from 'node:zlib';
 import { unitEconomics } from './tools/unitEconomics.mjs';
 import { searchWeb } from './discovery/service.mjs';
 import { buildKdpPackage } from './publishing/service.mjs';
+import { loadWorkspace, saveWorkspace, appendEvent, persistenceStatus } from './persistence.mjs';
 
 const GEMINI_URL='https://generativelanguage.googleapis.com/v1beta/models/';
 const DEFAULT_MODEL='gemini-3.8-flash';
@@ -376,6 +377,16 @@ export function bookExport(input={}){
   return out('invalid_data',{error:'unsupported_book_export_format'});
 }
 
+export async function workspaceLoad(input={}){
+  return loadWorkspace(input);
+}
+
+export async function workspaceSave(input={}){
+  const result=await saveWorkspace(input);
+  if(result.status==='verified') await appendEvent({kind:'workspace_saved',payload:{kind:result.kind,version:result.version}});
+  return result;
+}
+
 export function productionCapabilities(){
   return {
     status:'verified',
@@ -383,6 +394,7 @@ export function productionCapabilities(){
     market_research:{provider:'NOVESSA discovery service',real_evidence_only:true},
     book:{workspace:true,plan:true,write:true,epub:true,pdf:true,kdp_package:true},
     sheets:{xlsx_export:true,maximum_rows:5000},
+    persistence:persistenceStatus(),
     safety:{invented_financial_numbers:false,market_metrics_without_source:false}
   };
 }
