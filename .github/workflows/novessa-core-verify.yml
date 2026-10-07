@@ -4,6 +4,12 @@ on:
   push:
     branches:
       - novessa-core-0.4.9-vercel
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'novessa-core/**'
+      - '.github/workflows/novessa-core-verify.yml'
   workflow_dispatch:
 
 permissions:
