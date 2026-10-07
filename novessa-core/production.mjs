@@ -8,7 +8,7 @@ const stylePath = coreDir + 'public/styles.css';
 const serverPath = coreDir + 'server.mjs';
 const runtimePath = srcDir + 'novessaProduction.mjs';
 
-const runtime = String.raw\`import { createHmac, timingSafeEqual, randomUUID } from 'node:crypto';
+const runtime = String.raw`import { createHmac, timingSafeEqual, randomUUID } from 'node:crypto';
 import { deflateRawSync } from 'node:zlib';
 import { unitEconomics } from './tools/unitEconomics.mjs';
 import { searchWeb } from './discovery/service.mjs';
@@ -341,7 +341,7 @@ export function productionCapabilities(){
     safety:{invented_financial_numbers:false,market_metrics_without_source:false}
   };
 }
-\`;
+`;
 
 writeFileSync(runtimePath,runtime);
 
@@ -349,7 +349,7 @@ let server=readFileSync(serverPath,'utf8');
 if(!server.includes('__novessaProduction')){
   server=server.replace("const rateLimiter = createRateLimiter","const __novessaProduction = await import('./src/novessaProduction.mjs');\\nconst rateLimiter = createRateLimiter");
   server=server.replace("    if(req.method==='GET'&&u.pathname==='/api/product/plans')","    if(req.method==='GET'&&u.pathname==='/api/production/capabilities') return send(res,200,__novessaProduction.productionCapabilities());\\n    if(req.method==='GET'&&u.pathname==='/api/product/plans')");
-  const uiHandlers=String.raw\`
+  const uiHandlers=String.raw`
       const productionUiActions=['production-operator','production-approve','production-execute','book-plan','book-write','book-export'];
       if(productionUiActions.includes(actionName)){
         let uiInput;
@@ -371,9 +371,9 @@ if(!server.includes('__novessaProduction')){
         }
         const httpStatus=out.status==='invalid_data'||out.status==='input_incomplete'?400:out.status==='provider_unavailable'?503:out.status==='error'?502:200;
         return send(res,httpStatus,out);
-      \`;
+      `;
   server=server.replace("      const out=await runUiAction(actionName,uiInput,{env:process.env,activeRecommendationPolicy});",uiHandlers+"\\n      const out=await runUiAction(actionName,uiInput,{env:process.env,activeRecommendationPolicy});");
-  const apiRoutes=String.raw\`
+  const apiRoutes=String.raw`
     if(u.pathname==='/api/production/operator') return sendApiResult(res,(await __novessaProduction.operatorRun(input)).status==='provider_unavailable'?503:200,await __novessaProduction.operatorRun(input),requestId);
     if(u.pathname==='/api/production/action/approve') return sendApiResult(res,200,__novessaProduction.approveAction(String(input.approval_token||'')),requestId);
     if(u.pathname==='/api/production/action/execute') return sendApiResult(res,200,await __novessaProduction.executeApprovedAction(String(input.approval_token||'')),requestId);
@@ -382,13 +382,13 @@ if(!server.includes('__novessaProduction')){
     if(u.pathname==='/api/production/book/plan'){const out=await __novessaProduction.bookPlan(input);return sendApiResult(res,out.status==='provider_unavailable'?503:out.status==='input_incomplete'?400:out.status==='error'?502:200,out,requestId);}
     if(u.pathname==='/api/production/book/write'){const out=await __novessaProduction.bookWrite(input);return sendApiResult(res,out.status==='provider_unavailable'?503:out.status==='input_incomplete'?400:out.status==='error'?502:200,out,requestId);}
     if(u.pathname==='/api/production/book/export'){const generated=__novessaProduction.bookExport(input);if(generated.status!=='verified')return sendApiResult(res,generated.status==='input_incomplete'?400:400,generated,requestId);if(input.format==='kdp')return sendApiResult(res,200,generated,requestId);res.writeHead(200,{'content-type':generated.media_type,'content-disposition':'attachment; filename="'+String(generated.filename).replace(/[^A-Za-z0-9._-]/g,'_')+'"','cache-control':'no-store','x-content-type-options':'nosniff','x-request-id':requestId});return res.end(generated.content);}
-\`;
+`;
   server=server.replace("    if(u.pathname.startsWith('/api/connectors/shopify/'))",apiRoutes+"\\n    if(u.pathname.startsWith('/api/connectors/shopify/'))");
   writeFileSync(serverPath,server);
 }
 
 let index=readFileSync(uiPath,'utf8');
-const ui=String.raw\`
+const ui=String.raw`
 <section class="novessa-production-layer" id="novessa-production-layer">
   <div class="np-hero"><div><div class="eyebrow">NOVESSA • AI OPERATOR</div><h2>AI Operator</h2><p>Իրական տվյալներ → Core հաշվարկ → որոշում → Human Approval → գործողություն։</p></div><span id="npStatus" class="np-status">Ստուգում…</span></div>
   <div class="np-grid">
@@ -423,12 +423,12 @@ const ui=String.raw\`
       <div class="np-actions-row"><button id="bookSaveBtn" type="button" class="secondary">Պահպանել</button><button id="bookEpubBtn" type="button" class="secondary">EPUB</button><button id="bookPdfBtn" type="button" class="secondary">PDF</button></div><pre id="bookStatus" class="json"></pre>
     </article>
   </div>
-</section>\`;
+</section>`;
 if(!index.includes('id="novessa-production-layer"')) index=index.replace('<main>','<main>'+ui);
 writeFileSync(uiPath,index);
 
 let app=readFileSync(appPath,'utf8');
-const js=String.raw\`
+const js=String.raw`
 (function(){
   const el=id=>document.getElementById(id);
   const num=id=>{const v=Number(el(id)?.value);return Number.isFinite(v)?v:null;};
@@ -449,13 +449,13 @@ const js=String.raw\`
   el('bookPdfBtn')?.addEventListener('click',async()=>{try{await exportBook('pdf');el('bookStatus').textContent='PDF-ը պատրաստ է։';}catch(error){el('bookStatus').textContent=error.message||String(error);}});
   fetch('/api/production/capabilities').then(r=>r.json()).then(data=>{el('npStatus').textContent=data.status==='verified'?'Production Core պատրաստ է':'ՉԻ ՀԱՍՏԱՏՎԱԾ';}).catch(()=>{el('npStatus').textContent='ՉԻ ՀԱՍՏԱՏՎԱԾ';});
 })();
-\`;
+`;
 if(!app.includes('novessa_book_workspace_v2')) app+='\\n'+js+'\\n';
 writeFileSync(appPath,app);
 
 let style=readFileSync(stylePath,'utf8');
-style+=\`
+style+=`
 .novessa-production-layer{margin:24px 0 32px;padding:22px;border:1px solid #33275e;border-radius:24px;background:linear-gradient(145deg,rgba(16,10,40,.96),rgba(7,6,23,.98));box-shadow:0 18px 60px rgba(11,7,40,.35)}.np-hero{display:flex;justify-content:space-between;gap:18px;align-items:flex-start;margin-bottom:14px}.np-hero h2{margin:7px 0;font-size:30px}.np-hero p{margin:0;color:#a8a1c4}.np-status{padding:8px 12px;border:1px solid #43357b;border-radius:999px;color:#ddd6fe;font-size:12px}.np-grid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(320px,.85fr);gap:14px}.np-grid-3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}.np-label{display:grid;gap:6px;color:#c9c1dc;font-size:12px;margin:9px 0}.np-label input,.np-label textarea{box-sizing:border-box;width:100%;padding:10px 12px;border:1px solid #342b5b;border-radius:12px;background:#09071b;color:#f7f3ff;outline:none}.np-actions{display:grid;gap:9px}.np-actions-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin-top:10px}.np-result{margin-top:11px;padding:12px;border:1px dashed #3a2e69;border-radius:12px;white-space:pre-wrap;min-height:64px}.np-action{padding:12px;border:1px solid #3a2e69;border-radius:12px;background:#0a071d}.np-action strong{display:block;margin-bottom:5px}.np-action button{margin-top:8px}.json{white-space:pre-wrap;overflow:auto;max-height:420px}@media(max-width:950px){.np-grid{grid-template-columns:1fr}}@media(max-width:650px){.np-grid-3{grid-template-columns:repeat(2,minmax(0,1fr))}.np-actions-row{grid-template-columns:1fr}.np-hero{flex-direction:column}}
-\`;
+`;
 writeFileSync(stylePath,style);
 console.log('NOVESSA production integration build complete');
