@@ -1435,7 +1435,28 @@ async function handleMediaRequest(request, env) {
     if (operation === 'image' || operation === 'image-hq' || operation === 'illustration' || operation === 'kdp-cover' || operation === 'card-design' || operation === 'infographic') {
       const result = await executeImageOperation(env, operation, input);
       if (result.artifact?.mode === 'raw_response') {
-        return new Response(result.rawBody || null, { status: 200 });
+        return new Response(result.rawBody || null, {
+          status: 200,
+          headers: baseHeaders({
+            'Content-Type': result.artifact.content_type || 'image/png',
+            'X-Request-Id': requestId,
+          }),
+        });
+      }
+      if (typeof result.artifact?.image_base64 === 'string' && result.artifact.image_base64.length > 100) {
+        const encoded = result.artifact.image_base64.includes(',')
+          ? result.artifact.image_base64.slice(result.artifact.image_base64.indexOf(',') + 1)
+          : result.artifact.image_base64;
+        const binary = atob(encoded);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+        return new Response(bytes, {
+          status: 200,
+          headers: baseHeaders({
+            'Content-Type': 'image/png',
+            'X-Request-Id': requestId,
+          }),
+        });
       }
       return json(resultEnvelope({
         requestId,
