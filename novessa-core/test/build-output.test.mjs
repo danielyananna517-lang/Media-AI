@@ -47,6 +47,7 @@ test('Core Media client matches the verified Media AI HMAC contract',async()=>{
   process.env.NOVESSA_GATEWAY_SHARED_SECRET=secret;
   process.env.NOVESSA_ENV='development';
   let call=null;
+  try {
   const out=await requestMedia({
     operation:'chat',
     input:{message:'hello'},
@@ -74,7 +75,9 @@ test('Core Media client matches the verified Media AI HMAC contract',async()=>{
   assert.equal(call.url,'https://example.test/v1/media/request');
   assert.equal(out.status,'success');
   assert.equal(out.request_id,'req-test-1');
-  if(oldBase===undefined) delete process.env.NOVESSA_GATEWAY_BASE_URL; else process.env.NOVESSA_GATEWAY_BASE_URL=oldBase;
-  if(oldSecret===undefined) delete process.env.NOVESSA_GATEWAY_SHARED_SECRET; else process.env.NOVESSA_GATEWAY_SHARED_SECRET=oldSecret;
-  if(oldEnv===undefined) delete process.env.NOVESSA_ENV; else process.env.NOVESSA_ENV=oldEnv;
+  } finally {
+    if(oldBase===undefined) delete process.env.NOVESSA_GATEWAY_BASE_URL; else process.env.NOVESSA_GATEWAY_BASE_URL=oldBase;
+    if(oldSecret===undefined) delete process.env.NOVESSA_GATEWAY_SHARED_SECRET; else process.env.NOVESSA_GATEWAY_SHARED_SECRET=oldSecret;
+    if(oldEnv===undefined) delete process.env.NOVESSA_ENV; else process.env.NOVESSA_ENV=oldEnv;
+  }
 });
