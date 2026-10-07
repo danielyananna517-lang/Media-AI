@@ -490,7 +490,7 @@ writeFileSync(stylePath, style);
 
 
 // === NOVESSA DECISION CENTER v1 ===
-const decisionCenterHtml = \`
+const decisionCenterHtml = `
 <section class="novessa-decision-center" data-novessa-decision-center>
   <div class="dc-hero">
     <div>
@@ -557,12 +557,12 @@ const decisionCenterHtml = \`
       </article>
     </div>
   </div>
-</section>\`;
+</section>`;
 if(!index.includes('data-novessa-decision-center')) {
   index = index.replace('<main>', '<main>' + decisionCenterHtml);
 }
 
-const decisionCenterScript = \`
+const decisionCenterScript = `
 <script>
 (function(){
   const root=document.querySelector('[data-novessa-decision-center]');
@@ -687,12 +687,12 @@ const decisionCenterScript = \`
   document.addEventListener('change',e=>{if(e.target?.id==='languageSelect')setTimeout(setText,0);});
   setText();refreshStatus();
 })();
-</script>\`;
+</script>`;
 if(!index.includes('data-novessa-decision-center-script')){
   index = index.replace('</body>', decisionCenterScript.replace('<script>','<script data-novessa-decision-center-script>') + '</body>');
 }
 
-style += \`
+style += `
 /* NOVESSA Decision Center v1 */
 .novessa-decision-center{margin:26px 0 34px;padding:24px;border:1px solid #34286a;border-radius:26px;background:linear-gradient(145deg,rgba(16,10,40,.96),rgba(7,6,23,.98));box-shadow:0 20px 70px rgba(11,7,40,.45)}
 .dc-hero{display:flex;justify-content:space-between;gap:18px;align-items:flex-start}.dc-eyebrow,.dc-section-tag{font-size:11px;letter-spacing:.12em;font-weight:800;color:#a78bfa}.dc-hero h2{margin:7px 0 8px;font-size:clamp(24px,3vw,36px);line-height:1.08}.dc-subtitle{max-width:830px;color:#aaa2c5;margin:0;line-height:1.55}.dc-truth{padding:10px 14px;border:1px solid #41347e;border-radius:999px;color:#ddd6fe;background:rgba(109,40,217,.13);white-space:nowrap;font-size:12px;font-weight:700}
@@ -703,6 +703,6 @@ style += \`
 .dc-next-list{display:grid;gap:8px;margin-top:12px}.dc-next{display:grid;grid-template-columns:34px 1fr 20px;gap:10px;align-items:center;text-align:left;border:1px solid #2c2450;border-radius:14px;padding:11px 12px;background:#0b081f;color:#eee9ff;cursor:pointer}.dc-next:hover{border-color:#634bbd}.dc-next b{font-size:11px;color:#8f83b4}.dc-next strong{display:block;font-size:13px}.dc-next small{display:block;color:#9088a8;line-height:1.35;margin-top:3px}.dc-next i{font-style:normal;color:#a78bfa}
 .dc-truth-list{display:grid;gap:9px;margin-top:13px}.dc-truth-list div{display:flex;gap:9px;align-items:flex-start}.dc-truth-list span{color:#86efac;font-weight:900}.dc-truth-list p{margin:0;color:#aca5bf;font-size:12px;line-height:1.45}
 @media (max-width:950px){.dc-grid{grid-template-columns:1fr}.dc-fields{grid-template-columns:repeat(2,minmax(0,1fr))}}@media (max-width:650px){.novessa-decision-center{padding:16px;border-radius:18px}.dc-hero{flex-direction:column}.dc-truth{white-space:normal}.dc-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.dc-fields{grid-template-columns:1fr}.dc-actions{flex-direction:column}.dc-actions button{width:100%}}
-\`;
+`;
 writeFileSync(stylePath, style);
 writeFileSync(indexPath, index);
