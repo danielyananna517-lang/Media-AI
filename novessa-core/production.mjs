@@ -395,6 +395,7 @@ export function productionCapabilities(){
     book:{workspace:true,plan:true,write:true,epub:true,pdf:true,kdp_package:true},
     sheets:{xlsx_export:true,maximum_rows:5000},
     persistence:persistenceStatus(),
+    workspace:{commerce:true,book:true,sheets:true},
     safety:{invented_financial_numbers:false,market_metrics_without_source:false}
   };
 }
