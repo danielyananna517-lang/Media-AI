@@ -28,7 +28,9 @@ jobs:
           node-version: 22
       - name: Build Core
         working-directory: novessa-core
-        run: node build.mjs
+        run: |
+          node build.mjs
+          node production.mjs
       - name: Syntax check generated runtime
         working-directory: novessa-core
         run: |
