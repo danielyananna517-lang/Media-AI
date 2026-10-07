@@ -132,6 +132,22 @@ const SERVICE_CATALOG = Object.freeze({
     pricingTier: 'standard',
     credits: 30,
   },
+  'card-design': {
+    operation: 'card-design',
+    description: 'Marketplace product card design generation',
+    providerKey: 'image',
+    inputField: 'prompt',
+    pricingTier: 'premium',
+    credits: 60,
+  },
+  infographic: {
+    operation: 'infographic',
+    description: 'Marketplace infographic visual generation',
+    providerKey: 'image',
+    inputField: 'prompt',
+    pricingTier: 'premium',
+    credits: 60,
+  },
   'kdp-cover': {
     operation: 'kdp-cover',
     description: 'KDP-oriented cover generation',
@@ -155,6 +171,22 @@ const SERVICE_CATALOG = Object.freeze({
     inputField: 'text',
     pricingTier: 'standard',
     credits: 20,
+  },
+  'book-pdf': {
+    operation: 'book-pdf',
+    description: 'Book print-ready text package for PDF export',
+    providerKey: 'book',
+    inputField: 'book_data',
+    pricingTier: 'standard',
+    credits: 20,
+  },
+  qa: {
+    operation: 'qa',
+    description: 'Deterministic media quality audit',
+    providerKey: 'qa',
+    inputField: 'content',
+    pricingTier: 'standard',
+    credits: 0,
   },
   transcribe: {
     operation: 'transcribe',
@@ -341,6 +373,7 @@ function validateBookData(data, pageCount) {
 
 function providerPricing(providerKey) {
   const table = {
+    qa: { unit: 'fixed', fixed: 0, verified: true },
     chat: { unit: 'tokens', input: 0.0509, output: 0.335, verified: true },
     book: { unit: 'tokens', input: 0.0605, output: 0.40, verified: true },
     image: { unit: 'image', fixed: 0.000346, verified: true },
@@ -870,19 +903,54 @@ async function executeKdpInterior(env, input) {
   };
 }
 
+function buildDesignPrompt(operation, input) {
+  const product = safeString(input.product_name, 'Product');
+  const category = safeString(input.category, 'marketplace product');
+  const benefits = safeString(input.benefits, '');
+  const audience = safeString(input.audience, 'target customers');
+  const language = safeString(input.language, 'Russian');
+  const style = safeString(input.style, operation === 'card-design' ? 'clean commercial marketplace design' : 'clear modern infographic');
+  const format = safeString(input.format, operation === 'card-design' ? '4:5 vertical marketplace card' : '4:5 vertical infographic');
+  const price = safeString(input.price, '');
+  const textRule = 'Use only short readable labels; do not invent factual product claims.';
+  return [
+    operation === 'card-design' ? 'Create a marketplace product card visual.' : 'Create a marketplace infographic visual.',
+    'Product: ' + product + '.',
+    'Category: ' + category + '.',
+    benefits ? 'Key benefits: ' + benefits + '.' : '',
+    'Audience: ' + audience + '.',
+    price ? 'Price shown exactly as: ' + price + '.' : '',
+    'Language for labels: ' + language + '.',
+    'Visual style: ' + style + '.',
+    'Format: ' + format + '.',
+    textRule,
+    'No watermark, no fake logos, no invented certifications.'
+  ].filter(Boolean).join(' ');
+}
+
 async function executeImageOperation(env, operation, input) {
-  const check = validatePrompt(input.prompt, 6000);
+  const structured = operation === 'card-design' || operation === 'infographic'
+    ? buildDesignPrompt(operation, input)
+    : safeString(input.prompt);
+  const check = validatePrompt(structured, 6000);
   if (!check.ok) throw Object.assign(new Error(check.reason), { code: check.reason });
   const quality = operation === 'image-hq' || operation === 'kdp-cover' ? 'hq' : 'standard';
   const result = await generateImage(env, check.value, quality, input);
   const validation = validateImageResult(result.raw);
   if (!validation.ok) throw Object.assign(new Error(validation.reason), { code: validation.reason });
-  const artifact = validation.response ? {
-    mode: 'raw_response',
-    content_type: result.raw.headers.get('content-type') || 'application/octet-stream',
-  } : validation.normalized;
+  if (validation.response) {
+    return {
+      artifact: {
+        mode: 'raw_response',
+        content_type: result.raw.headers.get('content-type') || 'application/octet-stream',
+      },
+      rawBody: await result.raw.arrayBuffer(),
+      provider: result.model,
+      pricing: calculateCost(quality === 'hq' ? 'image-hq' : 'image', check.value.length),
+    };
+  }
   return {
-    artifact,
+    artifact: validation.normalized,
     provider: result.model,
     pricing: calculateCost(quality === 'hq' ? 'image-hq' : 'image', check.value.length),
   };
@@ -1013,6 +1081,217 @@ async function dispatchVideoJob(env, job) {
   }
 }
 
+function qaBook(bookData) {
+  const issues = [];
+  if (!isObject(bookData)) return { status: 'not_verified', verification_status: 'Not Verified', issues: ['book_data_must_be_object'] };
+  const title = safeString(bookData.title);
+  const pages = Array.isArray(bookData.pages) ? bookData.pages : [];
+  if (!title) issues.push('missing_title');
+  if (!pages.length) issues.push('missing_pages');
+  const expected = Number(bookData.expected_page_count || pages.length);
+  if (pages.length && expected !== pages.length) issues.push('page_count_mismatch');
+  const emptyPages = pages.filter((p) => !safeString(p?.text)).map((p, i) => Number(p?.page_number) || i + 1);
+  if (emptyPages.length) issues.push('empty_page_text');
+  const normalized = pages.map((p) => safeString(p?.text).toLowerCase()).filter(Boolean);
+  const duplicates = normalized.filter((text, i) => normalized.indexOf(text) !== i);
+  if (duplicates.length) issues.push('duplicate_page_text');
+  return {
+    status: issues.length ? 'partial' : 'verified',
+    verification_status: issues.length ? 'PARTIAL' : 'Verified',
+    passed: issues.length === 0,
+    page_count: pages.length,
+    issues,
+    checks: {
+      title: Boolean(title),
+      pages_present: pages.length > 0,
+      page_text_present: emptyPages.length === 0,
+      duplicate_text: duplicates.length === 0,
+      page_count_consistent: !issues.includes('page_count_mismatch'),
+    },
+  };
+}
+
+function bookPackage(bookData, input = {}) {
+  const check = qaBook(bookData);
+  return {
+    title: safeString(bookData?.title),
+    author: safeString(input.author, 'Author'),
+    language: safeString(input.language, 'Russian'),
+    trim: safeString(input.trim, '8.5x11'),
+    page_count: Array.isArray(bookData?.pages) ? bookData.pages.length : 0,
+    qa: check,
+    export: {
+      html_ready: check.passed,
+      pdf: 'browser-export',
+      direct_binary_pdf_generated: false,
+    },
+    pages: Array.isArray(bookData?.pages) ? bookData.pages.map((p, i) => ({
+      page_number: Number(p?.page_number) || i + 1,
+      title: safeString(p?.title, ''),
+      text: safeString(p?.text, ''),
+    })) : [],
+  };
+}
+
+async function executeQaOperation(env, input) {
+  const content = input?.content;
+  if (typeof content === 'string') {
+    return {
+      artifact: {
+        type: 'text-qa',
+        status: content.trim() ? 'verified' : 'partial',
+        verification_status: content.trim() ? 'Verified' : 'PARTIAL',
+        checks: {
+          non_empty: Boolean(content.trim()),
+          max_length: content.length <= 20_000,
+          character_count: content.length,
+        },
+        issues: content.trim() ? [] : ['empty_content'],
+      },
+      provider: 'novessa-quality-engine',
+      pricing: {
+        provider_cost_usd: 0,
+        margin_usd: 0,
+        user_price_usd: 0,
+        neuron_estimate: 0,
+        currency: 'USD',
+        pricing_verified: true,
+      },
+    };
+  }
+  const book = input?.book_data;
+  const audit = qaBook(book);
+  return {
+    artifact: audit,
+    provider: 'novessa-quality-engine',
+    pricing: {
+      provider_cost_usd: 0,
+      margin_usd: 0,
+      user_price_usd: 0,
+      neuron_estimate: 0,
+      currency: 'USD',
+      pricing_verified: true,
+    },
+  };
+}
+
+async function executeBookPdfOperation(env, input) {
+  const bookData = input?.book_data;
+  const audit = qaBook(bookData);
+  if (!audit.passed) throw Object.assign(new Error('book_qa_failed'), { code: 'book_qa_failed' });
+  return {
+    artifact: bookPackage(bookData, input),
+    provider: 'novessa-book-export-boundary',
+    pricing: calculateCost('book', JSON.stringify(bookData).length, 200),
+  };
+}
+
+async function publicUiRateLimit(request, env) {
+  const ip = safeString(request.headers.get('CF-Connecting-IP'), 'unknown');
+  const rate = await enforceRateLimit(env, { kind: 'anonymous', serviceId: 'ui-' + ip });
+  return rate;
+}
+
+async function handleUiMediaRequest(request, env, ctx) {
+  const rate = await publicUiRateLimit(request, env);
+  if (!rate.allowed) return json({ status: 'rate_limited', error: 'ui_rate_limited', remaining: rate.remaining }, 429);
+  const parsed = await parseJsonBody(request);
+  if (!parsed.ok) return json({ status: 'error', error: parsed.error }, parsed.status);
+  const body = parsed.body;
+  if (!isObject(body)) return json({ status: 'error', error: 'body_must_be_object' }, 400);
+  const operation = safeString(body.operation);
+  const input = isObject(body.input) ? body.input : {};
+  const requestId = randomId('ui');
+  if (!SUPPORTED_OPERATIONS.includes(operation)) {
+    return json(resultEnvelope({ requestId, operation: operation || null, status: 'error', error: 'unsupported_operation' }), 400);
+  }
+
+  try {
+    if (operation === 'video-clip') {
+      const created = await createVideoJob(env, 'media-ai-ui', requestId, input);
+      if (created.blocked) return json(created.response, 503);
+      return json(resultEnvelope({
+        requestId,
+        operation,
+        status: 'accepted',
+        artifact: { job: created.job },
+        metadata: buildMetadata({ operation, provider: created.job.provider, pricing: created.job.cost, extra: { async: true, ui: true } }),
+      }), 202, { 'X-Media-Job-Id': created.job.job_id });
+    }
+
+    if (operation === 'qa') {
+      const result = await executeQaOperation(env, input);
+      return json(resultEnvelope({ requestId, operation, artifact: result.artifact, metadata: buildMetadata({ operation, provider: result.provider, pricing: result.pricing }) }));
+    }
+
+    if (operation === 'book-pdf') {
+      const result = await executeBookPdfOperation(env, input);
+      return json(resultEnvelope({ requestId, operation, artifact: result.artifact, metadata: buildMetadata({ operation, provider: result.provider, pricing: result.pricing }) }));
+    }
+
+    if (operation === 'kdp-interior') {
+      const result = await executeKdpInterior(env, input);
+      return json(resultEnvelope({ requestId, operation, artifact: result.artifact, metadata: buildMetadata({ operation, provider: result.provider, pricing: result.pricing, extra: { mode: 'kdp_portal' } }) }));
+    }
+
+    if (operation === 'youtube-campaign') {
+      if (!isObject(input.book_data)) return json(resultEnvelope({ requestId, operation, status: 'error', error: 'missing_book_data' }), 400);
+      const artifact = youtubeCampaign(input.book_data, input);
+      return json(resultEnvelope({ requestId, operation, artifact, metadata: buildMetadata({ operation, provider: 'novessa-publishing-boundary', pricing: { provider_cost_usd: 0, margin_usd: 0, user_price_usd: 0, currency: 'USD', pricing_verified: true } }) }));
+    }
+
+    if (operation === 'transcribe') {
+      const result = await executeTranscribeOperation(env, input);
+      return json(resultEnvelope({ requestId, operation, artifact: result.artifact, metadata: buildMetadata({ operation, provider: result.provider, pricing: result.pricing }) }));
+    }
+
+    if (operation === 'voice') {
+      const result = await executeVoiceOperation(env, input);
+      if (result.rawResponse instanceof Response) {
+        const headers = new Headers(baseHeaders());
+        headers.set('Content-Type', result.rawResponse.headers.get('content-type') || 'audio/mpeg');
+        headers.set('X-Request-Id', requestId);
+        return new Response(result.rawResponse.body, { status: 200, headers });
+      }
+      return json(resultEnvelope({ requestId, operation, artifact: { mode: 'raw_provider_response' }, metadata: buildMetadata({ operation, provider: result.provider, pricing: result.pricing }) }));
+    }
+
+    if (operation === 'image' || operation === 'image-hq' || operation === 'illustration' || operation === 'kdp-cover' || operation === 'card-design' || operation === 'infographic') {
+      const result = await executeImageOperation(env, operation, input);
+      if (result.artifact?.mode === 'raw_response') {
+        return new Response(result.rawBody || null, {
+          status: 200,
+          headers: baseHeaders({ 'Content-Type': result.artifact.content_type || 'image/png', 'X-Request-Id': requestId }),
+        });
+      }
+      return json(resultEnvelope({ requestId, operation, artifact: result.artifact, metadata: buildMetadata({ operation, provider: result.provider, pricing: result.pricing }) }));
+    }
+
+    if (operation === 'book' || operation === 'book-32' || operation === 'coloring-book') {
+      const result = await executeTextOperation(env, operation, input);
+      return json(resultEnvelope({ requestId, operation, artifact: result.artifact, metadata: buildMetadata({ operation, provider: result.provider, pricing: result.pricing }) }));
+    }
+
+    const result = await executeTextOperation(env, operation, input);
+    return json(resultEnvelope({ requestId, operation, artifact: result.artifact, metadata: buildMetadata({ operation, provider: result.provider, pricing: result.pricing }) }));
+  } catch (error) {
+    return json(resultEnvelope({
+      requestId,
+      operation,
+      status: 'error',
+      error: error?.code || 'internal_error',
+      metadata: { verification_status: 'Not Verified', external_call_performed: false },
+    }), 500);
+  }
+}
+
+async function handleUiJobGet(request, env, jobId) {
+  const job = await loadJob(env, jobId);
+  if (!job) return json({ status: 'error', error: 'job_not_found' }, 404);
+  if (job.owner_service_id !== 'media-ai-ui') return json({ status: 'error', error: 'job_forbidden' }, 403);
+  return json({ status: 'success', job });
+}
+
 async function authorizeRequest(request, env, rawBody, requireSignature = true) {
   if (!requireSignature) return { valid: true, serviceId: 'public', requestId: randomId('public') };
   const auth = await verifyHmac(request, env, rawBody);
@@ -1109,11 +1388,30 @@ async function handleMediaRequest(request, env) {
       }));
     }
 
-    if (operation === 'image' || operation === 'image-hq' || operation === 'illustration' || operation === 'kdp-cover') {
+    if (operation === 'image' || operation === 'image-hq' || operation === 'illustration' || operation === 'kdp-cover' || operation === 'card-design' || operation === 'infographic') {
       const result = await executeImageOperation(env, operation, input);
       if (result.artifact?.mode === 'raw_response') {
         return new Response(result.rawBody || null, { status: 200 });
       }
+      return json(resultEnvelope({
+        requestId,
+        operation,
+        artifact: result.artifact,
+        metadata: buildMetadata({ operation, provider: result.provider, pricing: result.pricing }),
+      }));
+    }
+
+    if (operation === 'qa') {
+      const result = await executeQaOperation(env, input);
+      return json(resultEnvelope({
+        requestId,
+        operation,
+        artifact: result.artifact,
+        metadata: buildMetadata({ operation, provider: result.provider, pricing: result.pricing }),
+      }));
+    }
+    if (operation === 'book-pdf') {
+      const result = await executeBookPdfOperation(env, input);
       return json(resultEnvelope({
         requestId,
         operation,
@@ -1364,11 +1662,201 @@ async function handlePublishingYoutubeChannel(request, env) {
   }, 501);
 }
 
+const MEDIA_AI_UI_HTML = String.raw`<!doctype html>
+<html lang="hy">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>NOVESSA Media AI</title>
+<style>
+:root{font-family:system-ui,-apple-system,Segoe UI,sans-serif;color-scheme:light}
+*{box-sizing:border-box}body{margin:0;background:#f3f5f9;color:#182033}
+.shell{max-width:1120px;margin:0 auto;padding:20px}
+header{display:flex;align-items:center;gap:14px;margin-bottom:14px}
+.logo{width:46px;height:46px;border-radius:13px;background:#182033;color:#fff;display:grid;place-items:center;font-weight:900}
+h1{font-size:25px;margin:0}h2{margin:0 0 6px}h3{margin:18px 0 8px}p{color:#667085}
+.header-actions{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+button{border:1px solid #cdd5e1;border-radius:10px;background:#fff;padding:10px 13px;font:inherit;font-weight:650;cursor:pointer}
+button.active,button.primary{background:#182033;color:#fff;border-color:#182033}
+.status{background:#fff;border:1px solid #dfe4ec;border-radius:12px;padding:11px 14px;margin-bottom:16px}
+.grid{display:grid;grid-template-columns:240px 1fr;gap:16px}
+.card{background:#fff;border:1px solid #dfe4ec;border-radius:16px;padding:15px}
+.menu{display:grid;gap:7px}
+.menu button{text-align:left}
+label{display:block;font-weight:650;margin:13px 0 7px}
+input,textarea,select{width:100%;font:inherit;border:1px solid #cdd5e1;border-radius:10px;padding:10px;background:#fff}
+textarea{min-height:150px;resize:vertical}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.result{margin-top:15px;background:#0f172a;color:#e7edf6;border-radius:12px;padding:14px;min-height:170px;white-space:pre-wrap;overflow:auto}
+.preview{margin-top:12px;max-width:100%;border-radius:12px;border:1px solid #dfe4ec;display:none}
+.small{font-size:13px;color:#667085}
+.warn{padding:10px;border-radius:10px;background:#fff7e8;border:1px solid #f3d28c;margin-top:12px}
+@media(max-width:820px){.grid{grid-template-columns:1fr}.row{grid-template-columns:1fr}.header-actions{margin-left:0}}
+</style>
+</head>
+<body>
+<div class="shell">
+<header>
+<div class="logo">N</div>
+<div><h1>NOVESSA Media AI</h1><p>Ինքնուրույն մեդիա աշխատանքային կենտրոն • Cloudflare Worker 6.1.0</p></div>
+<div class="header-actions"><button id="health">Ստուգել կապը</button></div>
+</header>
+<div class="status" id="status">Կապը չի ստուգվել</div>
+<div class="grid">
+<aside class="card"><h3>Գործիքներ</h3><div class="menu">
+<button data-op="chat">Чат</button>
+<button data-op="image">Պատկեր</button>
+<button data-op="image-hq">Պատկեր HD</button>
+<button data-op="card-design">Карточка товара</button>
+<button data-op="infographic">Инфографика</button>
+<button data-op="illustration">Иллюстрация</button>
+<button data-op="book">Գիրք 8 էջ</button>
+<button data-op="book-32">Գիրք 32 էջ</button>
+<button data-op="coloring-book">Раскраска 32 стр.</button>
+<button data-op="kdp-cover">KDP обложка</button>
+<button data-op="book-pdf">Գիրք / PDF փաթեթ</button>
+<button data-op="voice">Озвучка</button>
+<button data-op="transcribe">Транскрипция</button>
+<button data-op="video-clip">Видео / Clip</button>
+<button data-op="qa">QA / Ստուգում</button>
+</div></aside>
+<section class="card">
+<h2 id="title">Чат</h2>
+<p id="help">Գրիր առաջադրանքը բնական լեզվով։</p>
+<div id="dynamic"></div>
+<div class="actions"><button id="run" class="primary">Գործարկել</button><button id="clear">Մաքրել</button></div>
+<img id="preview" class="preview" alt="Media AI result">
+<pre id="result" class="result">Արդյունքը այստեղ կհայտնվի։</pre>
+<div class="warn" id="videoWarn" style="display:none">Տեսանյութի արտաքին provider-ը դեռ չկարգավորված լինելու դեպքում արդյունքը կմնա provider_unavailable / Not Verified։</div>
+</section>
+</div>
+</div>
+<script>
+const menu=[...document.querySelectorAll('[data-op]')];
+const dynamic=document.getElementById('dynamic');
+const title=document.getElementById('title');
+const help=document.getElementById('help');
+const result=document.getElementById('result');
+const preview=document.getElementById('preview');
+const videoWarn=document.getElementById('videoWarn');
+let op='chat';
+
+const defs={
+chat:['Чат','Գրիր հարցը կամ առաջադրանքը։'],
+image:['Պատկեր','Գրիր տեսարանի նկարագրությունը։'],
+'image-hq':['Պատկեր HD','Գրիր բարձր որակի պատկերի նկարագրությունը։'],
+'card-design':['Карточка товара','Լրացրու ապրանքի տվյալները, և Media AI-ը կստեղծի քարտի դիզայնի պատկեր։'],
+infographic:['Инфографика','Լրացրու հիմնական տվյալները։'],
+illustration:['Иллюстрация','Գրիր նկարազարդման առաջադրանքը։'],
+book:['Գիրք 8 էջ','Գրիր թեման, հերոսներին և ոճը։'],
+'book-32':['Գիրք 32 էջ','Գրիր թեման, հերոսներին և ոճը։'],
+'coloring-book':['Раскраска 32 стр.','Գրիր թեման և հերոսներին։'],
+'kdp-cover':['KDP обложка','Գրիր գրքի թեման, վերնագիրը և լսարանը։'],
+'book-pdf':['Գիրք / PDF փաթեթ','Տեղադրիր արդեն պատրաստված book_data JSON-ը։'],
+voice:['Озвучка','Գրիր տեքստը ձայնագրման համար։'],
+transcribe:['Транскрипция','Մուտքագրիր audio JSON-ը։'],
+'video-clip':['Видео / Clip','Գրիր տեսանյութի առաջադրանքը։'],
+qa:['QA / Ստուգում','Տեղադրիր տեքստ կամ book_data JSON։']
+};
+
+function input(id,label,placeholder,type='text'){return '<label>'+label+'</label><input id="'+id+'" type="'+type+'" placeholder="'+placeholder+'">';}
+function textareaInput(id,label,placeholder){return '<label>'+label+'</label><textarea id="'+id+'" placeholder="'+placeholder+'"></textarea>';}
+
+function render(){
+  const d=defs[op]||defs.chat;
+  title.textContent=d[0]; help.textContent=d[1]; videoWarn.style.display=op==='video-clip'?'block':'none'; preview.style.display='none'; result.textContent='Արդյունքը այստեղ կհայտնվի։';
+  menu.forEach(b=>b.classList.toggle('active',b.dataset.op===op));
+  let html='';
+  if(op==='chat') html=textareaInput('message','Հաղորդագրություն','Օրինակ՝ կազմիր ապրանքի նկարագրություն...');
+  else if(op==='image'||op==='image-hq'||op==='illustration'||op==='kdp-cover') html=textareaInput('prompt','Առաջադրանք','Նկարագրիր, թե ինչ պետք է ստեղծվի...');
+  else if(op==='card-design'||op==='infographic'){
+    html='<div class="row">'+input('product_name','Ապրանքի անվանում','Օրինակ՝ Ջրի շիշ')+input('category','Կատեգորիա','Օրինակ՝ Խոհանոց')+'</div>'+
+      textareaInput('benefits','Հիմնական առավելություններ','Օրինակ՝ թեթև, չկոտրվող, 1 լիտր...')+
+      '<div class="row">'+input('audience','Թիրախային լսարան','Օրինակ՝ կանանց համար')+input('price','Գին','Օրինակ՝ 12990 ₽')+'</div>'+
+      '<div class="row">'+input('language','Լեզու','Russian')+input('style','Ոճ','clean commercial')+'</div>';
+  } else if(op==='book'||op==='book-32'||op==='coloring-book') html=textareaInput('prompt','Թեմա և պահանջներ','Օրինակ՝ ընկերության մասին մանկական պատմություն...');
+  else if(op==='book-pdf') html=textareaInput('book_data','Book data JSON','{"title":"...","pages":[...]}');
+  else if(op==='voice') html=textareaInput('text','Տեքստ','Գրիր ձայնագրվող տեքստը...');
+  else if(op==='transcribe') html=textareaInput('audio','Audio JSON','{"audio":{...}}');
+  else if(op==='video-clip') html=textareaInput('prompt','Видео prompt','Օրինակ՝ 10 վայրկյանանոց product clip...');
+  else if(op==='qa') html=textareaInput('content','Տեքստ կամ book_data JSON','Կպցրու ստուգվող նյութը...');
+  dynamic.innerHTML=html;
+}
+
+menu.forEach(b=>b.addEventListener('click',()=>{op=b.dataset.op;render();}));
+
+document.getElementById('health').addEventListener('click',async()=>{
+  const r=await fetch('/health'); const d=await r.json();
+  document.getElementById('status').textContent=d.ok?'Media AI՝ հասանելի • '+d.version:'Media AI՝ սխալ';
+});
+
+document.getElementById('clear').addEventListener('click',()=>render());
+
+document.getElementById('run').addEventListener('click',async()=>{
+  preview.style.display='none'; result.textContent='Կատարվում է...';
+  let input={};
+  try{
+    if(op==='chat') input={message:document.getElementById('message').value};
+    else if(op==='image'||op==='image-hq'||op==='illustration'||op==='kdp-cover') input={prompt:document.getElementById('prompt').value};
+    else if(op==='card-design'||op==='infographic') input={
+      product_name:document.getElementById('product_name').value,
+      category:document.getElementById('category').value,
+      benefits:document.getElementById('benefits').value,
+      audience:document.getElementById('audience').value,
+      price:document.getElementById('price').value,
+      language:document.getElementById('language').value,
+      style:document.getElementById('style').value
+    };
+    else if(op==='book'||op==='book-32'||op==='coloring-book') input={prompt:document.getElementById('prompt').value};
+    else if(op==='book-pdf'||op==='transcribe'||op==='qa'){
+      const raw=document.getElementById(op==='book-pdf'?'book_data':op==='transcribe'?'audio':'content').value.trim();
+      if(op==='qa'){ try{ input={book_data:JSON.parse(raw)}; } catch { input={content:raw}; } }
+      else if(op==='transcribe'){ input=JSON.parse(raw); }
+      else { input={book_data:JSON.parse(raw)}; }
+    }
+    else if(op==='voice') input={text:document.getElementById('text').value};
+    else if(op==='video-clip') input={spec:{prompt:document.getElementById('prompt').value,duration_seconds:6}};
+  }catch(e){result.textContent='Մուտքային JSON-ի սխալ։';return;}
+
+  const r=await fetch('/ui/api/run',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({operation:op,input})});
+  const type=r.headers.get('content-type')||'';
+  if(type.startsWith('image/')){
+    const blob=await r.blob(); preview.src=URL.createObjectURL(blob); preview.style.display='block'; result.textContent='Պատկերը ստեղծված է։'; return;
+  }
+  if(type.startsWith('audio/')){ const blob=await r.blob(); const url=URL.createObjectURL(blob); result.innerHTML='<audio controls src="'+url+'"></audio>'; return; }
+  const text=await r.text(); try{result.textContent=JSON.stringify(JSON.parse(text),null,2);}catch{result.textContent=text;}
+});
+
+render();
+</script>
+</body>
+</html>`;
+
+// Simple deterministic cost entry for QA.
 async function handleRequest(request, env, ctx) {
   if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: baseHeaders() });
   const url = new URL(request.url);
-  if (request.method === 'GET' && url.pathname === '/') {
-    return textResponse(`NOVESSA Media AI ${VERSION}`, 200, 'text/plain; charset=UTF-8');
+  if (request.method === 'GET' && (url.pathname === '/' || url.pathname === '/media-ai')) {
+    return new Response(MEDIA_AI_UI_HTML, {
+      status: 200,
+      headers: baseHeaders({ 'Content-Type': 'text/html; charset=UTF-8', 'X-Robots-Tag': 'noindex, nofollow' }),
+    });
+  }
+  if (request.method === 'GET' && url.pathname === '/ui/catalog') {
+    return json({ service: SERVICE_NAME, version: VERSION, operations: catalog() });
+  }
+  if (request.method === 'GET' && url.pathname === '/ui/capabilities') {
+    return json(routeCapabilities(env));
+  }
+  if (request.method === 'POST' && url.pathname === '/ui/api/run') {
+    return handleUiMediaRequest(request, env, ctx);
+  }
+  if (request.method === 'GET' && url.pathname.startsWith('/ui/api/job/')) {
+    const jobId = decodeURIComponent(url.pathname.slice('/ui/api/job/'.length));
+    if (!jobId) return json({ status: 'error', error: 'missing_job_id' }, 400);
+    return handleUiJobGet(request, env, jobId);
   }
   if (request.method === 'GET' && url.pathname === '/health') {
     return json(await health(env), 200);
