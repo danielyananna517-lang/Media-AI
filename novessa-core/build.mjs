@@ -158,6 +158,12 @@ const uiTranslations = [
   ['AI-ը չի ստեղծում ֆինանսական թիվ։ Բացակա կամ անորոշ տվյալը մնում է','AI-ը չի ստեղծում ֆինանսական թիվ։ Բացակա կամ անորոշ տվյալը մնում է'],
   ['Ստատուսները բերվում են հենց Novessa Core-ից, ոչ թե demo տվյալներից։','Կարգավիճակները բերվում են հենց Novessa Core-ից, ոչ թե ցուցադրական տվյալներից։'],
   ['Novessa-ն միավորում է ապրանքները, վաճառքը, շահույթը, marketplace-ների տվյալները, SEO-ն և կանոնների վերահսկումը մեկ համակարգում։','Novessa-ն միավորում է ապրանքները, վաճառքը, շահույթը, շուկաների տվյալները, SEO-ն և կանոնների վերահսկումը մեկ համակարգում։']
+  ['Status check…','Ստուգում…'],
+  ['Business Decision Center','Բիզնեսի որոշումների կենտրոն'],
+  ['AI does not create a financial number. Missing or uncertain data remains','AI-ը չի ստեղծում ֆինանսական թիվ։ Բացակա կամ անորոշ տվյալը մնում է'],
+  ['Current system status','Ներկայիս համակարգի վիճակը'],
+  ['Statuses are loaded from Novessa Core, not from demo data.','Կարգավիճակները բերվում են հենց Novessa Core-ից, ոչ թե ցուցադրական տվյալներից։'],
+  ['Rule Governance','Կանոնների կառավարում'],
 ];
 for (const [from,to] of uiTranslations) index = index.split(from).join(to);
 
@@ -330,6 +336,13 @@ const localizedRuntimeScript = `
       'Գիրք / Amazon KDP / YouTube':'Книга / Amazon KDP / YouTube',
       'Կարգավիճակները բերվում են հենց Novessa Core-ից, ոչ թե ցուցադրական տվյալներից։':'Статусы загружаются из Novessa Core, а не из демонстрационных данных.',
       'Novessa-ն միավորում է ապրանքները, վաճառքը, շահույթը, շուկաների տվյալները, SEO-ն և կանոնների վերահսկումը մեկ համակարգում։':'Novessa объединяет товары, продажи, прибыль, данные маркетплейсов, SEO и контроль правил в одной системе.',
+      'Ստուգում…':'Проверка…',
+      'Բիզնեսի որոշումների կենտրոն':'Центр бизнес-решений',
+      'AI-ը չի ստեղծում ֆինանսական թիվ։ Բացակա կամ անորոշ տվյալը մնում է':'AI не создаёт финансовые цифры. Отсутствующие или неопределённые данные остаются',
+      'Ներկայիս համակարգի վիճակը':'Текущее состояние системы',
+      'ապացույց → թեկնածու → թեստեր → ստուգման փուլ':'evidence → candidate → tests → gate',
+      'Commerce մոդել':'Модель Commerce',
+      'Կանոնների կառավարում':'Управление правилами',
 
       'Ցուցադրել canonical model-ը':'Показать canonical model'
     },
@@ -428,6 +441,13 @@ const localizedRuntimeScript = `
       'Գիրք / Amazon KDP / YouTube':'Book / Amazon KDP / YouTube',
       'Կարգավիճակները բերվում են հենց Novessa Core-ից, ոչ թե ցուցադրական տվյալներից։':'Statuses are loaded from Novessa Core, not from demo data.',
       'Novessa-ն միավորում է ապրանքները, վաճառքը, շահույթը, շուկաների տվյալները, SEO-ն և կանոնների վերահսկումը մեկ համակարգում։':'Novessa combines products, sales, profit, marketplace data, SEO, and rule control in one system.',
+      'Ստուգում…':'Checking…',
+      'Բիզնեսի որոշումների կենտրոն':'Business Decision Center',
+      'AI-ը չի ստեղծում ֆինանսական թիվ։ Բացակա կամ անորոշ տվյալը մնում է':'AI does not create financial numbers. Missing or uncertain data remains',
+      'Ներկայիս համակարգի վիճակը':'Current system status',
+      'ապացույց → թեկնածու → թեստեր → ստուգման փուլ':'evidence → candidate → tests → gate',
+      'Commerce մոդել':'Commerce model',
+      'Կանոնների կառավարում':'Rule governance',
 
     }
   };
