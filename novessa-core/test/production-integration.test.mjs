@@ -35,6 +35,7 @@ test('production capabilities declare real features and safe action boundary',()
   assert.equal(caps.operator.external_write_actions,true);
   assert.equal(caps.persistence.provider,'supabase-rest');
   assert.equal(caps.persistence.server_side,true);
+  assert.equal(caps.workspace.commerce,true);
 });
 
 test('persistence is explicit when the server database is not configured',()=>{
