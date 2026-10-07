@@ -106,6 +106,100 @@ app = app.replace(
 writeFileSync(appPath, app);
 const sheetsAppCode = "const sheetRows=(()=>{try{const saved=JSON.parse(localStorage.getItem('novessa_sheet_rows_v2')||'[]');return Array.isArray(saved)?saved:[]}catch{return []}})(); window.__novessaSheetRows=sheetRows;\nconst sheetI18n={hy:{added:'Տողը ավելացվեց։',imported:'Ներմուծված տողեր՝ ',url:'Մուտքագրիր Google Sheets-ի հղումը։',host:'Թույլատրվում է միայն Google հղումը։',bad:'Google Sheets-ի հղումը ճիշտ չէ։'},ru:{added:'Строка добавлена.',imported:'Импортировано строк: ',url:'Введи ссылку Google Sheets.',host:'Разрешена только ссылка Google.',bad:'Ссылка Google Sheets неверна.'},en:{added:'Row added.',imported:'Imported rows: ',url:'Enter the Google Sheets link.',host:'Only a Google link is allowed.',bad:'The Google Sheets link is invalid.'}}; function sheetMsg(key,extra=''){const lang=document.documentElement.lang||'hy';return (sheetI18n[lang]||sheetI18n.hy)[key]+extra;}\nfunction csvEscape(v){const s=String(v??'');return '\"' + s.replace(/\"/g,'\"\"') + '\"';}\nfunction renderSheetRows(){\n  const body=$('#sheetsTable tbody'); if(!body) return;\n  body.innerHTML=sheetRows.map(r=>'<tr>'+r.map(v=>'<td>'+String(v).replace(/[&<>]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]))+'</td>').join('')+'</tr>').join('');\n}\n$('#addSheetRowBtn')?.addEventListener('click',()=>{\n  const r=[$('#sheetProduct')?.value||'', $('#sheetPrice')?.value||'', $('#sheetCost')?.value||'', $('#sheetQty')?.value||'', $('#sheetSales')?.value||'', $('#sheetStock')?.value||''];\n  if(!r[0]) return;\n  sheetRows.push(r); window.__novessaSheetRows=sheetRows; localStorage.setItem('novessa_sheet_rows_v2',JSON.stringify(sheetRows)); renderSheetRows();\n  ['sheetProduct','sheetPrice','sheetCost','sheetQty','sheetSales','sheetStock'].forEach(id=>{const e=$('#'+id);if(e)e.value='';});\n  const out=$('#out-sheets'); if(out) out.textContent=sheetMsg('added');\n});\n$('#exportXlsxBtn')?.addEventListener('click',async()=>{\n  const out=$('#out-sheets');\n  try{\n    const r=await fetch('/ui/api/action/sheets-xlsx',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({headers:['Ապրանք','Գին','Ինքնարժեք','Քանակ','Վաճառք','Մնացորդ'],rows:sheetRows})});\n    if(!r.ok){const t=await r.text();let b={};try{b=JSON.parse(t)}catch{};throw new Error(b.error||'xlsx_export_failed');}\n    const blob=await r.blob(),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='novessa-sheets.xlsx';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);\n    if(out)out.textContent='Excel (.xlsx) պատրաստ է։';\n  }catch(error){if(out)out.textContent=String(error.message||error);}\n});\n$('#exportSheetBtn')?.addEventListener('click',()=>{\n  const rows=[['Ապրանք','Գին','Ինքնարժեք','Քանակ','Վաճառք','Մնացորդ'],...sheetRows];\n  const csv='\\ufeff'+rows.map(r=>r.map(csvEscape).join(',')).join('\\n');\n  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})); a.download='novessa-sheets.csv'; a.click();\n});\n$('#csvTemplateBtn')?.addEventListener('click',()=>{\n  const csv='\\ufeffԱպրանք,Գին,Ինքնարժեք,Քանակ,Վաճառք,Մնացորդ\\n';\n  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})); a.download='novessa-sheets-template.csv'; a.click();\n});\n$('#csvFile')?.addEventListener('change',async(e)=>{\n  const file=e.target.files?.[0]; if(!file) return;\n  const raw=await file.text();\n  const lines=raw.replace(/^\\ufeff/,'').split(/\\r?\\n/).filter(Boolean);\n  const parsed=lines.slice(1).map(line=>line.split(',').map(v=>v.replace(/^\"|\"$/g,'').replace(/\"\"/g,'\"'))).filter(r=>r.length>=6);\n  sheetRows.push(...parsed.map(r=>r.slice(0,6))); window.__novessaSheetRows=sheetRows; localStorage.setItem('novessa_sheet_rows_v2',JSON.stringify(sheetRows)); renderSheetRows();\n  const out=$('#out-sheets'); if(out) out.textContent=sheetMsg('imported',parsed.length);\n});\n$('#sheetLinkBtn')?.addEventListener('click',()=>{\n  const url=$('#sheetUrl')?.value?.trim(), out=$('#out-sheets');\n  if(!url){if(out)out.textContent=sheetMsg('url');return;}\n  try{\n    const u=new URL(url);\n    if(!/^(docs\\.google\\.com|drive\\.google\\.com)$/.test(u.hostname)){if(out)out.textContent='Թույլատրվում է միայն Google հղումը։';return;}\n    window.open(u.href,'_blank','noopener');\n  }catch{if(out)out.textContent=sheetMsg('bad');}\n});\n\n";
 app += '\n' + sheetsAppCode;
+
+const persistenceEnhancer = String.raw\`
+// === NOVESSA PERSISTENCE ENHANCER ===
+(function(){
+  const el=id=>document.getElementById(id);
+  const token=()=>String(el('uiToken')?.value||sessionStorage.getItem('novessa_ui_token')||'');
+  const call=async(action,payload={})=>{
+    const headers={'content-type':'application/json'};const t=token();
+    if(t){headers['x-novessa-ui-token']=t;sessionStorage.setItem('novessa_ui_token',t);}
+    const r=await fetch('/ui/api/action/'+action,{method:'POST',headers,body:JSON.stringify(payload)});
+    const raw=await r.text();let body={};try{body=JSON.parse(raw)}catch{}
+    if(!r.ok)throw Object.assign(new Error(body.error||'persistence_request_failed'),{body,status:r.status});
+    return body;
+  };
+  let enabled=false;
+  const bookMsg=m=>{const n=el('bookStatus');if(n)n.textContent=m;};
+  const sheetMsg=m=>{const n=el('out-sheets');if(n)n.textContent=m;};
+  const authMsg=()=>({hy:'Backend պահպանումը միացված է, բայց մուտքի կոդ է պահանջվում։',ru:'Серверное хранение включено, но требуется код доступа.',en:'Backend storage is enabled, but an access code is required.'}[document.documentElement.lang||'hy']);
+  const bookState=()=>{
+    let plan={};try{plan=JSON.parse(el('bookPlan')?.textContent||'{}')}catch{}
+    const raw=String(el('bookEditor')?.value||'');
+    const chapters=raw.split(/\\n\\s*##\\s+/).map((chunk,i)=>{
+      const clean=chunk.replace(/^##\\s+/,'').trim();if(!clean)return null;
+      const pos=clean.indexOf('\\n');
+      return{title:pos>0?clean.slice(0,pos).trim():('Chapter '+(i+1)),text:pos>0?clean.slice(pos).trim():clean};
+    }).filter(Boolean);
+    return{title:String(el('bookTitle')?.value||''),author:String(el('bookAuthor')?.value||''),topic:String(el('bookTopic')?.value||''),audience:String(el('bookAudience')?.value||''),language:String(el('bookLanguage')?.value||'en'),market_query:String(el('bookMarketQuery')?.value||''),plan,chapters};
+  };
+  const applyBook=state=>{
+    if(!state||typeof state!=='object')return;
+    for(const k of ['title','author','topic','audience','language']){const n=el('book'+k[0].toUpperCase()+k.slice(1));if(n&&state[k]!==undefined)n.value=state[k]||'';}
+    const q=el('bookMarketQuery');if(q&&state.market_query!==undefined)q.value=state.market_query||'';
+    if(el('bookPlan'))el('bookPlan').textContent=JSON.stringify(state.plan||{},null,2);
+    if(el('bookEditor'))el('bookEditor').value=(state.chapters||[]).map((ch,i)=>'## '+(ch.title||('Chapter '+(i+1)))+'\\n\\n'+(ch.text||'')).join('\\n\\n');
+  };
+  const saveBook=async()=>{
+    if(!enabled)return false;
+    const result=await call('workspace-save',{kind:'book',state:bookState()});
+    if(result.status==='verified'){bookMsg('Գրքի workspace-ը պահպանված է backend-ում։');return true;}
+    return false;
+  };
+  const loadBook=async()=>{
+    if(!enabled)return;
+    const result=await call('workspace-load',{kind:'book'});
+    if(result.status==='verified'&&result.state){applyBook(result.state);bookMsg('Գրքի workspace-ը բեռնված է backend-ից։');}
+    else if(result.status==='not_found')bookMsg('Backend-ը միացված է։ Գրքի workspace-ը դեռ չի ստեղծվել։');
+  };
+  const bookSave=el('bookSaveBtn');
+  bookSave?.addEventListener('click',()=>{saveBook().catch(error=>{bookMsg(error.status===401?authMsg():'Backend պահպանումը ձախողվեց։');});});
+  el('bookEditor')?.addEventListener('input',()=>{if(!enabled)return;clearTimeout(window.__novessaBookSaveTimer);window.__novessaBookSaveTimer=setTimeout(()=>saveBook().catch(()=>{}),700);});
+  const waitForBookChange=id=>{
+    el(id)?.addEventListener('click',()=>{
+      if(!enabled)return;
+      const before=JSON.stringify(bookState());let tries=0;
+      const timer=setInterval(async()=>{
+        tries++;
+        const now=JSON.stringify(bookState());
+        if(now!==before||tries>=60){clearInterval(timer);if(now!==before)await saveBook().catch(error=>bookMsg(error.status===401?authMsg():'Backend պահպանումը ձախողվեց։'));}},1000);
+    });
+  };
+  waitForBookChange('bookPlanBtn');waitForBookChange('bookWriteBtn');
+
+  const sheetRows=()=>Array.isArray(window.__novessaSheetRows)?window.__novessaSheetRows:[];
+  const renderSheets=()=>{
+    const body=el('sheetsTable')?.querySelector('tbody');if(!body)return;
+    body.innerHTML=sheetRows().map(r=>'<tr>'+r.map(v=>'<td>'+String(v??'').replace(/[&<>]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]))+'</td>').join('')+'</tr>').join('');
+  };
+  const saveSheets=async()=>{
+    if(!enabled)return false;
+    const result=await call('workspace-save',{kind:'sheets',state:{headers:['Ապրանք','Գին','Ինքնարժեք','Քանակ','Վաճառք','Մնացորդ'],rows:sheetRows()}});
+    if(result.status==='verified'){sheetMsg('Sheets workspace-ը պահպանված է backend-ում։');return true;}
+    return false;
+  };
+  const loadSheets=async()=>{
+    if(!enabled)return;
+    const result=await call('workspace-load',{kind:'sheets'});
+    if(result.status==='verified'&&Array.isArray(result.state?.rows)){
+      const rows=sheetRows();rows.splice(0,rows.length,...result.state.rows);localStorage.setItem('novessa_sheet_rows_v2',JSON.stringify(rows));renderSheets();sheetMsg('Sheets workspace-ը բեռնված է backend-ից։');
+    } else if(result.status==='not_found')sheetMsg('Backend-ը միացված է։ Sheets workspace-ը դեռ չի ստեղծվել։');
+  };
+  const tbody=el('sheetsTable')?.querySelector('tbody');
+  if(tbody&&window.MutationObserver){
+    const observer=new MutationObserver(()=>{if(!enabled)return;clearTimeout(window.__novessaSheetSaveTimer);window.__novessaSheetSaveTimer=setTimeout(()=>saveSheets().catch(error=>sheetMsg(error.status===401?authMsg():'Backend պահպանումը ձախողվեց։')),500);});
+    observer.observe(tbody,{childList:true,subtree:true});
+  }
+  fetch('/api/production/capabilities').then(r=>r.json()).then(async data=>{
+    enabled=data?.persistence?.status==='configured';
+    if(!enabled){bookMsg('Backend պահպանումը դեռ միացված չէ։ Գիրքը/Sheets-ը այս պահին պահվում են միայն այս դիտարկիչում։');return;}
+    try{await loadBook();await loadSheets();}catch(error){const msg=error.status===401?authMsg():'Backend persistence-ի runtime կապը ՉԻ ՀԱՍՏԱՏՎԱԾ։';bookMsg(msg);sheetMsg(msg);}
+  }).catch(()=>{enabled=false;});
+  window.__novessaPersistence={enabled:()=>enabled,saveBook,saveSheets,loadBook,loadSheets};
+})();
+\`;
+app += '\\n' + persistenceEnhancer;
 writeFileSync(appPath, app);
 
 const uiTranslations = [
