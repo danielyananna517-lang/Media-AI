@@ -727,4 +727,84 @@ style += `
 @media (max-width:950px){.dc-grid{grid-template-columns:1fr}.dc-fields{grid-template-columns:repeat(2,minmax(0,1fr))}}@media (max-width:650px){.novessa-decision-center{padding:16px;border-radius:18px}.dc-hero{flex-direction:column}.dc-truth{white-space:normal}.dc-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.dc-fields{grid-template-columns:1fr}.dc-actions{flex-direction:column}.dc-actions button{width:100%}}
 `;
 writeFileSync(stylePath, style);
+
+/* NOVESSA UI polish + targeted input accessibility */
+const uiPolishScript = `
+<script data-novessa-ui-polish>
+(function(){
+  function enableTargetedMoneyFields(){
+    document.querySelectorAll('label').forEach(label=>{
+      const t=(label.textContent||'').replace(/\\s+/g,' ').trim().toLowerCase();
+      if((t.includes('գին')||t.includes('price')) && (t.includes('զեղչ')||t.includes('discount'))){
+        label.querySelectorAll('input,textarea,select').forEach(input=>{
+          input.disabled=false; input.readOnly=false;
+          input.removeAttribute('disabled'); input.removeAttribute('readonly');
+          input.style.pointerEvents='auto';
+        });
+      }
+    });
+  }
+  function persistSheets(){
+    const rows=Array.isArray(window.__novessaSheetRows)?window.__novessaSheetRows:null;
+    if(rows) localStorage.setItem('novessa_sheet_rows_v2',JSON.stringify(rows));
+  }
+  function restoreSheets(){
+    try{
+      const saved=JSON.parse(localStorage.getItem('novessa_sheet_rows_v2')||'[]');
+      if(Array.isArray(saved) && saved.length){
+        window.__novessaSheetRows=saved;
+        if(typeof window.renderSheetRows==='function') window.renderSheetRows();
+      }
+    }catch{}
+  }
+  function improveInputs(){
+    document.querySelectorAll('input,textarea,select').forEach(el=>{
+      if(el.type==='file') return;
+      el.setAttribute('autocomplete',el.getAttribute('autocomplete')||'off');
+      el.style.maxWidth='100%';
+    });
+  }
+  document.addEventListener('click',enableTargetedMoneyFields,true);
+  document.addEventListener('focusin',enableTargetedMoneyFields,true);
+  document.addEventListener('DOMContentLoaded',()=>{
+    enableTargetedMoneyFields(); improveInputs(); restoreSheets();
+    const originalPush=window.__novessaSheetRowsPush;
+    if(!originalPush && Array.isArray(window.__novessaSheetRows)){
+      const arr=window.__novessaSheetRows;
+      window.__novessaSheetRowsPush=(...items)=>{arr.push(...items);persistSheets();};
+    }
+  });
+  const observer=new MutationObserver(()=>{enableTargetedMoneyFields();improveInputs();});
+  observer.observe(document.documentElement,{childList:true,subtree:true});
+})();
+</script>`;
+index = index.replace('</body>', uiPolishScript + '</body>');
+
+const stylePathFinal = 'public/styles.css';
+let styleFinal = readFileSync(stylePathFinal, 'utf8');
+styleFinal += `
+/* NOVESSA interaction/accessibility polish */
+input:not([type="file"]), textarea, select{min-height:42px;box-sizing:border-box;opacity:1}
+input:not([type="file"]):disabled, textarea:disabled, select:disabled{opacity:.72;cursor:not-allowed}
+.tab-panel{scroll-margin-top:96px}
+.field,.dc-fields label,.np-label{min-width:0}
+button,.tab,.ghost,.secondary{touch-action:manipulation}
+table{width:100%;border-collapse:collapse}
+th,td{padding:10px 12px;border-bottom:1px solid rgba(83,68,128,.35);text-align:left;white-space:nowrap}
+th{color:#c9c1dd;font-size:12px;font-weight:700}
+td{color:#ece8f7;font-size:13px}
+#sheetsTable tbody tr:hover{background:rgba(109,40,217,.08)}
+@media(max-width:700px){
+  .tabs{overflow-x:auto;scrollbar-width:thin}
+  .tabs .tab{flex:0 0 auto}
+  .grid-3,.dc-fields,.np-grid-3{grid-template-columns:1fr}
+  .status-grid,.dc-kpis{grid-template-columns:1fr 1fr}
+}
+@media(max-width:480px){
+  .status-grid,.dc-kpis{grid-template-columns:1fr}
+  .panel,.truth-card,.novessa-decision-center,.novessa-production-layer{border-radius:16px}
+}
+`;
+writeFileSync(indexPath, index);
+writeFileSync(stylePathFinal, styleFinal);
 writeFileSync(indexPath, index);
