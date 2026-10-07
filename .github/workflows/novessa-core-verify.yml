@@ -18,6 +18,7 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    timeout-minutes: 3
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
@@ -30,4 +31,4 @@ jobs:
         run: node build.mjs
       - name: Run Core tests
         working-directory: novessa-core
-        run: npm test
+        run: npm test -- --test-timeout=15000
