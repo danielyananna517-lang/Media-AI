@@ -143,6 +143,7 @@ function deterministicFacts(input={}){
     facts.economics=unitEconomics(input);
   if(input.rnp&&typeof input.rnp==='object') facts.rnp=rnp(input.rnp);
   else if(['stock','sales_history','period_days','lead_time_days','target_cover_days'].every(k=>input[k]!==undefined)) facts.rnp=rnp(input);
+  if(input.wildberries&&typeof input.wildberries==='object') facts.wildberries=input.wildberries;
   return facts;
 }
 function actionList(facts){
@@ -152,27 +153,20 @@ function actionList(facts){
   const recommendedOrder=firstNumber(facts.rnp,['recommended_order']);
   const reorderPoint=firstNumber(facts.rnp,['reorder_point']);
   const risk=facts.rnp?.metrics?.risk;
-  if(Number.isFinite(recommendedOrder)&&recommendedOrder>0) actions.push({
-    type:'reorder_plan',
-    title:'Պատրաստել լրացման պլանը',
-    reason:'Հաշվարկված մնացորդը չի հասնում նպատակային ծածկույթին։',
-    payload:{recommended_order:recommendedOrder,reorder_point:reorderPoint,risk},
-    execution:'internal_plan'
-  });
-  if(Number.isFinite(margin)&&margin<0) actions.push({
-    type:'profit_guard',
-    title:'Կանգնեցնել ոչ շահութաբեր գործարկումը',
-    reason:'Հաշվարկված շահույթի մարժան բացասական է։',
-    payload:{profit_margin:margin},
-    execution:'internal_decision_gate'
-  });
-  if(Number.isFinite(unitProfit)&&unitProfit<0) actions.push({
-    type:'price_cost_review',
-    title:'Վերանայել գինն ու ինքնարժեքը',
-    reason:'Միավորի շահույթը բացասական է։',
-    payload:{unit_profit:unitProfit},
-    execution:'internal_decision_gate'
-  });
+  if(Number.isFinite(recommendedOrder)&&recommendedOrder>0)
+    actions.push({type:'reorder_plan',title:'Պատրաստել լրացման պլանը',reason:'Հաշվարկված մնացորդը չի հասնում նպատակային ծածկույթին։',payload:{recommended_order:recommendedOrder,reorder_point:reorderPoint,risk},execution:'internal_plan'});
+  if(Number.isFinite(margin)&&margin<0)
+    actions.push({type:'profit_guard',title:'Կանգնեցնել ոչ շահութաբեր գործարկումը',reason:'Հաշվարկված շահույթի մարժան բացասական է։',payload:{profit_margin:margin},execution:'internal_decision_gate'});
+  if(Number.isFinite(unitProfit)&&unitProfit<0)
+    actions.push({type:'price_cost_review',title:'Վերանայել գինն ու ինքնարժեքը',reason:'Միավորի շահույթը բացասական է։',payload:{unit_profit:unitProfit},execution:'internal_decision_gate'});
+  const wb=facts.wildberries;
+  if(wb?.warehouse_id&&wb?.chrt_id&&Number.isFinite(recommendedOrder)&&recommendedOrder>0){
+    const currentStock=Number(wb.current_stock);
+    if(Number.isFinite(currentStock)&&currentStock>=0)
+      actions.push({type:'wb_update_stock',title:'Թարմացնել Wildberries մնացորդը',reason:'RNP-ը հաշվարկել է լրացման քանակը, իսկ WB պահեստի և չափի ID-ները տրամադրված են։',payload:{warehouse_id:Number(wb.warehouse_id),chrt_id:Number(wb.chrt_id),amount:Math.ceil(currentStock+recommendedOrder),recommended_order:recommendedOrder},execution:'wildberries_api'});
+  }
+  if(wb?.campaign_id&&wb.stop_campaign===true)
+    actions.push({type:'wb_stop_campaign',title:'Կանգնեցնել Wildberries գովազդային արշավը',reason:'Այս campaign ID-ի stop գործողությունը հատուկ նշված է որպես թույլատրված։',payload:{campaign_id:Number(wb.campaign_id)},execution:'wildberries_api'});
   return actions;
 }
 
@@ -222,6 +216,19 @@ export async function executeApprovedAction(token){
   if(payload.type==='reorder_plan') return out('verified',{action_id:payload.action_id,executed:true,execution:'internal_plan_finalized',result:payload.payload});
   if(payload.type==='profit_guard'||payload.type==='price_cost_review')
     return out('verified',{action_id:payload.action_id,executed:true,execution:'internal_decision_gate_recorded',result:payload.payload});
+  if(payload.type==='wb_update_stock'){
+    const p=payload.payload;
+    if(!Number.isInteger(p?.warehouse_id)||p.warehouse_id<=0||!Number.isInteger(p?.chrt_id)||p.chrt_id<=0||!Number.isInteger(p?.amount)||p.amount<0)
+      return out('invalid_data',{error:'wb_stock_action_invalid'});
+    const result=await wbRequest('https://marketplace-api.wildberries.ru','/api/v3/stocks/'+p.warehouse_id,{method:'PUT',body:{stocks:[{chrtId:p.chrt_id,amount:p.amount}]}});
+    return result.status==='verified'?out('verified',{action_id:payload.action_id,executed:true,execution:'wildberries_stock_update',result:p}):result;
+  }
+  if(payload.type==='wb_stop_campaign'){
+    const id=Number(payload.payload?.campaign_id);
+    if(!Number.isInteger(id)||id<=0) return out('invalid_data',{error:'wb_campaign_id_invalid'});
+    const result=await wbRequest('https://advert-api.wildberries.ru','/adv/v0/stop?id='+encodeURIComponent(id));
+    return result.status==='verified'?out('verified',{action_id:payload.action_id,executed:true,execution:'wildberries_campaign_stop',result:{campaign_id:id,http_status:result.http_status}}):result;
+  }
   return out('invalid_data',{error:'operator_action_not_supported'});
 }
 
@@ -344,7 +351,7 @@ export function bookExport(input={}){
 export function productionCapabilities(){
   return {
     status:'verified',
-    operator:{ai_provider:'google-gemini',deterministic_metrics:['unit_economics','rnp'],approval:true,external_write_actions:false},
+    operator:{ai_provider:'google-gemini',deterministic_metrics:['unit_economics','rnp'],approval:true,external_write_actions:true},
     market_research:{provider:'NOVESSA discovery service',real_evidence_only:true},
     book:{workspace:true,plan:true,write:true,epub:true,pdf:true,kdp_package:true},
     safety:{invented_financial_numbers:false,market_metrics_without_source:false}
