@@ -81,6 +81,21 @@ app = app.replace(
 );
 writeFileSync(appPath, app);
 
+const uiTranslations = [
+  ['Unit Economics','Юнит-экономика'],
+  ['Profit Guardian','Контроль прибыли'],
+  ['Sales Funnel','Воронка продаж'],
+  ['Commission, %','Комиссия, %'],
+  ['Logistics / հատ','Логистика / шт.'],
+  ['Storage / հատ','Хранение / шт.'],
+  ['Tax, %','Налог, %'],
+  ['Ads spend','Расходы на рекламу'],
+  ['JSON input','JSON-данные'],
+  ['Buyout orders','Выкупленные заказы'],
+  ['UI token','Код доступа']
+];
+for (const [from,to] of uiTranslations) index = index.split(from).join(to);
+
 index = index.replace(
   /<script src="\/assets\/app\.js" defer><\/script>/,
   ''
