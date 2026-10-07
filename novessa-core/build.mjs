@@ -75,6 +75,24 @@ writeFileSync(indexPath, index);
 const serverPath = 'server.mjs';
 writeFileSync(serverPath, readFileSync('server.mjs.template', 'utf8'));
 
+const uiTestPath = 'test/ui-pricing.test.mjs';
+let uiTest = readFileSync(uiTestPath, 'utf8');
+uiTest = uiTest.replace(
+  /test\('UI production action requires UI token',[\\s\\S]*?\n\}\);/,
+  `test('UI production safe actions are available without a UI token while protected actions still require one',async t=>{
+  const port=await freePort(); const child=start(port,{NOVESSA_ENV:'production',NOVESSA_CORE_SHARED_SECRET:'ui-test-core',NOVESSA_UI_TOKEN:'ui-test-token'}); t.after(()=>stop(child)); await waitForHealth(port);
+  const pricingBody=JSON.stringify({list_price:200,discount_percent:25});
+  const pricingWithoutToken=await request(port,{method:'POST',path:'/ui/api/action/pricing',body:pricingBody,headers:{'content-type':'application/json'}});
+  assert.equal(pricingWithoutToken.status,200);
+  const protectedBody=JSON.stringify({entities:[],expected_totals:null});
+  const protectedWithoutToken=await request(port,{method:'POST',path:'/ui/api/action/commerce-intelligence',body:protectedBody,headers:{'content-type':'application/json'}});
+  assert.equal(protectedWithoutToken.status,401);
+  const pricingWithToken=await request(port,{method:'POST',path:'/ui/api/action/pricing',body:pricingBody,headers:{'content-type':'application/json','x-ui-token':'ui-test-token'}});
+  assert.equal(pricingWithToken.status,200);
+});`
+);
+writeFileSync(uiTestPath, uiTest);
+
 const appPath = 'public/app.js';
 let app = readFileSync(appPath, 'utf8');
 app = app.replace(
