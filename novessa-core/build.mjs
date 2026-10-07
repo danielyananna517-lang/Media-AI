@@ -642,7 +642,12 @@ const commandCenterHtml = String.raw`
   </div>
 </section>`;
 
-if(!index.includes('data-novessa-command-center')) index=index.replace(/(<main\b[^>]*>)/,match=>match+commandCenterHtml);
+if(!index.includes('data-novessa-command-center')){
+  const before=index;
+  index=index.replace(/(<main\b[^>]*>)/i,match=>match+commandCenterHtml);
+  if(index===before) index=index.replace(/(<body\b[^>]*>)/i,match=>match+commandCenterHtml);
+  if(!index.includes('data-novessa-command-center')) throw new Error('NOVESSA Command Center insertion failed');
+}
 
 const commandCenterScript = String.raw`
 <script data-novessa-command-center-script>
