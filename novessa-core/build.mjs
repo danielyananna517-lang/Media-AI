@@ -488,3 +488,221 @@ button{transition:transform .15s ease,border-color .15s ease,background .15s eas
 `;
 writeFileSync(stylePath, style);
 
+
+// === NOVESSA DECISION CENTER v1 ===
+const decisionCenterHtml = \`
+<section class="novessa-decision-center" data-novessa-decision-center>
+  <div class="dc-hero">
+    <div>
+      <div class="dc-eyebrow" data-dc="eyebrow">NOVESSA • BUSINESS DECISION CENTER</div>
+      <h2 data-dc="title">Որոշումներ՝ ոչ թե պարզապես dashboard</h2>
+      <p class="dc-subtitle" data-dc="subtitle">Տես՝ ինչն է աշխատում, ինչն է վտանգավոր, և ինչն է պետք անել հաջորդը։ Թվերը գալիս են Core-ի հաշվարկից կամ քո իրական տվյալներից։</p>
+    </div>
+    <div class="dc-truth" id="dcTruth">Core status…</div>
+  </div>
+  <div class="dc-kpis" id="dcStatusGrid">
+    <div class="dc-kpi"><span data-dc="core">Core</span><strong id="dcCoreStatus">—</strong></div>
+    <div class="dc-kpi"><span data-dc="connectors">Միացումներ</span><strong id="dcConnectorsStatus">—</strong></div>
+    <div class="dc-kpi"><span data-dc="wb">Wildberries</span><strong id="dcWbStatus">—</strong></div>
+    <div class="dc-kpi"><span data-dc="data">Տվյալների վիճակ</span><strong id="dcDataStatus">—</strong></div>
+  </div>
+  <div class="dc-grid">
+    <article class="dc-panel dc-panel-primary">
+      <div class="dc-panel-head">
+        <div>
+          <div class="dc-section-tag" data-dc="calculatorTag">1 • ՀԻՄԱ ՀԱՇՎԱՐԿԵՆՔ</div>
+          <h3 data-dc="calculatorTitle">Ապրանքի իրական տնտեսագիտություն</h3>
+          <p data-dc="calculatorText">Մուտքագրիր մեկ ապրանքի փաստացի կամ պլանավորված տվյալները։ NOVESSA Core-ը կվերադարձնի իր հաշվարկը՝ առանց AI-ի կողմից ֆինանսական թիվ հորինելու։</p>
+        </div>
+      </div>
+      <div class="dc-fields">
+        <label><span data-dc="product">Ապրանք</span><input id="dcProduct" type="text" placeholder="օր.՝ Jeans"></label>
+        <label><span data-dc="price">Գին</span><input id="dcPrice" inputmode="decimal" type="number" step="0.01" min="0"></label>
+        <label><span data-dc="cost">Ինքնարժեք</span><input id="dcCost" inputmode="decimal" type="number" step="0.01" min="0"></label>
+        <label><span data-dc="sales">Վաճառքի քանակ</span><input id="dcSales" inputmode="numeric" type="number" step="1" min="0"></label>
+        <label><span data-dc="commission">Միջնորդավճար, %</span><input id="dcCommission" inputmode="decimal" type="number" step="0.01" min="0"></label>
+        <label><span data-dc="logistics">Լոգիստիկա / միավոր</span><input id="dcLogistics" inputmode="decimal" type="number" step="0.01" min="0"></label>
+        <label><span data-dc="storage">Պահեստավորում / միավոր</span><input id="dcStorage" inputmode="decimal" type="number" step="0.01" min="0"></label>
+        <label><span data-dc="tax">Հարկ, %</span><input id="dcTax" inputmode="decimal" type="number" step="0.01" min="0"></label>
+        <label><span data-dc="ads">Գովազդի ծախս</span><input id="dcAds" inputmode="decimal" type="number" step="0.01" min="0"></label>
+      </div>
+      <div class="dc-actions">
+        <button id="dcCalculate" type="button" data-dc="calculate">Հաշվել Core-ով</button>
+        <button id="dcFinance" class="secondary" type="button" data-dc="openCalculations">Բացել բոլոր հաշվարկները</button>
+      </div>
+      <div class="dc-result" id="dcResult" aria-live="polite">
+        <div class="dc-result-empty" data-dc="emptyResult">Մինչև հաշվարկը այստեղ արդյունք չի ցուցադրվում։</div>
+      </div>
+    </article>
+    <div class="dc-side">
+      <article class="dc-panel">
+        <div class="dc-section-tag" data-dc="nextTag">2 • ՀԱՋՈՐԴ ՔԱՅԼԸ</div>
+        <h3 data-dc="nextTitle">Բիզնեսի աշխատանքային հերթականություն</h3>
+        <div class="dc-next-list">
+          <button class="dc-next" id="dcCommerce" type="button"><b>01</b><span><strong data-dc="market">Շուկա և ապրանք</strong><small data-dc="marketText">ստուգել պահանջարկը, մրցակիցներին և դիրքավորումը</small></span><i>→</i></button>
+          <button class="dc-next" id="dcFinance2" type="button"><b>02</b><span><strong data-dc="economics">Unit Economics</strong><small data-dc="economicsText">գին, ծախս, մարժա, break-even և profit risk</small></span><i>→</i></button>
+          <button class="dc-next" id="dcCard" type="button"><b>03</b><span><strong data-dc="card">Քարտ / SEO</strong><small data-dc="cardText">բովանդակություն, հարցումներ, conversion-ի նախադրյալներ</small></span><i>→</i></button>
+          <button class="dc-next" id="dcPublishing" type="button"><b>04</b><span><strong data-dc="launch">Launch / Publishing</strong><small data-dc="launchText">կազմակերպել գործարկումը և չափել արդյունքը</small></span><i>→</i></button>
+        </div>
+      </article>
+      <article class="dc-panel">
+        <div class="dc-section-tag" data-dc="truthTag">3 • ՃՇՄԱՐՏՈՒԹՅՈՒՆ</div>
+        <h3 data-dc="truthTitle">Ինչը չենք ձևացնում</h3>
+        <div class="dc-truth-list">
+          <div><span>✓</span><p data-dc="truth1">Չկապված marketplace-ը չի ներկայացվում որպես live data։</p></div>
+          <div><span>✓</span><p data-dc="truth2">Չբավարարող տվյալները մնում են PARTIAL / NOT VERIFIED։</p></div>
+          <div><span>✓</span><p data-dc="truth3">Ֆինանսական թվերը հաշվարկվում են deterministic Core-ով։</p></div>
+          <div><span>✓</span><p data-dc="truth4">AI-ը մեկնաբանում է տվյալը, բայց չի դառնում հաշվապահական truth source։</p></div>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>\`;
+if(!index.includes('data-novessa-decision-center')) {
+  index = index.replace('<main>', '<main>' + decisionCenterHtml);
+}
+
+const decisionCenterScript = \`
+<script>
+(function(){
+  const root=document.querySelector('[data-novessa-decision-center]');
+  if(!root) return;
+  const byId=id=>document.getElementById(id);
+  const textMap={
+    hy:{
+      eyebrow:'NOVESSA • BUSINESS DECISION CENTER',title:'Որոշումներ՝ ոչ թե պարզապես dashboard',
+      subtitle:'Տես՝ ինչն է աշխատում, ինչն է վտանգավոր, և ինչն է պետք անել հաջորդը։ Թվերը գալիս են Core-ի հաշվարկից կամ քո իրական տվյալներից։',
+      core:'Core',connectors:'Միացումներ',wb:'Wildberries',data:'Տվյալների վիճակ',
+      calculatorTag:'1 • ՀԻՄԱ ՀԱՇՎԱՐԿԵՆՔ',calculatorTitle:'Ապրանքի իրական տնտեսագիտություն',
+      calculatorText:'Մուտքագրիր մեկ ապրանքի փաստացի կամ պլանավորված տվյալները։ NOVESSA Core-ը կվերադարձնի իր հաշվարկը՝ առանց AI-ի կողմից ֆինանսական թիվ հորինելու։',
+      product:'Ապրանք',price:'Գին',cost:'Ինքնարժեք',sales:'Վաճառքի քանակ',commission:'Միջնորդավճար, %',logistics:'Լոգիստիկա / միավոր',storage:'Պահեստավորում / միավոր',tax:'Հարկ, %',ads:'Գովազդի ծախս',
+      calculate:'Հաշվել Core-ով',openCalculations:'Բացել բոլոր հաշվարկները',emptyResult:'Մինչև հաշվարկը այստեղ արդյունք չի ցուցադրվում։',
+      nextTag:'2 • ՀԱՋՈՐԴ ՔԱՅԼԸ',nextTitle:'Բիզնեսի աշխատանքային հերթականություն',
+      market:'Շուկա և ապրանք',marketText:'ստուգել պահանջարկը, մրցակիցներին և դիրքավորումը',
+      economics:'Unit Economics',economicsText:'գին, ծախս, մարժա, break-even և profit risk',
+      card:'Քարտ / SEO',cardText:'բովանդակություն, հարցումներ, conversion-ի նախադրյալներ',
+      launch:'Launch / Publishing',launchText:'կազմակերպել գործարկումը և չափել արդյունքը',
+      truthTag:'3 • ՃՇՄԱՐՏՈՒԹՅՈՒՆ',truthTitle:'Ինչը չենք ձևացնում',
+      truth1:'Չկապված marketplace-ը չի ներկայացվում որպես live data.',truth2:'Չբավարարող տվյալները մնում են PARTIAL / NOT VERIFIED.',
+      truth3:'Ֆինանսական թվերը հաշվարկվում են deterministic Core-ով.',truth4:'AI-ը մեկնաբանում է տվյալը, բայց չի դառնում հաշվապահական truth source.',
+      healthy:'Աշխատում է',verified:'Ստուգված է',partial:'Մասամբ',notVerified:'ՉԻ ՀԱՍՏԱՏՎԱԾ',
+      coreReady:'Core OK',liveConnected:'Live կապ կա',notConnected:'Կապ չկա',loading:'Ստուգում…',
+      invalid:'Լրացրու բոլոր անհրաժեշտ թվերը՝ Core հաշվարկը ճիշտ ստանալու համար.',
+      failed:'Core հաշվարկը չհաջողվեց. արդյունքը չեմ փոխարինում հորինված թվով.',
+      resultTitle:'Core հաշվարկի արդյունք',source:'Source: NOVESSA Core'
+    },
+    ru:{
+      eyebrow:'NOVESSA • ЦЕНТР БИЗНЕС-РЕШЕНИЙ',title:'Решения, а не просто dashboard',
+      subtitle:'Сразу видно, что работает, где риск и что делать дальше. Цифры берутся из Core или ваших реальных данных.',
+      core:'Core',connectors:'Подключения',wb:'Wildberries',data:'Состояние данных',
+      calculatorTag:'1 • СЧИТАЕМ СЕЙЧАС',calculatorTitle:'Реальная экономика товара',
+      calculatorText:'Введи фактические или плановые данные одного товара. NOVESSA Core вернёт расчёт без выдуманных финансовых цифр.',
+      product:'Товар',price:'Цена',cost:'Себестоимость',sales:'Количество продаж',commission:'Комиссия, %',logistics:'Логистика / ед.',storage:'Хранение / ед.',tax:'Налог, %',ads:'Расход на рекламу',
+      calculate:'Рассчитать в Core',openCalculations:'Открыть все расчёты',emptyResult:'До расчёта результат здесь не показывается.',
+      nextTag:'2 • СЛЕДУЮЩИЙ ШАГ',nextTitle:'Рабочий порядок бизнеса',
+      market:'Рынок и товар',marketText:'проверить спрос, конкурентов и позиционирование',
+      economics:'Unit Economics',economicsText:'цена, расходы, маржа, break-even и риск прибыли',
+      card:'Карточка / SEO',cardText:'контент, запросы и предпосылки конверсии',
+      launch:'Launch / Publishing',launchText:'организовать запуск и измерять результат',
+      truthTag:'3 • ПРАВДА',truthTitle:'Что мы не выдаём за реальность',
+      truth1:'Неподключённый marketplace не показывается как live data.',truth2:'Недостаточные данные остаются PARTIAL / NOT VERIFIED.',
+      truth3:'Финансовые цифры считает deterministic Core.',truth4:'AI интерпретирует данные, но не является бухгалтерским truth source.',
+      healthy:'Работает',verified:'Проверено',partial:'Частично',notVerified:'НЕ ПОДТВЕРЖДЕНО',
+      coreReady:'Core OK',liveConnected:'Live подключён',notConnected:'Нет подключения',loading:'Проверка…',
+      invalid:'Заполни необходимые числовые поля для корректного Core-расчёта.',
+      failed:'Расчёт Core не выполнен. Я не заменяю его выдуманными цифрами.',
+      resultTitle:'Результат расчёта Core',source:'Source: NOVESSA Core'
+    },
+    en:{
+      eyebrow:'NOVESSA • BUSINESS DECISION CENTER',title:'Decisions, not just a dashboard',
+      subtitle:'See what works, where the risk is, and what to do next. Numbers come from Core or your real data.',
+      core:'Core',connectors:'Connectors',wb:'Wildberries',data:'Data status',
+      calculatorTag:'1 • CALCULATE NOW',calculatorTitle:'Real product economics',
+      calculatorText:'Enter actual or planned data for one product. NOVESSA Core returns the calculation without invented financial numbers.',
+      product:'Product',price:'Price',cost:'Unit cost',sales:'Units sold',commission:'Commission, %',logistics:'Logistics / unit',storage:'Storage / unit',tax:'Tax, %',ads:'Ad spend',
+      calculate:'Calculate in Core',openCalculations:'Open all calculations',emptyResult:'No result is shown here before calculation.',
+      nextTag:'2 • NEXT STEP',nextTitle:'Business operating sequence',
+      market:'Market & product',marketText:'check demand, competitors, and positioning',
+      economics:'Unit Economics',economicsText:'price, costs, margin, break-even, and profit risk',
+      card:'Card / SEO',cardText:'content, queries, and conversion prerequisites',
+      launch:'Launch / Publishing',launchText:'organize the launch and measure the outcome',
+      truthTag:'3 • TRUTH',truthTitle:'What we do not fake',
+      truth1:'An unconnected marketplace is not presented as live data.',truth2:'Insufficient data stays PARTIAL / NOT VERIFIED.',
+      truth3:'Financial numbers are calculated by deterministic Core logic.',truth4:'AI interprets data but is not the accounting truth source.',
+      healthy:'Working',verified:'Verified',partial:'Partial',notVerified:'NOT VERIFIED',
+      coreReady:'Core OK',liveConnected:'Live connected',notConnected:'Not connected',loading:'Checking…',
+      invalid:'Fill in the required numeric fields for a valid Core calculation.',
+      failed:'Core calculation failed. I will not replace it with invented numbers.',
+      resultTitle:'Core calculation result',source:'Source: NOVESSA Core'
+    }
+  };
+  const lang=()=>document.documentElement.lang==='ru'?'ru':document.documentElement.lang==='en'?'en':'hy';
+  const setText=()=>{
+    const m=textMap[lang()];
+    root.querySelectorAll('[data-dc]').forEach(el=>{const k=el.getAttribute('data-dc');if(m[k]!==undefined)el.textContent=m[k];});
+  };
+  const setStatus=(id,textValue,kind)=>{const el=byId(id);if(!el)return;el.textContent=textValue;el.dataset.status=kind||'';};
+  const refreshStatus=async()=>{
+    const m=textMap[lang()];
+    setStatus('dcCoreStatus',m.loading,'loading');setStatus('dcConnectorsStatus',m.loading,'loading');setStatus('dcWbStatus',m.loading,'loading');setStatus('dcDataStatus',m.loading,'loading');
+    try{
+      const [uiR,connR,wbR]=await Promise.all([fetch('/api/ui/status'),fetch('/api/connectors/status'),fetch('/api/connectors/wildberries/status')]);
+      const ui=await uiR.json(),conn=await connR.json(),wb=await wbR.json();
+      const uiOk=ui?.status==='verified'||ui?.status==='ready'||ui?.status==='ok';
+      setStatus('dcCoreStatus',uiOk?m.coreReady:m.partial,uiOk?'ok':'partial');
+      const connectors=Array.isArray(conn?.connectors)?conn.connectors:[];
+      const implemented=connectors.filter(c=>c.status==='verified').length;
+      setStatus('dcConnectorsStatus',implemented?m.verified:m.partial,implemented?'ok':'partial');
+      setStatus('dcWbStatus',wb?.configured?m.liveConnected:m.notConnected,wb?.configured?'ok':'partial');
+      const quality=ui?.data_quality?.status||ui?.data_status||'partial';
+      setStatus('dcDataStatus',quality==='verified'?m.verified:m.partial,quality==='verified'?'ok':'partial');
+      byId('dcTruth').textContent=uiOk?m.healthy:m.partial;
+    }catch{
+      setStatus('dcCoreStatus',m.notVerified,'bad');setStatus('dcConnectorsStatus',m.notVerified,'bad');setStatus('dcWbStatus',m.notConnected,'partial');setStatus('dcDataStatus',m.notVerified,'bad');byId('dcTruth').textContent=m.notVerified;
+    }
+  };
+  const num=id=>{const v=Number(byId(id)?.value);return Number.isFinite(v)?v:null;};
+  const showMessage=(msg,kind)=>{
+    const out=byId('dcResult');out.dataset.state='result';out.innerHTML='<div class="dc-result-message" data-kind="'+kind+'">'+String(msg).replace(/[&<>"]/g,s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[s]))+'</div>';
+  };
+  const calculate=async()=>{
+    const m=textMap[lang()];
+    const vals={price:num('dcPrice'),unit_cost:num('dcCost'),sales:num('dcSales'),commission_percent:num('dcCommission'),logistics_per_unit:num('dcLogistics'),storage_per_unit:num('dcStorage'),tax_percent:num('dcTax'),ad_spend:num('dcAds')};
+    if(Object.values(vals).some(v=>v===null)){showMessage(m.invalid,'bad');return;}
+    const out=byId('dcResult');out.dataset.state='result';out.innerHTML='<div class="dc-result-head"><strong>'+m.resultTitle+'</strong><span>'+m.source+'</span></div><pre id="dcResultJson">…</pre>';
+    try{
+      const r=await fetch('/ui/api/action/unit-economics',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(vals)});
+      const body=await r.json();
+      if(!r.ok){showMessage(body?.error||m.failed,'bad');return;}
+      byId('dcResultJson').textContent=JSON.stringify(body,null,2);
+    }catch{showMessage(m.failed,'bad');}
+  };
+  const clickTab=name=>document.querySelector('.tab[data-tab="'+name+'"]')?.click();
+  byId('dcCalculate')?.addEventListener('click',calculate);
+  byId('dcFinance')?.addEventListener('click',()=>clickTab('finance'));
+  byId('dcFinance2')?.addEventListener('click',()=>clickTab('finance'));
+  byId('dcCommerce')?.addEventListener('click',()=>clickTab('commerce'));
+  byId('dcCard')?.addEventListener('click',()=>clickTab('content'));
+  byId('dcPublishing')?.addEventListener('click',()=>clickTab('publishing'));
+  document.addEventListener('change',e=>{if(e.target?.id==='languageSelect')setTimeout(setText,0);});
+  setText();refreshStatus();
+})();
+</script>\`;
+if(!index.includes('data-novessa-decision-center-script')){
+  index = index.replace('</body>', decisionCenterScript.replace('<script>','<script data-novessa-decision-center-script>') + '</body>');
+}
+
+style += \`
+/* NOVESSA Decision Center v1 */
+.novessa-decision-center{margin:26px 0 34px;padding:24px;border:1px solid #34286a;border-radius:26px;background:linear-gradient(145deg,rgba(16,10,40,.96),rgba(7,6,23,.98));box-shadow:0 20px 70px rgba(11,7,40,.45)}
+.dc-hero{display:flex;justify-content:space-between;gap:18px;align-items:flex-start}.dc-eyebrow,.dc-section-tag{font-size:11px;letter-spacing:.12em;font-weight:800;color:#a78bfa}.dc-hero h2{margin:7px 0 8px;font-size:clamp(24px,3vw,36px);line-height:1.08}.dc-subtitle{max-width:830px;color:#aaa2c5;margin:0;line-height:1.55}.dc-truth{padding:10px 14px;border:1px solid #41347e;border-radius:999px;color:#ddd6fe;background:rgba(109,40,217,.13);white-space:nowrap;font-size:12px;font-weight:700}
+.dc-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:20px 0}.dc-kpi{padding:15px 16px;border:1px solid #2f2559;border-radius:17px;background:rgba(14,10,33,.8)}.dc-kpi span{display:block;color:#a39bbf;font-size:12px;margin-bottom:7px}.dc-kpi strong{font-size:16px;color:#f7f3ff}.dc-kpi strong[data-status=ok]{color:#86efac}.dc-kpi strong[data-status=partial]{color:#fde68a}.dc-kpi strong[data-status=bad]{color:#fda4af}
+.dc-grid{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(320px,.85fr);gap:16px}.dc-side{display:grid;gap:16px}.dc-panel{border:1px solid #2f2559;border-radius:20px;background:linear-gradient(145deg,rgba(18,13,39,.94),rgba(9,7,26,.96));padding:20px}.dc-panel-primary{min-width:0}.dc-panel-head h3{margin:7px 0 6px;font-size:22px}.dc-panel-head p{margin:0;color:#a9a2c0;line-height:1.5}
+.dc-fields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:18px}.dc-fields label{display:grid;gap:7px;color:#c6bfdc;font-size:12px;font-weight:650}.dc-fields input{width:100%;box-sizing:border-box;padding:11px 12px;border-radius:12px;border:1px solid #342b5b;background:#09071b;color:#f7f3ff;outline:none}.dc-fields input:focus{border-color:#7257d0;box-shadow:0 0 0 3px rgba(109,40,217,.16)}
+.dc-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}.dc-actions button{min-height:42px}.dc-result{margin-top:16px;padding:16px;border-radius:15px;border:1px dashed #3a2e69;background:#08061a;min-height:92px}.dc-result-empty{color:#89819f;font-size:13px;padding-top:18px}.dc-result-head{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:10px}.dc-result-head strong{font-size:15px}.dc-result-head span{font-size:11px;color:#9289ad}.dc-result pre{margin:0;max-height:310px;overflow:auto;white-space:pre-wrap;color:#d9d3ef;font-size:11px;line-height:1.45}.dc-result-message{font-size:13px;line-height:1.5}.dc-result-message[data-kind=bad]{color:#fda4af}
+.dc-next-list{display:grid;gap:8px;margin-top:12px}.dc-next{display:grid;grid-template-columns:34px 1fr 20px;gap:10px;align-items:center;text-align:left;border:1px solid #2c2450;border-radius:14px;padding:11px 12px;background:#0b081f;color:#eee9ff;cursor:pointer}.dc-next:hover{border-color:#634bbd}.dc-next b{font-size:11px;color:#8f83b4}.dc-next strong{display:block;font-size:13px}.dc-next small{display:block;color:#9088a8;line-height:1.35;margin-top:3px}.dc-next i{font-style:normal;color:#a78bfa}
+.dc-truth-list{display:grid;gap:9px;margin-top:13px}.dc-truth-list div{display:flex;gap:9px;align-items:flex-start}.dc-truth-list span{color:#86efac;font-weight:900}.dc-truth-list p{margin:0;color:#aca5bf;font-size:12px;line-height:1.45}
+@media (max-width:950px){.dc-grid{grid-template-columns:1fr}.dc-fields{grid-template-columns:repeat(2,minmax(0,1fr))}}@media (max-width:650px){.novessa-decision-center{padding:16px;border-radius:18px}.dc-hero{flex-direction:column}.dc-truth{white-space:normal}.dc-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.dc-fields{grid-template-columns:1fr}.dc-actions{flex-direction:column}.dc-actions button{width:100%}}
+\`;
+writeFileSync(stylePath, style);
+writeFileSync(indexPath, index);
