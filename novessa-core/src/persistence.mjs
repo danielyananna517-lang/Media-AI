@@ -1,5 +1,5 @@
 const MAX_STATE_BYTES = 900000;
-const ALLOWED_KINDS = new Set(['book','sheets']);
+const ALLOWED_KINDS = new Set(['book','sheets','commerce']);
 
 function config(){
   const url=String(process.env.NOVESSA_PERSISTENCE_SUPABASE_URL||'').trim().replace(/\/+$/,'');
