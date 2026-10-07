@@ -408,12 +408,18 @@ if(!server.includes('__novessaProduction')){
   server=server.replace("const rateLimiter = createRateLimiter","const __novessaProduction = await import('./src/novessaProduction.mjs');"+newline+"const rateLimiter = createRateLimiter");
   server=server.replace("    if(req.method==='GET'&&u.pathname==='/api/product/plans')","    if(req.method==='GET'&&u.pathname==='/api/production/capabilities') return send(res,200,__novessaProduction.productionCapabilities());"+newline+"    if(req.method==='GET'&&u.pathname==='/api/product/plans')");
   const uiHandlers=String.raw`
-      const productionUiActions=['production-operator','production-approve','production-execute','book-plan','book-write','book-export','sheets-xlsx'];
+      const productionUiActions=['production-operator','production-approve','production-execute','book-plan','book-write','book-export','sheets-xlsx','workspace-load','workspace-save'];
       if(productionUiActions.includes(actionName)){
+        if(actionName==='workspace-load'||actionName==='workspace-save'){
+          const access=verifyUiAccess({headers:req.headers,env:process.env});
+          if(access.status!=='verified') return send(res,access.http_status||401,{status:access.status,error:access.error||'ui_auth_failed'});
+        }
         let uiInput;
         try{uiInput=await readJson(req);}catch(error){return send(res,error.statusCode||400,{status:'error',error:String(error.message||error)});}
         let out;
         if(actionName==='production-operator') out=await __novessaProduction.operatorRun(uiInput);
+        else if(actionName==='workspace-load') out=await __novessaProduction.workspaceLoad(uiInput);
+        else if(actionName==='workspace-save') out=await __novessaProduction.workspaceSave(uiInput);
         else if(actionName==='production-approve') out=__novessaProduction.approveAction(String(uiInput.approval_token||''));
         else if(actionName==='production-execute') out=await __novessaProduction.executeApprovedAction(String(uiInput.approval_token||''));
         else if(actionName==='book-plan') out=await __novessaProduction.bookPlan(uiInput);
@@ -441,6 +447,8 @@ if(!server.includes('__novessaProduction')){
       `;
   server=server.replace("      const out=await runUiAction(actionName,uiInput,{env:process.env,activeRecommendationPolicy});",uiHandlers+newline+"      const out=await runUiAction(actionName,uiInput,{env:process.env,activeRecommendationPolicy});");
   const apiRoutes=String.raw`
+    if(u.pathname==='/api/production/workspace/load') return sendApiResult(res,200,await __novessaProduction.workspaceLoad(input),requestId);
+    if(u.pathname==='/api/production/workspace/save') return sendApiResult(res,200,await __novessaProduction.workspaceSave(input),requestId);
     if(u.pathname==='/api/production/operator'){const out=await __novessaProduction.operatorRun(input);return sendApiResult(res,out.status==='provider_unavailable'?503:out.status==='input_incomplete'?400:out.status==='error'?502:200,out,requestId);}
     if(u.pathname==='/api/production/action/approve') return sendApiResult(res,200,__novessaProduction.approveAction(String(input.approval_token||'')),requestId);
     if(u.pathname==='/api/production/action/execute') return sendApiResult(res,200,await __novessaProduction.executeApprovedAction(String(input.approval_token||'')),requestId);
