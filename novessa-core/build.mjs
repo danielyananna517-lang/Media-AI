@@ -6,27 +6,49 @@ writeFileSync('core.tar.gz', Buffer.from(parts, 'base64'));
 execFileSync('tar', ['-xzf', 'core.tar.gz', '--strip-components=1'], {stdio:'inherit'});
 
 const mediaPath = 'src/mediaClient.mjs';
-let media = readFileSync(mediaPath, 'utf8');
-media = media.replace(
-  "const payload = \`${timestamp}.${requestId}.${sha256(body)}\`;",
-  "const payload = \`${timestamp}:${requestId}:${body}\`;"
-);
-media = media.replace(
-  "    'x-service-id':'novessa-core',\n    'x-timestamp':timestamp,\n    'x-request-id':requestId,\n    'x-service-signature':signature(secret,timestamp,requestId,body)",
-  "    'X-Media-Signature':signature(secret,timestamp,requestId,body),\n    'X-Media-Timestamp':timestamp,\n    'X-Media-Service-Id':'novessa-core',\n    'X-Media-Request-Id':requestId"
-);
-media = media.replace(
-  "const body = JSON.stringify({ contract_version:'1.0', request_id:requestId, source:'novessa', target:'media-ai', operation, input });",
-  "const body = JSON.stringify({ operation, input });"
-);
-media = media.replace(
-  "const validEnvelope = payload?.contract_version === '1.0' && payload?.request_id === requestId;",
-  "const validEnvelope = payload?.request_id === requestId;"
-);
-media = media.replace(
-  "if (validEnvelope && (payload?.status === STATUS.INPUT_INCOMPLETE || payload?.status === STATUS.PARTIAL || payload?.status === STATUS.VERIFIED || payload?.status === STATUS.ERROR || payload?.status === STATUS.PROVIDER_UNAVAILABLE)) return payload;",
-  "if (validEnvelope && (payload?.status === STATUS.SUCCESS || payload?.status === STATUS.INPUT_INCOMPLETE || payload?.status === STATUS.PARTIAL || payload?.status === STATUS.VERIFIED || payload?.status === STATUS.ERROR || payload?.status === STATUS.PROVIDER_UNAVAILABLE)) return payload;"
-);
+const media = `import crypto from 'node:crypto';
+import { STATUS, result } from './status.mjs';
+import { validateGatewayUrl } from './connectors/config.mjs';
+
+function signature(secret, timestamp, requestId, body) {
+  const payload = \`${timestamp}:${requestId}:${body}\`;
+  return crypto.createHmac('sha256', secret).update(payload).digest('hex');
+}
+
+export async function requestMedia({operation, input, requestId=\`media-${crypto.randomUUID()}\`, fetchImpl=fetch, nowMs=Date.now()} = {}) {
+  const production = String(process.env.NOVESSA_ENV || '').toLowerCase() === 'production';
+  const rawBase = String(process.env.NOVESSA_GATEWAY_BASE_URL || '').trim();
+  const secret = String(process.env.NOVESSA_GATEWAY_SHARED_SECRET || '');
+  if (!rawBase || !secret) return result(STATUS.PROVIDER_UNAVAILABLE, { error:'media_gateway_not_configured' });
+  const baseValidation = validateGatewayUrl(rawBase, { production });
+  if (!baseValidation.ok) return result(STATUS.PROVIDER_UNAVAILABLE, { error:baseValidation.error });
+  const base = baseValidation.url;
+  const body = JSON.stringify({ operation, input });
+  const timestamp = String(Math.trunc(nowMs));
+  const headers = {
+    'content-type':'application/json',
+    'X-Media-Signature':signature(secret,timestamp,requestId,body),
+    'X-Media-Timestamp':timestamp,
+    'X-Media-Service-Id':'novessa-core',
+    'X-Media-Request-Id':requestId
+  };
+  try {
+    const r = await fetchImpl(\`${base}/v1/media/request\`, {method:'POST', headers, body, redirect:'error'});
+    const raw = await r.text();
+    let payload;
+    try { payload = JSON.parse(raw); } catch { return result(STATUS.ERROR,{ error:'media_gateway_invalid_json', http_status:r.status }); }
+    const validEnvelope = payload?.request_id === requestId;
+    const accepted = [STATUS.SUCCESS, STATUS.INPUT_INCOMPLETE, STATUS.PARTIAL, STATUS.VERIFIED, STATUS.ERROR, STATUS.PROVIDER_UNAVAILABLE];
+    if (validEnvelope && accepted.includes(payload?.status)) return payload;
+    if (!r.ok) return result(STATUS.ERROR,{ http_status:r.status, upstream:payload });
+    return result(STATUS.ERROR,{ error:'media_gateway_unrecognized_status', http_status:r.status, upstream:payload });
+  } catch (error) {
+    return result(STATUS.PROVIDER_UNAVAILABLE, { error:'media_gateway_unreachable' });
+  }
+}
+
+export { signature as signMediaRequest };
+`;
 writeFileSync(mediaPath, media);
 
 const serverPath = 'server.mjs';
