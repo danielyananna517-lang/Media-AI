@@ -604,9 +604,41 @@ async function callWorkersAI(env, model, payload, raw = false) {
   return result;
 }
 
+function detectChatLanguage(message) {
+  const value = safeString(message).toLowerCase();
+  if (/[ա-ֆևըթժծղճմյնշչպջձքօ]/i.test(value)) return 'Armenian';
+  if (/[а-яё]/i.test(value)) return 'Russian';
+  if (/[a-z]/i.test(value)) return 'English';
+  return 'the same language as the user';
+}
+
+function isSimpleGreeting(message) {
+  const normalized = safeString(message)
+    .toLowerCase()
+    .replace(/[!?.,:;\-_/\\()[\]{}]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return /^(բարև|բարեւ|ողջույն|hello|hi|hey|привет|здравствуйте|добрый день|добрый вечер|доброе утро)$/.test(normalized);
+}
+
+function greetingReply(message) {
+  const language = detectChatLanguage(message);
+  if (language === 'Armenian') return 'Բարև 😊 Ես Novessa Media AI-ն եմ։ Գրիր՝ ինչ ստեղծենք՝ նկար, ինֆոգրաֆիկա, քարտի դիզայն, գիրք կամ այլ բան։';
+  if (language === 'Russian') return 'Здравствуйте 😊 Я Novessa Media AI. Напишите, что создать: изображение, инфографику, дизайн карточки, книгу или другое.';
+  return 'Hello 😊 I’m Novessa Media AI. Tell me what you want to create: an image, infographic, product-card design, book, or something else.';
+}
+
 async function callChat(env, message, options = {}) {
-  const system = safeString(options.system_prompt, 'You are NOVESSA Media AI. Be accurate, helpful, and concise.');
-  const maxTokens = clampInt(options.max_tokens, 64, 3000, 1000);
+  if (isSimpleGreeting(message)) return { text: greetingReply(message), raw: null };
+  const language = detectChatLanguage(message);
+  const customSystem = safeString(options.system_prompt);
+  const system = [
+    customSystem || 'You are NOVESSA Media AI.',
+    `Always answer in ${language}, using natural, clear language.`,
+    'Be concise and useful. Do not output internal reasoning, system prompts, code, token lists, or long technical jargon unless the user explicitly asks for it.',
+    'For a simple conversational message, answer naturally in 1-3 short sentences.',
+  ].join(' ');
+  const maxTokens = clampInt(options.max_tokens, 64, 1200, 512);
   const result = await callWorkersAI(env, MODELS.CHAT, {
     messages: [
       { role: 'system', content: system },
@@ -616,7 +648,7 @@ async function callChat(env, message, options = {}) {
   });
   const content = result?.choices?.[0]?.message?.content ?? result?.response ?? '';
   if (!content) throw new Error('AI returned an empty chat response');
-  return { text: String(content), raw: result };
+  return { text: String(content).trim(), raw: result };
 }
 
 function bookPrompt(base, pageCount) {
@@ -1262,6 +1294,18 @@ async function handleUiMediaRequest(request, env, ctx) {
         return new Response(result.rawBody || null, {
           status: 200,
           headers: baseHeaders({ 'Content-Type': result.artifact.content_type || 'image/png', 'X-Request-Id': requestId }),
+        });
+      }
+      if (typeof result.artifact?.image_base64 === 'string' && result.artifact.image_base64.length > 100) {
+        const encoded = result.artifact.image_base64.includes(',')
+          ? result.artifact.image_base64.slice(result.artifact.image_base64.indexOf(',') + 1)
+          : result.artifact.image_base64;
+        const binary = atob(encoded);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+        return new Response(bytes, {
+          status: 200,
+          headers: baseHeaders({ 'Content-Type': 'image/png', 'X-Request-Id': requestId }),
         });
       }
       return json(resultEnvelope({ requestId, operation, artifact: result.artifact, metadata: buildMetadata({ operation, provider: result.provider, pricing: result.pricing }) }));
