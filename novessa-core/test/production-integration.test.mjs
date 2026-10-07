@@ -20,6 +20,9 @@ test('production integration patched the generated runtime',()=>{
   assert.match(server,/\/api\/production\/operator/);
   assert.match(server,/\/api\/production\/book\/export/);
   assert.match(server,/\/ui\/api\/action\/workspace-save/);
+  const index=readFileSync(new URL('../public/index.html',import.meta.url),'utf8');
+  assert.match(index,/data-novessa-command-center/);
+  assert.match(index,/NOVESSA • COMMAND CENTER/);
   assert.equal(existsSync(new URL('../public/index.html',import.meta.url)),true);
 });
 
