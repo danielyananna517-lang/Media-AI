@@ -1,6 +1,5 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
-import crypto from 'node:crypto';
 
 const parts = Array.from({length:15}, (_,i) => readFileSync(`core-part-${String(i+1).padStart(2,'0')}.txt`, 'utf8')).join('');
 writeFileSync('core.tar.gz', Buffer.from(parts, 'base64'));
@@ -70,20 +69,17 @@ app = app.replace(
 );
 writeFileSync(appPath, app);
 
-const appHash = crypto.createHash('sha256').update(app, 'utf8').digest('base64');
 index = index.replace(
   /<script src="\/assets\/app\.js" defer><\/script>/,
-  '<script>' + app + '<\/script>'
+  ''
 );
+if (!index.includes('<script src="/assets/app.js"')) {
+  index = index.replace(
+    '</body>',
+    '<script src="/assets/app.js" defer><\/script></body>'
+  );
+}
 writeFileSync(indexPath, index);
-
-const serverPath = 'server.mjs';
-let server = readFileSync(serverPath, 'utf8');
-server = server.replace(
-  "script-src 'self';",
-  "script-src 'self' 'sha256-" + appHash + "';"
-);
-writeFileSync(serverPath, server);
 
 const stylePath = 'public/styles.css';
 let style = readFileSync(stylePath, 'utf8');
