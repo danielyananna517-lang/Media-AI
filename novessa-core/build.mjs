@@ -1,5 +1,6 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
+import crypto from 'node:crypto';
 
 const parts = Array.from({length:15}, (_,i) => readFileSync(`core-part-${String(i+1).padStart(2,'0')}.txt`, 'utf8')).join('');
 writeFileSync('core.tar.gz', Buffer.from(parts, 'base64'));
@@ -68,6 +69,21 @@ app = app.replace(
   "catch(err){ if(out){ const body=err.body||{}; if(body.error==='ui_auth_required') out.textContent='Այս գործողությունը Production-ում պաշտպանված է։ Մուտքագրիր NOVESSA UI token-ը վերևի դաշտում, ապա կրկին փորձիր։'; else if(body.error==='ui_token_not_configured') out.textContent='UI token-ը Vercel Production-ում կարգավորված չէ։'; else out.textContent=pretty(body||{status:'error',error:err.message}); } }"
 );
 writeFileSync(appPath, app);
+
+const appHash = crypto.createHash('sha256').update(app, 'utf8').digest('base64');
+index = index.replace(
+  /<script src="\/assets\/app\.js" defer><\/script>/,
+  '<script>' + app + '<\/script>'
+);
+writeFileSync(indexPath, index);
+
+const serverPath = 'server.mjs';
+let server = readFileSync(serverPath, 'utf8');
+server = server.replace(
+  "script-src 'self';",
+  "script-src 'self' 'sha256-" + appHash + "';"
+);
+writeFileSync(serverPath, server);
 
 const stylePath = 'public/styles.css';
 let style = readFileSync(stylePath, 'utf8');
