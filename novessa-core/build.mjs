@@ -13,12 +13,14 @@ const media = `import crypto from 'node:crypto';
 import { STATUS, result } from './status.mjs';
 import { validateGatewayUrl } from './connectors/config.mjs';
 
-function signature(secret, timestamp, requestId, body) {
-  const payload = timestamp + ':' + requestId + ':' + body;
-  return crypto.createHmac('sha256', secret).update(payload).digest('hex');
+function sha256(s){ return crypto.createHash('sha256').update(s).digest('hex'); }
+function base64url(buffer){ return buffer.toString('base64').replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_'); }
+function signature(secret, timestamp, requestId, body){
+  const payload = \`${timestamp}.${requestId}.${sha256(body)}\`;
+  return base64url(crypto.createHmac('sha256', secret).update(payload).digest());
 }
 
-export async function requestMedia({operation, input, requestId, fetchImpl=fetch, nowMs=Date.now()} = {}) {
+export async function requestMedia({operation, input, requestId=\`media-${crypto.randomUUID()}\`, fetchImpl=fetch, nowMs=Date.now()} = {}) {
   const production = String(process.env.NOVESSA_ENV || '').toLowerCase() === 'production';
   const rawBase = String(process.env.NOVESSA_GATEWAY_BASE_URL || '').trim();
   const secret = String(process.env.NOVESSA_GATEWAY_SHARED_SECRET || '');
@@ -26,26 +28,25 @@ export async function requestMedia({operation, input, requestId, fetchImpl=fetch
   const baseValidation = validateGatewayUrl(rawBase, { production });
   if (!baseValidation.ok) return result(STATUS.PROVIDER_UNAVAILABLE, { error:baseValidation.error });
   const base = baseValidation.url;
-  const effectiveRequestId = requestId || ('media-' + crypto.randomUUID());
-  const body = JSON.stringify({ operation, input });
+  const body = JSON.stringify({ contract_version:'1.0', request_id:requestId, source:'novessa', target:'media-ai', operation, input });
   const timestamp = String(Math.trunc(nowMs));
   const headers = {
     'content-type':'application/json',
-    'X-Media-Signature':signature(secret,timestamp,effectiveRequestId,body),
-    'X-Media-Timestamp':timestamp,
-    'X-Media-Service-Id':'novessa-core',
-    'X-Media-Request-Id':effectiveRequestId
+    'x-service-id':'novessa-core',
+    'x-timestamp':timestamp,
+    'x-request-id':requestId,
+    'x-service-signature':signature(secret,timestamp,requestId,body)
   };
   try {
-    const r = await fetchImpl(base + '/v1/media/request', {method:'POST', headers, body, redirect:'error'});
+    const r = await fetchImpl(\`${base}/v1/media/request\`, {method:'POST', headers, body, redirect:'error'});
     const raw = await r.text();
     let payload;
     try { payload = JSON.parse(raw); } catch { return result(STATUS.ERROR,{ error:'media_gateway_invalid_json', http_status:r.status }); }
-    const validEnvelope = payload?.request_id === effectiveRequestId;
-    const accepted = [STATUS.SUCCESS, STATUS.INPUT_INCOMPLETE, STATUS.PARTIAL, STATUS.VERIFIED, STATUS.ERROR, STATUS.PROVIDER_UNAVAILABLE];
-    if (validEnvelope && accepted.includes(payload?.status)) return payload;
+    if (payload?.status === STATUS.PROVIDER_UNAVAILABLE) return payload;
+    const validEnvelope = payload?.contract_version === '1.0' && payload?.request_id === requestId;
+    if (validEnvelope && (payload?.status === STATUS.INPUT_INCOMPLETE || payload?.status === STATUS.PARTIAL || payload?.status === STATUS.VERIFIED || payload?.status === STATUS.ERROR || payload?.status === STATUS.PROVIDER_UNAVAILABLE)) return payload;
     if (!r.ok) return result(STATUS.ERROR,{ http_status:r.status, upstream:payload });
-    return result(STATUS.ERROR,{ error:'media_gateway_unrecognized_status', http_status:r.status, upstream:payload });
+    return result(STATUS.ERROR,{ error:'media_gateway_unrecognized_status', http_status:r.status });
   } catch (error) {
     return result(STATUS.PROVIDER_UNAVAILABLE, { error:'media_gateway_unreachable' });
   }
@@ -53,7 +54,7 @@ export async function requestMedia({operation, input, requestId, fetchImpl=fetch
 
 export { signature as signMediaRequest };
 `;
-writeFileSync(mediaPath, media);
+writeFileSync(mediaPath, media);;
 
 const indexPath = 'public/index.html';
 let index = readFileSync(indexPath, 'utf8');
