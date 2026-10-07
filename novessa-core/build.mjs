@@ -107,7 +107,7 @@ writeFileSync(appPath, app);
 const sheetsAppCode = "const sheetRows=(()=>{try{const saved=JSON.parse(localStorage.getItem('novessa_sheet_rows_v2')||'[]');return Array.isArray(saved)?saved:[]}catch{return []}})(); window.__novessaSheetRows=sheetRows;\nconst sheetI18n={hy:{added:'Տողը ավելացվեց։',imported:'Ներմուծված տողեր՝ ',url:'Մուտքագրիր Google Sheets-ի հղումը։',host:'Թույլատրվում է միայն Google հղումը։',bad:'Google Sheets-ի հղումը ճիշտ չէ։'},ru:{added:'Строка добавлена.',imported:'Импортировано строк: ',url:'Введи ссылку Google Sheets.',host:'Разрешена только ссылка Google.',bad:'Ссылка Google Sheets неверна.'},en:{added:'Row added.',imported:'Imported rows: ',url:'Enter the Google Sheets link.',host:'Only a Google link is allowed.',bad:'The Google Sheets link is invalid.'}}; function sheetMsg(key,extra=''){const lang=document.documentElement.lang||'hy';return (sheetI18n[lang]||sheetI18n.hy)[key]+extra;}\nfunction csvEscape(v){const s=String(v??'');return '\"' + s.replace(/\"/g,'\"\"') + '\"';}\nfunction renderSheetRows(){\n  const body=$('#sheetsTable tbody'); if(!body) return;\n  body.innerHTML=sheetRows.map(r=>'<tr>'+r.map(v=>'<td>'+String(v).replace(/[&<>]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]))+'</td>').join('')+'</tr>').join('');\n}\n$('#addSheetRowBtn')?.addEventListener('click',()=>{\n  const r=[$('#sheetProduct')?.value||'', $('#sheetPrice')?.value||'', $('#sheetCost')?.value||'', $('#sheetQty')?.value||'', $('#sheetSales')?.value||'', $('#sheetStock')?.value||''];\n  if(!r[0]) return;\n  sheetRows.push(r); window.__novessaSheetRows=sheetRows; localStorage.setItem('novessa_sheet_rows_v2',JSON.stringify(sheetRows)); renderSheetRows();\n  ['sheetProduct','sheetPrice','sheetCost','sheetQty','sheetSales','sheetStock'].forEach(id=>{const e=$('#'+id);if(e)e.value='';});\n  const out=$('#out-sheets'); if(out) out.textContent=sheetMsg('added');\n});\n$('#exportXlsxBtn')?.addEventListener('click',async()=>{\n  const out=$('#out-sheets');\n  try{\n    const r=await fetch('/ui/api/action/sheets-xlsx',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({headers:['Ապրանք','Գին','Ինքնարժեք','Քանակ','Վաճառք','Մնացորդ'],rows:sheetRows})});\n    if(!r.ok){const t=await r.text();let b={};try{b=JSON.parse(t)}catch{};throw new Error(b.error||'xlsx_export_failed');}\n    const blob=await r.blob(),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='novessa-sheets.xlsx';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);\n    if(out)out.textContent='Excel (.xlsx) պատրաստ է։';\n  }catch(error){if(out)out.textContent=String(error.message||error);}\n});\n$('#exportSheetBtn')?.addEventListener('click',()=>{\n  const rows=[['Ապրանք','Գին','Ինքնարժեք','Քանակ','Վաճառք','Մնացորդ'],...sheetRows];\n  const csv='\\ufeff'+rows.map(r=>r.map(csvEscape).join(',')).join('\\n');\n  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})); a.download='novessa-sheets.csv'; a.click();\n});\n$('#csvTemplateBtn')?.addEventListener('click',()=>{\n  const csv='\\ufeffԱպրանք,Գին,Ինքնարժեք,Քանակ,Վաճառք,Մնացորդ\\n';\n  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})); a.download='novessa-sheets-template.csv'; a.click();\n});\n$('#csvFile')?.addEventListener('change',async(e)=>{\n  const file=e.target.files?.[0]; if(!file) return;\n  const raw=await file.text();\n  const lines=raw.replace(/^\\ufeff/,'').split(/\\r?\\n/).filter(Boolean);\n  const parsed=lines.slice(1).map(line=>line.split(',').map(v=>v.replace(/^\"|\"$/g,'').replace(/\"\"/g,'\"'))).filter(r=>r.length>=6);\n  sheetRows.push(...parsed.map(r=>r.slice(0,6))); window.__novessaSheetRows=sheetRows; localStorage.setItem('novessa_sheet_rows_v2',JSON.stringify(sheetRows)); renderSheetRows();\n  const out=$('#out-sheets'); if(out) out.textContent=sheetMsg('imported',parsed.length);\n});\n$('#sheetLinkBtn')?.addEventListener('click',()=>{\n  const url=$('#sheetUrl')?.value?.trim(), out=$('#out-sheets');\n  if(!url){if(out)out.textContent=sheetMsg('url');return;}\n  try{\n    const u=new URL(url);\n    if(!/^(docs\\.google\\.com|drive\\.google\\.com)$/.test(u.hostname)){if(out)out.textContent='Թույլատրվում է միայն Google հղումը։';return;}\n    window.open(u.href,'_blank','noopener');\n  }catch{if(out)out.textContent=sheetMsg('bad');}\n});\n\n";
 app += '\n' + sheetsAppCode;
 
-const persistenceEnhancer = String.raw\`
+const persistenceEnhancer = String.raw`
 // === NOVESSA PERSISTENCE ENHANCER ===
 (function(){
   const el=id=>document.getElementById(id);
@@ -198,7 +198,7 @@ const persistenceEnhancer = String.raw\`
   }).catch(()=>{enabled=false;});
   window.__novessaPersistence={enabled:()=>enabled,saveBook,saveSheets,loadBook,loadSheets};
 })();
-\`;
+`;
 app += '\\n' + persistenceEnhancer;
 writeFileSync(appPath, app);
 
@@ -564,7 +564,7 @@ writeFileSync(indexPath, index);
 
 
 /* === NOVESSA COMMAND CENTER v2 === */
-const commandCenterHtml = String.raw\`
+const commandCenterHtml = String.raw`
 <section class="novessa-command-center" id="novessa-command-center" data-novessa-command-center>
   <div class="cc-hero">
     <div class="cc-hero-copy">
@@ -640,11 +640,11 @@ const commandCenterHtml = String.raw\`
     <span>✓</span>
     <p><strong>NOVESSA principle:</strong> Evidence → Calculation → Decision → Approval → Action → History.</p>
   </div>
-</section>\`;
+</section>`;
 
 if(!index.includes('data-novessa-command-center')) index=index.replace('<main>','<main>'+commandCenterHtml);
 
-const commandCenterScript = String.raw\`
+const commandCenterScript = String.raw`
 <script data-novessa-command-center-script>
 (function(){
   const root=document.querySelector('[data-novessa-command-center]'); if(!root)return;
@@ -730,7 +730,7 @@ const commandCenterScript = String.raw\`
   root.querySelectorAll('[data-cc-tab]').forEach(b=>b.addEventListener('click',()=>clickTab(b.getAttribute('data-cc-tab'))));
   refresh();
 })();
-</script>\`;
+</script>`;
 if(!index.includes('data-novessa-command-center-script')) index=index.replace('</body>',commandCenterScript+'</body>');
 
 const stylePath = 'public/styles.css';
