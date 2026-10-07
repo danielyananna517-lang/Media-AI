@@ -46,7 +46,7 @@ export default async function handler(req, res) {
         'content-type': 'application/json',
         'X-Media-Signature': sign(secret, timestamp, requestId, body),
         'X-Media-Timestamp': timestamp,
-        'X-Media-Service-Id': 'media-ai-ui',
+        'X-Media-Service-Id': 'media-ai-internal',
         'X-Media-Request-Id': requestId
       },
       body
