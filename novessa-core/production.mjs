@@ -365,7 +365,7 @@ const newline=String.fromCharCode(10);
 let server=readFileSync(serverPath,'utf8');
 if(!server.includes('__novessaProduction')){
   server=server.replace("const rateLimiter = createRateLimiter","const __novessaProduction = await import('./src/novessaProduction.mjs');"+newline+"const rateLimiter = createRateLimiter");
-  server=server.replace("    if(req.method==='GET'&&u.pathname==='/api/product/plans')","    if(req.method==='GET'&&u.pathname==='/api/production/capabilities') return send(res,200,__novessaProduction.productionCapabilities());\\n    if(req.method==='GET'&&u.pathname==='/api/product/plans')");
+  server=server.replace("    if(req.method==='GET'&&u.pathname==='/api/product/plans')","    if(req.method==='GET'&&u.pathname==='/api/production/capabilities') return send(res,200,__novessaProduction.productionCapabilities());"+newline+"    if(req.method==='GET'&&u.pathname==='/api/product/plans')");
   const uiHandlers=String.raw`
       const productionUiActions=['production-operator','production-approve','production-execute','book-plan','book-write','book-export'];
       if(productionUiActions.includes(actionName)){
