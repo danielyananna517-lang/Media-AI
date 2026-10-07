@@ -164,18 +164,19 @@ const server=http.createServer(async(req,res)=>{
       const auth=await verifyCoreRequest(req,rawBody,{env:process.env});
       if(!auth.valid) return send(res,401,{status:'error',error:auth.error||'unauthorized'});
     }
-    if(u.pathname==='/api/ui/action'){
-      const access=verifyUiAccess({token,env:process.env});
-      if(!access.ok) return send(res,401,{status:'error',error:'ui_access_denied'});
+    if(req.method==='POST' && u.pathname.startsWith('/ui/api/action/')){
+      const auth=verifyUiAccess({headers:req.headers,env:process.env});
+      const actionName=decodeURIComponent(u.pathname.slice('/ui/api/action/'.length));
       const safeActions=['pricing','unit-economics','profit-guardian','scenario','sales-funnel','business-health','product-card','seo','card-design','infographic','book-validate','kdp-package','youtube-campaign','publishing-capabilities'];
-      if(production && !token && safeActions.includes(input.action)) {
-        const result=await runUiAction(input);
-        await recordUsage({operation:u.pathname,status:result.status,request_id:requestId});
-        return sendApiResult(res,200,result,requestId);
+      if(auth.status!=='verified' && !(production && !token && safeActions.includes(actionName))) {
+        return send(res,auth.http_status||401,{status:auth.status,error:auth.error||'ui_auth_failed'});
       }
-      const result=await runUiAction(input);
-      await recordUsage({operation:u.pathname,status:result.status,request_id:requestId});
-      return sendApiResult(res,200,result,requestId);
+      let input;
+      try { input=await readJson(req); } catch (error) { return send(res,error.statusCode||400,{status:'error',error:String(error.message||error)}); }
+      if(input===null || typeof input!=='object' || Array.isArray(input)) return send(res,400,{status:'invalid_data',error:'request body must be an object'});
+      const out=await runUiAction(actionName,input,{env:process.env,activeRecommendationPolicy});
+      const httpStatus=out.status==='invalid_data'||out.status==='input_incomplete'?400:out.status==='provider_unavailable'?503:out.status==='error'?502:200;
+      return send(res,httpStatus,out);
     }
     if(u.pathname==='/api/report') {
       const out=buildReport(input);
