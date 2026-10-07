@@ -52,3 +52,25 @@ export { signature as signMediaRequest };
 `;
 writeFileSync(mediaPath, media);
 
+const indexPath = 'public/index.html';
+let index = readFileSync(indexPath, 'utf8');
+index = index.replace(/<input id="uiToken"[^>]*>/, '');
+index = index.replace(
+  '<button id="refreshBtn" class="ghost">Թարմացնել</button>',
+  '<button id="refreshBtn" class="ghost">Թարմացնել</button><input id="uiToken" class="ui-token" type="password" placeholder="UI token" aria-label="NOVESSA UI token" autocomplete="off">'
+);
+writeFileSync(indexPath, index);
+
+const appPath = 'public/app.js';
+let app = readFileSync(appPath, 'utf8');
+app = app.replace(
+  "catch(err){ if(out) out.textContent=pretty(err.body||{status:'error',error:err.message}); }",
+  "catch(err){ if(out){ const body=err.body||{}; if(body.error==='ui_auth_required') out.textContent='Այս գործողությունը Production-ում պաշտպանված է։ Մուտքագրիր NOVESSA UI token-ը վերևի դաշտում, ապա կրկին փորձիր։'; else if(body.error==='ui_token_not_configured') out.textContent='UI token-ը Vercel Production-ում կարգավորված չէ։'; else out.textContent=pretty(body||{status:'error',error:err.message}); } }"
+);
+writeFileSync(appPath, app);
+
+const stylePath = 'public/styles.css';
+let style = readFileSync(stylePath, 'utf8');
+style += '.ui-token{width:180px!important;max-width:180px!important;padding:8px 10px!important}.ui-token::placeholder{color:#6f7d98}';
+writeFileSync(stylePath, style);
+
