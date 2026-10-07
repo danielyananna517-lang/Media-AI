@@ -672,7 +672,7 @@ const __novessaProductAnalysis=String.raw`
     }catch(error){if(out)out.textContent=error.message||'Ապրանքի վերլուծությունը ՉԻ ՀԱՍՏԱՏՎԱԾ։';}
   });
 })();
-\`;
+`;
 
 app += newline + __novessaProductAnalysis + newline;
 writeFileSync(appPath,app);
