@@ -155,15 +155,8 @@ const server=http.createServer(async(req,res)=>{
     const requestId=crypto.randomUUID();
     if(req.method==='GET'&&STATIC_FILES[u.pathname]) return serveStatic(res,STATIC_FILES[u.pathname]);
     if(req.method!=='POST') return send(res,404,{status:'error',error:'not_found'});
-    const input=await readJson(req);
     const production=String(process.env.NOVESSA_ENV||'').toLowerCase()==='production';
     const token=String(req.headers['x-novessa-ui-token']||'');
-    const coreAuthRequired=production;
-    if(coreAuthRequired){
-      const rawBody=JSON.stringify(input);
-      const auth=await verifyCoreRequest(req,rawBody,{env:process.env});
-      if(!auth.valid) return send(res,401,{status:'error',error:auth.error||'unauthorized'});
-    }
     if(req.method==='POST' && u.pathname.startsWith('/ui/api/action/')){
       const auth=verifyUiAccess({headers:req.headers,env:process.env});
       const actionName=decodeURIComponent(u.pathname.slice('/ui/api/action/'.length));
@@ -171,12 +164,19 @@ const server=http.createServer(async(req,res)=>{
       if(auth.status!=='verified' && !(production && !token && safeActions.includes(actionName))) {
         return send(res,auth.http_status||401,{status:auth.status,error:auth.error||'ui_auth_failed'});
       }
-      let input;
-      try { input=await readJson(req); } catch (error) { return send(res,error.statusCode||400,{status:'error',error:String(error.message||error)}); }
-      if(input===null || typeof input!=='object' || Array.isArray(input)) return send(res,400,{status:'invalid_data',error:'request body must be an object'});
-      const out=await runUiAction(actionName,input,{env:process.env,activeRecommendationPolicy});
+      let uiInput;
+      try { uiInput=await readJson(req); } catch (error) { return send(res,error.statusCode||400,{status:'error',error:String(error.message||error)}); }
+      if(uiInput===null || typeof uiInput!=='object' || Array.isArray(uiInput)) return send(res,400,{status:'invalid_data',error:'request body must be an object'});
+      const out=await runUiAction(actionName,uiInput,{env:process.env,activeRecommendationPolicy});
       const httpStatus=out.status==='invalid_data'||out.status==='input_incomplete'?400:out.status==='provider_unavailable'?503:out.status==='error'?502:200;
       return send(res,httpStatus,out);
+    }
+    const input=await readJson(req);
+    const coreAuthRequired=production;
+    if(coreAuthRequired){
+      const rawBody=JSON.stringify(input);
+      const auth=await verifyCoreRequest(req,rawBody,{env:process.env});
+      if(!auth.valid) return send(res,401,{status:'error',error:auth.error||'unauthorized'});
     }
     if(u.pathname==='/api/report') {
       const out=buildReport(input);
