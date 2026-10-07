@@ -16,11 +16,11 @@ import { validateGatewayUrl } from './connectors/config.mjs';
 function sha256(s){ return crypto.createHash('sha256').update(s).digest('hex'); }
 function base64url(buffer){ return buffer.toString('base64').replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_'); }
 function signature(secret, timestamp, requestId, body){
-  const payload = \`${timestamp}.${requestId}.${sha256(body)}\`;
+  const payload = timestamp + '.' + requestId + '.' + sha256(body);
   return base64url(crypto.createHmac('sha256', secret).update(payload).digest());
 }
 
-export async function requestMedia({operation, input, requestId=\`media-${crypto.randomUUID()}\`, fetchImpl=fetch, nowMs=Date.now()} = {}) {
+export async function requestMedia({operation, input, requestId='media-' + crypto.randomUUID(), fetchImpl=fetch, nowMs=Date.now()} = {}) {
   const production = String(process.env.NOVESSA_ENV || '').toLowerCase() === 'production';
   const rawBase = String(process.env.NOVESSA_GATEWAY_BASE_URL || '').trim();
   const secret = String(process.env.NOVESSA_GATEWAY_SHARED_SECRET || '');
@@ -38,7 +38,7 @@ export async function requestMedia({operation, input, requestId=\`media-${crypto
     'x-service-signature':signature(secret,timestamp,requestId,body)
   };
   try {
-    const r = await fetchImpl(\`${base}/v1/media/request\`, {method:'POST', headers, body, redirect:'error'});
+    const r = await fetchImpl(base + '/v1/media/request', {method:'POST', headers, body, redirect:'error'});
     const raw = await r.text();
     let payload;
     try { payload = JSON.parse(raw); } catch { return result(STATUS.ERROR,{ error:'media_gateway_invalid_json', http_status:r.status }); }
@@ -54,7 +54,7 @@ export async function requestMedia({operation, input, requestId=\`media-${crypto
 
 export { signature as signMediaRequest };
 `;
-writeFileSync(mediaPath, media);;
+writeFileSync(mediaPath, media);
 
 const indexPath = 'public/index.html';
 let index = readFileSync(indexPath, 'utf8');
