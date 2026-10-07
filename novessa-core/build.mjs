@@ -190,39 +190,21 @@ index = index.replace('</main>', '</main>');
 const localizedRuntimeScript = `
 <script>
 (function(){
-  const map = [
-    ['REAL CORE • DETERMINISTIC • AUDITABLE','ԻՐԱԿԱՆ CORE • ՀԱՇՎԱՐԿԱՅԻՆ • ՍՏՈՒԳԵԼԻ'],
-    ['Коммерция Intelligence Core','Առևտրի վերլուծության Core'],
-    ['Core ok','Core աշխատում է'],
-    ['Connectors verified','Միացումները ստուգված են'],
-    ['Store verified','Խանութը ստուգված է'],
-    ['Rules verified','Կանոնները ստուգված են'],
-    ['Publishing verified','Հրապարակումը ստուգված է'],
-    ['Canonical store','Հիմնական տվյալների պահոց'],
-    ['Rule packs','Կանոնների փաթեթներ'],
-    ['Pending cases','Սպասող դեպքեր'],
-    ['Store records','Խանութի գրառումներ'],
-    ['implemented_partial','մասամբ միացված է'],
-    ['implemented','միացված է'],
-    ['NOT VERIFIED','ՉԻ ՀԱՍՏԱՏՎԱԾ'],
-    ['PARTIAL','ՄԱՍԱՄԲ'],
-    ['verified','ստուգված է'],
-    ['ready','պատրաստ է']
-  ];
-  function localize(){
-    const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);
+  const baseText = new WeakMap();
+  let currentLang = localStorage.getItem('novessa_ui_language') || 'hy';
+  let rendering = false;
+
+  function captureBaseText(root=document.body){
+    const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);
     const nodes=[];
     while(walker.nextNode()) nodes.push(walker.currentNode);
     for(const node of nodes){
       const parent=node.parentElement;
-      if(!parent || /^(SCRIPT|STYLE|PRE|CODE)$/i.test(parent.tagName)) continue;
-      let value=node.nodeValue;
-      for(const [from,to] of map) value=value.split(from).join(to);
-      node.nodeValue=value;
+      if(!parent || /^(SCRIPT|STYLE|PRE|CODE|OPTION)$/i.test(parent.tagName)) continue;
+      if(!baseText.has(node)) baseText.set(node,node.nodeValue);
     }
   }
-  localize();
-  new MutationObserver(localize).observe(document.body,{subtree:true,childList:true,characterData:true});
+
   const translations = {
     hy: {},
     ru: {
@@ -370,49 +352,55 @@ const localizedRuntimeScript = `
       'Կառուցել brief':'Build brief'
     }
   };
-  function getLang(){ return localStorage.getItem('novessa_ui_language') || 'hy'; }
-  function setLang(lang){
-    localStorage.setItem('novessa_ui_language',lang);
-    document.documentElement.lang=lang;
-    renderLanguage(lang);
-  }
-  function renderLanguage(lang){
-    const dict=translations[lang]||{};
+
+  function applyLanguage(lang){
+    currentLang=translations[lang] ? lang : 'hy';
+    rendering=true;
+    document.documentElement.lang=currentLang;
+    captureBaseText();
+    const dict=translations[currentLang];
     const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);
     const nodes=[];
     while(walker.nextNode()) nodes.push(walker.currentNode);
     for(const node of nodes){
       const parent=node.parentElement;
       if(!parent || /^(SCRIPT|STYLE|PRE|CODE|OPTION)$/i.test(parent.tagName)) continue;
-      let value=node.nodeValue;
-      if(!node.__novessaBaseText) node.__novessaBaseText=value;
-      let base=node.__novessaBaseText;
-      const currentLang=parent.closest('[data-novessa-language]')?.dataset?.novessaLanguage;
-      if(currentLang && currentLang===lang) continue;
-      node.nodeValue=dict[base] || base;
+      const base=baseText.get(node);
+      if(base!=null) node.nodeValue=dict[base] || base;
     }
-    document.querySelectorAll('[data-i18n-placeholder]').forEach(el=>{
-      const key=el.getAttribute('data-i18n-placeholder');
-      if(key && dict[key]) el.placeholder=dict[key];
-    });
     const select=document.getElementById('languageSelect');
-    if(select) select.value=lang;
+    if(select) select.value=currentLang;
+    rendering=false;
   }
-  function openSettings(){
-    document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
-    document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
-    const panel=document.getElementById('tab-settings');
-    if(panel) panel.classList.add('active');
+
+  function setLang(lang){
+    localStorage.setItem('novessa_ui_language',lang);
+    applyLanguage(lang);
   }
-  document.addEventListener('click',event=>{
-    if(event.target?.id==='settingsBtn') openSettings();
+
+  const observer=new MutationObserver(mutations=>{
+    if(rendering) return;
+    for(const m of mutations){
+      if(m.type==='childList'){
+        m.addedNodes.forEach(node=>{
+          if(node.nodeType===Node.TEXT_NODE){
+            if(!baseText.has(node)) baseText.set(node,node.nodeValue);
+          } else if(node.nodeType===Node.ELEMENT_NODE){
+            captureBaseText(node);
+          }
+        });
+      }
+    }
+    applyLanguage(currentLang);
   });
+  observer.observe(document.body,{subtree:true,childList:true,characterData:false});
+
   document.addEventListener('change',event=>{
     if(event.target?.id==='languageSelect') setLang(event.target.value);
   });
-  window.addEventListener('DOMContentLoaded',()=>setTimeout(()=>setLang(getLang()),0));
-  setTimeout(localize,250);
-  setTimeout(()=>{ localize(); setLang(getLang()); },1000);
+
+  captureBaseText();
+  applyLanguage(currentLang);
 })();
 </script>`;
 index = index.replace('</body>', localizedRuntimeScript + '</body>');
