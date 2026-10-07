@@ -674,7 +674,28 @@ const decisionCenterScript = `
       const r=await fetch('/ui/api/action/unit-economics',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(vals)});
       const body=await r.json();
       if(!r.ok){showMessage(body?.error||m.failed,'bad');return;}
-      byId('dcResultJson').textContent=JSON.stringify(body,null,2);
+      const source=body?.data??body?.result??body;
+      const flat={};
+      const visit=(obj,prefix='')=>{
+        if(!obj||typeof obj!=='object') return;
+        for(const [k,v] of Object.entries(obj)){
+          const key=prefix?prefix+'.'+k:k;
+          if(v!==null&&typeof v==='object') visit(v,key);
+          else if(v!==undefined) flat[key]=v;
+        }
+      };
+      visit(source);
+      const labels={revenue:'Հասույթ',unit_profit:'Շահույթ / միավոր',total_profit:'Ընդհանուր շահույթ',profit:'Շահույթ',net_profit:'Զուտ շահույթ',profit_margin:'Շահույթի մարժա',margin:'Մարժա',commission:'Միջնորդավճար',logistics:'Լոգիստիկա',storage:'Պահեստավորում',tax:'Հարկ',ad_spend:'Գովազդ',total_cost:'Ընդհանուր ծախս',break_even_units:'Break-even միավոր',break_even_price:'Break-even գին'};
+      const find=(name)=>flat[name]??flat['data.'+name]??flat['result.'+name]??flat['metrics.'+name];
+      const preferred=Object.keys(labels).filter(k=>find(k)!==undefined);
+      const cards=preferred.map(k=>{
+        const v=find(k);
+        const display=typeof v==='number'&&Number.isFinite(v)?v.toLocaleString(undefined,{maximumFractionDigits:2}):String(v);
+        return '<div class="dc-metric"><span>'+labels[k]+'</span><strong>'+display+'</strong></div>';
+      }).join('');
+      const status=body?.status?'<div class="dc-result-status">Կարգավիճակ՝ '+String(body.status)+'</div>':'';
+      const details=Object.entries(flat).filter(([k])=>!preferred.includes(k)).slice(0,8).map(([k,v])=>'<div class="dc-detail"><span>'+k+'</span><b>'+String(v)+'</b></div>').join('');
+      byId('dcResultJson').outerHTML='<div class="dc-metrics">'+(cards||'<div class="dc-result-message">Core-ը վերադարձրել է արդյունքը, բայց ֆինանսական դաշտերը ճանաչելի չեն ցուցադրման համար։</div>')+'</div>'+status+(details?'<div class="dc-details">'+details+'</div>':'');
     }catch{showMessage(m.failed,'bad');}
   };
   const clickTab=name=>document.querySelector('.tab[data-tab="'+name+'"]')?.click();
@@ -694,6 +715,7 @@ if(!index.includes('data-novessa-decision-center-script')){
 
 style += `
 /* NOVESSA Decision Center v1 */
+.dc-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:8px}.dc-metric{padding:14px 15px;border:1px solid #34286a;border-radius:14px;background:rgba(21,15,48,.72)}.dc-metric span{display:block;font-size:11px;color:#aaa2c5;margin-bottom:5px}.dc-metric strong{font-size:20px;line-height:1.1}.dc-result-status{margin-top:10px;font-size:11px;color:#aaa2c5}.dc-details{margin-top:10px;border-top:1px solid #2a2254;padding-top:10px}.dc-detail{display:flex;justify-content:space-between;gap:12px;font-size:12px;color:#aaa2c5;padding:5px 0}.dc-detail b{color:#e8e5f1;font-weight:600;text-align:right}@media(max-width:700px){.dc-metrics{grid-template-columns:1fr}}
 .novessa-decision-center{margin:26px 0 34px;padding:24px;border:1px solid #34286a;border-radius:26px;background:linear-gradient(145deg,rgba(16,10,40,.96),rgba(7,6,23,.98));box-shadow:0 20px 70px rgba(11,7,40,.45)}
 .dc-hero{display:flex;justify-content:space-between;gap:18px;align-items:flex-start}.dc-eyebrow,.dc-section-tag{font-size:11px;letter-spacing:.12em;font-weight:800;color:#a78bfa}.dc-hero h2{margin:7px 0 8px;font-size:clamp(24px,3vw,36px);line-height:1.08}.dc-subtitle{max-width:830px;color:#aaa2c5;margin:0;line-height:1.55}.dc-truth{padding:10px 14px;border:1px solid #41347e;border-radius:999px;color:#ddd6fe;background:rgba(109,40,217,.13);white-space:nowrap;font-size:12px;font-weight:700}
 .dc-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:20px 0}.dc-kpi{padding:15px 16px;border:1px solid #2f2559;border-radius:17px;background:rgba(14,10,33,.8)}.dc-kpi span{display:block;color:#a39bbf;font-size:12px;margin-bottom:7px}.dc-kpi strong{font-size:16px;color:#f7f3ff}.dc-kpi strong[data-status=ok]{color:#86efac}.dc-kpi strong[data-status=partial]{color:#fde68a}.dc-kpi strong[data-status=bad]{color:#fda4af}
