@@ -3,7 +3,7 @@
 
 create table if not exists public.novessa_workspaces (
   workspace_id text not null,
-  kind text not null check (kind in ('book','sheets')),
+  kind text not null check (kind in ('book','sheets','commerce')),
   state jsonb not null default '{}'::jsonb,
   version bigint not null default 1,
   created_at timestamptz not null default now(),
