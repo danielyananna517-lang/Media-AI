@@ -67,7 +67,7 @@ index = index.replace('</main>', sheetsSection + '</main>');
 index = index.replace(/<input id="uiToken"[^>]*>/, '');
 index = index.replace(
   '<button id="refreshBtn" class="ghost">Թարմացնել</button>',
-  '<button id="refreshBtn" class="ghost">Թարմացնել</button><input id="uiToken" class="ui-token" type="password" placeholder="UI token" aria-label="UI token" autocomplete="off">'
+  '<button id="refreshBtn" class="ghost">Թարմացնել</button>'
 );
 writeFileSync(indexPath, index);
 
@@ -191,6 +191,10 @@ const languageSettingsHtml = `
             <option value="ru">Русский</option>
             <option value="en">English</option>
           </select>
+        </div>
+        <div class="field wide">
+          <label for="uiToken">Մուտքի կոդ</label>
+          <input id="uiToken" class="ui-token" type="password" placeholder="Մուտքի կոդ" autocomplete="off">
         </div>
       </article>
     </section>`;
