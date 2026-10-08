@@ -140,7 +140,7 @@ export async function analyzeProduct(input={},deps={}){
     market_research=await runner({query:marketQuery,limit:Math.min(20,Math.max(3,Number(input.research_limit)||8))});
   }
   const profit=firstNumber(economics,['unit_profit','profit_per_unit','net_profit','profit']);
-  const margin=firstNumber(economics,['profit_margin','margin']);
+  const margin=firstNumber(economics,['margin_percent','profit_margin','margin']);
   const profitSignal=Number.isFinite(profit)?(profit<0?'loss_making':'positive'):Number.isFinite(margin)?(margin<0?'loss_making':'positive'):'unknown';
   const researchStatus=marketQuery?(market_research?.status||'unknown'):'not_requested';
   const complete=economics.status==='verified'&&(researchStatus==='verified'||researchStatus==='not_requested');
@@ -189,7 +189,7 @@ export function analyzeProductPortfolio(input={}){
       continue;
     }
     const economics=unitEconomics(numbers);
-    const unitProfit=firstNumber(economics,['unit_profit','profit_per_unit','net_profit','profit']);
+    const unitProfit=firstNumber(economics,['profit_per_sale','unit_profit','profit_per_unit','net_profit']);
     const margin=firstNumber(economics,['profit_margin','margin']);
     const revenue=firstNumber(economics,['revenue','sales_revenue']);
     const rowTotalProfit=firstNumber(economics,['total_profit'])??(Number.isFinite(unitProfit)?unitProfit*numbers.sales:NaN);
