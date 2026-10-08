@@ -17,7 +17,7 @@ async function waitForHealth(child){
 
 async function withServer(fn){
   const child=spawn(process.execPath,['server.mjs'],{
-    env:{...process.env,NOVESSA_ENV:'production',NOVESSA_UI_TOKEN:'test-ui-token'}
+    env:{...process.env,NOVESSA_ENV:'production',NOVESSA_UI_TOKEN:'test-ui-token',NOVESSA_CORE_SHARED_SECRET:'test-core-secret'}
   });
   try{await waitForHealth(child);return await fn();}finally{child.kill('SIGTERM');}
 }
@@ -41,7 +41,7 @@ test('pricing decision is deterministic and exposes reference prices',()=>{
   assert.equal(result.decision.status,'profitable');
   assert.ok(Math.abs(result.decision.current_unit_profit-39)<1e-9);
   assert.ok(Math.abs(result.decision.current_margin_percent-39)<1e-9);
-  assert.ok(Math.abs(result.price_references.break_even_price-54.11764705882353)<1e-9);
+  assert.equal(result.price_references.break_even_price,54.117647);
   assert.ok(Math.abs(result.price_references.target_margin_price-70.76923076923077)<1e-9);
   assert.deepEqual(result.price_references.price_range,{min:54.117647,max:70.769231,basis:'break-even to target-margin reference range; not a market-price claim'});
   assert.ok(Math.abs(result.discount.price-75)<1e-9);
