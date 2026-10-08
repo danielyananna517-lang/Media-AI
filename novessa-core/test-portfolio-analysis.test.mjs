@@ -47,7 +47,6 @@ test('portfolio analysis ranks supplied products by total profit',async()=>{
     assert.equal(r.body.summary.loss_making_rows,0);
     assert.equal(r.body.summary.total_sales,30);
     assert.equal(r.body.summary.total_revenue,2800);
-    console.log('PORTFOLIO_DEBUG',JSON.stringify(r.body));
     assert.equal(r.body.summary.total_profit,680);
     assert.equal(r.body.ranking[0].name,'A');
     assert.ok(r.body.ranking[0].total_profit>r.body.ranking[1].total_profit);
