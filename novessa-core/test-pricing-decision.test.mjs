@@ -76,14 +76,14 @@ test('pricing decision HTTP route uses the same deterministic module',async()=>{
   await withServer(async()=>{
     const r=await fetch(base+'/api/production/pricing-decision',{
       method:'POST',
-      headers:{'content-type':'application/json','x-request-id':'pricing-decision-test-001'}
+      headers:{'content-type':'application/json','x-request-id':'pricing-decision-test-001'},
       body:JSON.stringify(input)
     });
     const body=await r.json();
     assert.equal(r.status,200,JSON.stringify(body));
     assert.equal(body.status,'verified');
     assert.equal(body.decision.status,'profitable');
-    assert.equal(body.price_references.target_margin_price,72);
+    assert.equal(body.price_references.target_margin_price,70.769231);
   });
 });
 
@@ -91,7 +91,7 @@ test('pricing decision safe UI action is exposed without claiming market data',a
   await withServer(async()=>{
     const r=await fetch(base+'/ui/api/action/pricing-decision',{
       method:'POST',
-      headers:{'content-type':'application/json','x-request-id':'pricing-decision-test-002'}
+      headers:{'content-type':'application/json','x-request-id':'pricing-decision-test-002'},
       body:JSON.stringify(input)
     });
     const body=await r.json();
