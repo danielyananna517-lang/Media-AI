@@ -1,0 +1,40 @@
+name: NOVESSA Core validation
+
+on:
+  push:
+    branches:
+      - novessa-core-0.4.9-vercel
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Validate JavaScript syntax
+        run: |
+          node --check novessa-core/build.mjs
+          cp novessa-core/server.mjs.template /tmp/server-template.mjs
+          node --check /tmp/server-template.mjs
+
+      - name: Validate package and Vercel configuration
+        run: |
+          node -e "JSON.parse(require('fs').readFileSync('novessa-core/package.json','utf8')); JSON.parse(require('fs').readFileSync('novessa-core/vercel.json','utf8')); console.log('Core config JSON OK')"
+
+      - name: Verify required Core routes
+        run: |
+          node -e "const s=require('fs').readFileSync('novessa-core/server.mjs.template','utf8'); for (const x of ['/ui/api/action/','/api/publishing/kdp/package','/api/publishing/youtube/campaign','/api/connectors/wildberries/profit']) if (!s.includes(x)) throw new Error('Missing route: '+x); console.log('Required routes present')"
+
+      - name: Verify language settings
+        run: |
+          node -e "const s=require('fs').readFileSync('novessa-core/build.mjs','utf8'); for (const x of ['languageSettingsHtml','novessa_ui_language','Հայերեն','Русский','English']) if (!s.includes(x)) throw new Error('Missing language feature: '+x); console.log('Language settings present')"

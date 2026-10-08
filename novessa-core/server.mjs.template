@@ -1,0 +1,368 @@
+import http from 'node:http';
+import crypto from 'node:crypto';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { unitEconomics } from './src/tools/unitEconomics.mjs';
+import { profitGuardian } from './src/tools/profitGuardian.mjs';
+import { scenarioAnalysis } from './src/tools/scenarios.mjs';
+import { salesFunnel } from './src/tools/salesFunnel.mjs';
+import { validateProductCard } from './src/tools/productCard.mjs';
+import { buildReport, buildReportCsv } from './src/reporting.mjs';
+import { recordUsage, usageSummary } from './src/usage.mjs';
+import { requestMedia } from './src/mediaClient.mjs';
+import { businessHealth } from './src/businessHealth.mjs';
+import { dataQuality } from './src/dataQuality.mjs';
+import { normalizeImport } from './src/import/normalize.mjs';
+import { customerWorkflow, customerWorkflowAsync } from './src/customerWorkflow.mjs';
+import { verifyCoreRequest } from './src/coreAuth.mjs';
+import { createReplayGuard } from './src/replayGuard.mjs';
+import { createRateLimiter } from './src/rateLimit.mjs';
+import { listConnectorDefinitions } from './src/connectors/registry.mjs';
+import { createConnectorAdapter } from './src/connectors/adapter.mjs';
+import { getPlanCatalog, getOnboardingSchema } from './src/productization.mjs';
+import { getDefaultPolicy } from './src/evolution/engine.mjs';
+import { createWildberriesConnector } from './src/connectors/wildberries.mjs';
+import { analyzeWildberriesOperational } from './src/connectors/wildberriesAnalysis.mjs';
+import { reconcileWildberriesRealization } from './src/connectors/wildberriesReconciliation.mjs';
+import { analyzeWildberriesProfit } from './src/connectors/wildberriesProfit.mjs';
+import { getEvolutionStatus, submitFeedback, evolve, rollbackEvolution } from './src/evolution/service.mjs';
+import { getRuleStatus, ingestRuleObservation, createRuleCandidate, evaluateAndMaybePromoteRule, rollbackRuleChange } from './src/rules/service.mjs';
+import { refreshRuleSource } from './src/rules/monitor.mjs';
+import { normalizeCommerceSnapshot } from './src/connectors/commerceSnapshot.mjs';
+import { canonicalModelSchema } from './src/commerce/canonical.mjs';
+import { reconcileCanonicalCommerce } from './src/commerce/reconciliation.mjs';
+import { optimizeSeo } from './src/content/seo.mjs';
+import { buildCardDesignBrief } from './src/content/cardDesign.mjs';
+import { buildInfographicBrief } from './src/content/infographic.mjs';
+import { listRulePacks, listAlgorithms } from './src/rules/registry.mjs';
+import { validateRulePack } from './src/rules/engine.mjs';
+import { searchWeb } from './src/discovery/service.mjs';
+import { discoverRuleSources, verifyDiscoveredRuleSource } from './src/discovery/rules.mjs';
+import { scanRuleIntelligence } from './src/discovery/intelligence.mjs';
+import { listRuleChangeCases } from './src/discovery/cases.mjs';
+import { createStructuredRuleCandidate, generateRuleTests, evaluateStructuredRuleCandidate } from './src/rules/structured-service.mjs';
+import { ingestCanonicalSnapshot, getCommerceStoreStatus } from './src/commerce/store.mjs';
+import { syncCommerceConnector } from './src/connectors/sync.mjs';
+import { analyzeCanonicalCommerce, analyzeCanonicalStore } from './src/commerce/intelligence.mjs';
+import { runUiAction, verifyUiAccess } from './src/ui/service.mjs';
+import { pricing } from './src/tools/pricing.mjs';
+import { publishingCapabilities, validateBook, buildKdpPackage, buildYoutubeCampaign, youtubeChannel, youtubeVideo, youtubeAnalytics, youtubeUploadSession } from './src/publishing/service.mjs';
+
+const PORT = Number(process.env.PORT || 8787);
+const MAX_BODY = 1024 * 1024;
+const MAX_RESPONSE = 2 * 1024 * 1024;
+const replayGuard = createReplayGuard();
+const rateLimiter = createRateLimiter({maxRequests: Number(process.env.NOVESSA_RATE_LIMIT_MAX || 120), windowMs: Number(process.env.NOVESSA_RATE_LIMIT_WINDOW_MS || 60000)});
+let activeRecommendationPolicy = getDefaultPolicy();
+try {
+  const persistedEvolution = await getEvolutionStatus();
+  if (persistedEvolution?.status === 'verified' && persistedEvolution.active_policy) activeRecommendationPolicy = persistedEvolution.active_policy;
+} catch { /* use safe default policy on unreadable runtime state; readiness remains independent */ }
+
+function send(res,status,body){
+  if (res.headersSent) return;
+  const payload = JSON.stringify(body);
+  if (Buffer.byteLength(payload, 'utf8') > MAX_RESPONSE) {
+    res.writeHead(500,{'content-type':'application/json; charset=utf-8','cache-control':'no-store','x-content-type-options':'nosniff'});
+    return res.end(JSON.stringify({status:'error',error:'response_too_large'}));
+  }
+  res.writeHead(status,{'content-type':'application/json; charset=utf-8','cache-control':'no-store','x-content-type-options':'nosniff'});
+  res.end(payload);
+}
+function sendApiResult(res, status, body, requestId){
+  return send(res,status,{request_id:requestId,...body});
+}
+function sendCsv(res,status,text,requestId){
+  if (res.headersSent) return;
+  const payload=String(text);
+  if (Buffer.byteLength(payload,'utf8') > MAX_RESPONSE) return send(res,500,{status:'error',error:'response_too_large',request_id:requestId});
+  res.writeHead(status,{'content-type':'text/csv; charset=utf-8','content-disposition':'attachment; filename=novessa-business-report.csv','cache-control':'no-store','x-content-type-options':'nosniff','x-request-id':requestId});
+  res.end(payload);
+}
+const APP_ROOT = path.dirname(fileURLToPath(import.meta.url));
+const STATIC_FILES = Object.freeze({
+  '/': { file: path.join(APP_ROOT, 'public', 'index.html'), type: 'text/html; charset=utf-8' },
+  '/assets/app.js': { file: path.join(APP_ROOT, 'public', 'app.js'), type: 'application/javascript; charset=utf-8' },
+  '/assets/styles.css': { file: path.join(APP_ROOT, 'public', 'styles.css'), type: 'text/css; charset=utf-8' }
+});
+
+async function serveStatic(res, fileSpec) {
+  const body = await fs.readFile(fileSpec.file);
+  res.writeHead(200, {
+    'content-type': fileSpec.type,
+    'cache-control': fileSpec.file.endsWith('index.html') ? 'no-store' : 'public, max-age=300',
+    'content-security-policy': "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+    'x-content-type-options': 'nosniff',
+    'x-frame-options': 'DENY',
+    'referrer-policy': 'no-referrer'
+  });
+  res.end(body);
+}
+
+async function readJson(req,{withRaw=false}={}){
+  const contentType=String(req.headers['content-type']||'').split(';',1)[0].trim().toLowerCase();
+  if (contentType !== 'application/json') throw Object.assign(new Error('content-type must be application/json'),{statusCode:415});
+  const chunks=[]; let size=0;
+  for await(const chunk of req){
+    size += chunk.length;
+    if(size>MAX_BODY) throw Object.assign(new Error('payload too large'),{statusCode:413});
+    chunks.push(chunk);
+  }
+  const raw=Buffer.concat(chunks).toString('utf8');
+  if(!raw.trim()) throw Object.assign(new Error('request body is required'),{statusCode:400});
+  let input;
+  try { input=JSON.parse(raw); } catch { throw Object.assign(new Error('invalid JSON'),{statusCode:400}); }
+  if(input===null || typeof input!=='object' || Array.isArray(input)) throw Object.assign(new Error('request body must be an object'),{statusCode:400});
+  return withRaw ? {input,rawBody:raw} : input;
+}
+const routes = {
+  '/api/data-quality': dataQuality,
+  '/api/customer/workflow': customerWorkflow,
+  '/api/import/normalize': normalizeImport,
+  '/api/analyze/unit-economics': unitEconomics,
+  '/api/analyze/profit-guardian': profitGuardian,
+  '/api/analyze/scenario': scenarioAnalysis,
+  '/api/analyze/business-health': businessHealth,
+  '/api/analyze/sales-funnel': salesFunnel,
+  '/api/analyze/pricing': pricing,
+  '/api/product-card/validate': (d)=>validateProductCard(d.input ?? d, d.profile ?? 'generic')
+};
+
+const server=http.createServer(async(req,res)=>{
+  try{
+    const u=new URL(req.url,'http://127.0.0.1');
+    if(req.method==='GET'&&u.pathname==='/health') return send(res,200,{status:'ok',service:'novessa-core',version:'0.4.9'});
+    if(req.method==='GET'&&u.pathname==='/api/connectors/catalog') return send(res,200,{status:'verified',contract_version:'1.0',connectors:listConnectorDefinitions()});
+    if(req.method==='GET'&&u.pathname==='/api/connectors/status') return send(res,200,{status:'verified',connectors:listConnectorDefinitions().map(c=>({...c,status:c.implementation_status==='implemented'?'partial':'not_verified'}))});
+    if(req.method==='GET'&&u.pathname==='/api/connectors/wildberries/status') {
+      const configured=Boolean(String(process.env.WB_API_TOKEN||'').trim());
+      return send(res,200,{status:'partial',connector:'wildberries',configured,runtime_verification:'not_verified_without_real_credentials',external_call_performed:false});
+    }
+    if(req.method==='GET'&&u.pathname==='/api/product/plans') return send(res,200,{status:'verified',productization:getPlanCatalog()});
+    if(req.method==='GET'&&u.pathname==='/api/customer/onboarding/schema') return send(res,200,{status:'verified',onboarding:getOnboardingSchema()});
+    if(req.method==='GET'&&u.pathname==='/api/rules/catalog') return send(res,200,{status:'verified',rules:listRulePacks()});
+    if(req.method==='GET'&&u.pathname==='/api/commerce/canonical-model') return send(res,200,{status:'verified',model:canonicalModelSchema()});
+    if(req.method==='GET'&&u.pathname==='/api/publishing/capabilities') return send(res,200,publishingCapabilities());
+    if(req.method==='GET'&&u.pathname==='/api/commerce/store/status') return send(res,200,await getCommerceStoreStatus({env:process.env}));
+    if(req.method==='GET'&&u.pathname==='/api/rules/intelligence/cases') return send(res,200,await listRuleChangeCases({env:process.env,state:u.searchParams.get('state')||'pending',ruleId:u.searchParams.get('rule_id')||null}));
+    if(req.method==='GET'&&u.pathname==='/api/rules/status') return send(res,200,await getRuleStatus());
+    if(req.method==='GET'&&u.pathname==='/api/rules/algorithms') return send(res,200,{status:'verified',algorithms:listAlgorithms(),deterministic_formula_mutation:false,accounting_truth_mutation:false});
+    if(req.method==='GET'&&u.pathname==='/api/evolution/status'){
+      const adminToken=String(process.env.NOVESSA_EVOLUTION_ADMIN_TOKEN||'');
+      const supplied=String(req.headers['x-admin-token']||'');
+      if(!adminToken) return send(res,503,{status:'not_ready',error:'evolution_admin_not_configured'});
+      const a=Buffer.from(supplied),b=Buffer.from(adminToken);
+      if(a.length!==b.length||!crypto.timingSafeEqual(a,b)) return send(res,401,{status:'error',error:'admin_auth_required'});
+      return send(res,200,await getEvolutionStatus());
+    }
+    if(req.method==='GET'&&u.pathname==='/ready'){
+      const production=String(process.env.NOVESSA_ENV||'').toLowerCase()==='production';
+      if(production && !String(process.env.NOVESSA_CORE_SHARED_SECRET||'')) return send(res,503,{status:'not_ready',service:'novessa-core',version:'0.4.9',error:'core_auth_not_configured'});
+      return send(res,200,{status:'ready',service:'novessa-core',version:'0.4.9'});
+    }
+    if(req.method==='GET'&&u.pathname==='/api/ui/status'){
+      const { uiSnapshot } = await import('./src/ui/service.mjs');
+      return send(res,200,await uiSnapshot({env:process.env}));
+    }
+    if(req.method==='GET'&&u.pathname==='/api/usage/summary'){
+      const adminToken=String(process.env.NOVESSA_USAGE_ADMIN_TOKEN||'');
+      const supplied=String(req.headers['x-admin-token']||'');
+      if(!adminToken) return send(res,503,{status:'not_ready',error:'usage_summary_admin_not_configured'});
+      const a=Buffer.from(supplied),b=Buffer.from(adminToken);
+      if(a.length!==b.length||!crypto.timingSafeEqual(a,b)) return send(res,401,{status:'error',error:'admin_auth_required'});
+      return send(res,200,await usageSummary());
+    }
+
+    if(req.method==='POST' && u.pathname.startsWith('/ui/api/action/')){
+      const production=String(process.env.NOVESSA_ENV||'').toLowerCase()==='production';
+      const token=String(req.headers['x-novessa-ui-token']||'');
+      const actionName=decodeURIComponent(u.pathname.slice('/ui/api/action/'.length));
+      const safeActions=['pricing','unit-economics','profit-guardian','scenario','sales-funnel','business-health','product-card','seo','card-design','infographic','book-validate','kdp-package','youtube-campaign','publishing-capabilities','product-analysis','reverse-profit','portfolio-analysis','pricing-decision'];
+      const access=verifyUiAccess({headers:req.headers,env:process.env});
+      if(access.status!=='verified' && !(production && !token && safeActions.includes(actionName))){
+        return send(res,access.http_status||401,{status:access.status,error:access.error||'ui_auth_failed'});
+      }
+      let uiInput;
+      try { uiInput=await readJson(req); } catch(error) { return send(res,error.statusCode||400,{status:'error',error:String(error.message||error)}); }
+      const out=await runUiAction(actionName,uiInput,{env:process.env,activeRecommendationPolicy});
+      const httpStatus=out.status==='invalid_data'||out.status==='input_incomplete'?400:out.status==='provider_unavailable'?503:out.status==='error'?502:200;
+      return send(res,httpStatus,out);
+    }
+
+    if(req.method==='GET'&&STATIC_FILES[u.pathname]) return serveStatic(res,STATIC_FILES[u.pathname]);
+    if(req.method!=='POST') return send(res,405,{status:'error',error:'method_not_allowed'});
+    const {input,rawBody}=await readJson(req,{withRaw:true});
+    const requestId=String(req.headers['x-request-id']||'');
+    if(!/^[A-Za-z0-9._:-]{8,128}$/.test(requestId)) return send(res,400,{status:'invalid_data',error:'x-request-id is invalid'});
+    const auth=verifyCoreRequest({headers:req.headers,rawBody,env:process.env});
+    if(auth.status!=='verified') return send(res,auth.http_status||401,{status:'error',error:auth.error||'core_auth_failed'});
+    if(!replayGuard.accept(requestId)) return send(res,409,{status:'error',error:'AUTH_REPLAY_DETECTED'});
+    const rate=rateLimiter.allow(req.socket.remoteAddress||'unknown');
+    if(!rate.allowed){
+      res.setHeader('retry-after',String(Math.ceil(rate.retryAfterMs/1000)));
+      return send(res,429,{status:'error',error:'RATE_LIMITED'});
+    }
+
+    if(u.pathname.startsWith('/api/connectors/shopify/')){
+      const adapter=createConnectorAdapter({descriptor:{name:'shopify',contract_version:'1.0',auth_type:'shop_access_token'}});
+      let out;
+      if(u.pathname.endsWith('/ping')) out=await adapter.pull({operation:'ping'});
+      else if(u.pathname.endsWith('/products')) out=await adapter.pull({operation:'products',input});
+      else if(u.pathname.endsWith('/orders')) out=await adapter.pull({operation:'orders',input});
+      else return send(res,404,{status:'error',error:'shopify_route_not_found'});
+      return sendApiResult(res,out.status==='provider_unavailable'?503:out.status==='invalid_data'||out.status==='input_incomplete'?400:200,out,requestId);
+    }
+    if(u.pathname.startsWith('/api/connectors/etsy/')){
+      const adapter=createConnectorAdapter({descriptor:{name:'etsy',contract_version:'1.0',auth_type:'oauth2'}});
+      let out;
+      if(u.pathname.endsWith('/ping')) out=await adapter.pull({operation:'ping'});
+      else if(u.pathname.endsWith('/listings')) out=await adapter.pull({operation:'listings',input});
+      else if(u.pathname.endsWith('/inventory')) out=await adapter.pull({operation:'inventory',input});
+      else if(u.pathname.endsWith('/receipts')) out=await adapter.pull({operation:'receipts',input});
+      else return send(res,404,{status:'error',error:'etsy_route_not_found'});
+      return sendApiResult(res,out.status==='provider_unavailable'?503:out.status==='invalid_data'||out.status==='input_incomplete'?400:200,out,requestId);
+    }
+    if(u.pathname.startsWith('/api/connectors/amazon/')){
+      const adapter=createConnectorAdapter({descriptor:{name:'amazon',contract_version:'1.0',auth_type:'lwa_plus_sigv4'}});
+      let out;
+      if(u.pathname.endsWith('/orders')) out=await adapter.pull({operation:'orders',input});
+      else if(u.pathname.endsWith('/catalog')) out=await adapter.pull({operation:'catalog',input});
+      else if(u.pathname.endsWith('/finances')) out=await adapter.pull({operation:'finances',input});
+      else return send(res,404,{status:'error',error:'amazon_route_not_found'});
+      return sendApiResult(res,out.status==='provider_unavailable'?503:out.status==='invalid_data'||out.status==='input_incomplete'?400:200,out,requestId);
+    }
+    if(u.pathname.startsWith('/api/connectors/ozon/')){
+      const adapter=createConnectorAdapter({descriptor:{name:'ozon',contract_version:'1.0',auth_type:'client_id_api_key'}});
+      let out;
+      if(u.pathname.endsWith('/stocks')) out=await adapter.pull({operation:'stocks',input});
+      else if(u.pathname.endsWith('/analytics')) out=await adapter.pull({operation:'analytics',input});
+      else if(u.pathname.endsWith('/postings')) out=await adapter.pull({operation:'postings',input});
+      else return send(res,404,{status:'error',error:'ozon_route_not_found'});
+      return sendApiResult(res,out.status==='provider_unavailable'?503:out.status==='invalid_data'||out.status==='input_incomplete'?400:200,out,requestId);
+    }
+    if(u.pathname.startsWith('/api/connectors/wildberries/')){
+      const wb=createWildberriesConnector();
+      let out;
+      if(u.pathname==='/api/connectors/wildberries/ping') out=await wb.ping();
+      else if(u.pathname==='/api/connectors/wildberries/seller-info') out=await wb.sellerInfo();
+      else if(u.pathname==='/api/connectors/wildberries/cards') out=await wb.cards({limit:input.limit,textSearch:input.text_search,withPhoto:input.with_photo});
+      else if(u.pathname==='/api/connectors/wildberries/cards/all') out=await wb.cardsAll({limit:input.limit,maxPages:input.max_pages,textSearch:input.text_search,withPhoto:input.with_photo});
+      else if(u.pathname==='/api/connectors/wildberries/orders') out=await wb.orders({dateFrom:input.date_from});
+      else if(u.pathname==='/api/connectors/wildberries/orders/all') out=await wb.ordersAll({dateFrom:input.date_from,maxPages:input.max_pages});
+      else if(u.pathname==='/api/connectors/wildberries/sales') out=await wb.sales({dateFrom:input.date_from});
+      else if(u.pathname==='/api/connectors/wildberries/sales/all') out=await wb.salesAll({dateFrom:input.date_from,maxPages:input.max_pages});
+      else if(u.pathname==='/api/connectors/wildberries/funnel') out=await wb.salesFunnel({selectedPeriod:input.selected_period,pastPeriod:input.past_period,nmIds:input.nm_ids,brandNames:input.brand_names,subjectIds:input.subject_ids,tagIds:input.tag_ids,limit:input.limit,offset:input.offset});
+      else if(u.pathname==='/api/connectors/wildberries/realization-details') out=await wb.realizationDetails({dateFrom:input.date_from,dateTo:input.date_to});
+      else if(u.pathname==='/api/connectors/wildberries/reconciliation'){
+        const realization=await wb.realizationDetails({dateFrom:input.date_from,dateTo:input.date_to});
+        out=realization.status==="verified"?reconcileWildberriesRealization({records:realization.data.records,expected:input.expected,tolerance:input.tolerance}):realization;
+      }
+      else if(u.pathname==='/api/connectors/wildberries/analyze') out=await analyzeWildberriesOperational({dateFrom:input.date_from,selectedPeriod:input.selected_period});
+      else if(u.pathname==='/api/connectors/wildberries/profit'){
+        const realization=await wb.realizationDetails({dateFrom:input.date_from,dateTo:input.date_to});
+        out=realization.status==='verified'?analyzeWildberriesProfit({records:realization.data.records,currency:input.currency,costInputs:input.cost_inputs}):realization;
+      }
+      else if(u.pathname==='/api/connectors/wildberries/sync') out=await wb.sync({dateFrom:input.date_from,selectedPeriod:input.selected_period,include:input.include});
+      else if(u.pathname==='/api/connectors/wildberries/status') out=await wb.status();
+      else return send(res,404,{status:'error',error:'wildberries_route_not_found'});
+      await recordUsage({operation:u.pathname,status:out.status,request_id:requestId});
+      const httpStatus=out.status==='provider_unavailable'?503:out.status==='invalid_data'||out.status==='input_incomplete'?400:out.status==='error'?502:200;
+      return sendApiResult(res,httpStatus,out,requestId);
+    }
+    if(u.pathname==='/api/analyze/business-health'){
+      const result=businessHealth(input,{recommendationPolicy:activeRecommendationPolicy});
+      await recordUsage({operation:u.pathname,status:result.status,request_id:requestId});
+      return sendApiResult(res,200,result,requestId);
+    }
+    if(u.pathname==='/api/customer/workflow'){
+      const workflow=await customerWorkflowAsync(input);
+      await recordUsage({operation:u.pathname,status:workflow.status,request_id:requestId});
+      const httpStatus=workflow.status==='provider_unavailable'?503:workflow.status==='invalid_data'?400:200;
+      return sendApiResult(res,httpStatus,workflow,requestId);
+    }
+    if(u.pathname==='/api/report'){
+      const analysisPath=String(input.analysis_path||'');
+      const fn=routes[analysisPath];
+      if(!fn) return send(res,400,{status:'invalid_data',error:'analysis_path is required and must reference an analysis route'});
+      const analysis=fn(input.data??input);
+      await recordUsage({operation:u.pathname,status:analysis.status,request_id:requestId});
+      return sendApiResult(res,200,buildReport({analysis}),requestId);
+    }
+    if(u.pathname==='/api/report/export'){
+      const analysisPath=String(input.analysis_path||'');
+      const fn=routes[analysisPath];
+      if(!fn) return send(res,400,{status:'invalid_data',error:'analysis_path is required and must reference an analysis route'});
+      const format=String(input.format||'csv').trim().toLowerCase();
+      if(format!=='csv'&&format!=='json') return send(res,400,{status:'invalid_data',error:'unsupported_report_export_format'});
+      const analysis=fn(input.data??input);
+      const report=buildReport({analysis});
+      await recordUsage({operation:u.pathname,status:analysis.status,request_id:requestId});
+      if(format==='json') return sendApiResult(res,200,{...report,export_format:'json'},requestId);
+      return sendCsv(res,200,buildReportCsv(report),requestId);
+    }
+    if(u.pathname==='/api/content/seo/optimize') return sendApiResult(res,200,optimizeSeo(input),requestId);
+    if(u.pathname==='/api/content/seo'){
+      const out=optimizeSeo(input);
+      return sendApiResult(res,out.status==='invalid_data'?400:200,out,requestId);
+    }
+    if(u.pathname==='/api/content/card-design/brief') return sendApiResult(res,200,buildCardDesignBrief(input),requestId);
+    if(u.pathname==='/api/content/infographic/brief') return sendApiResult(res,200,buildInfographicBrief(input),requestId);
+    if(u.pathname==='/api/discovery/search'){ const out=await searchWeb(input); const httpStatus=out.status==='provider_unavailable'?503:out.status==='invalid_data'||out.status==='input_incomplete'?400:out.status==='error'?502:200; return sendApiResult(res,httpStatus,out,requestId); }
+    if(u.pathname==='/api/rules/refresh'){ const out=await refreshRuleSource({id:input.id,env:process.env}); const httpStatus=out.status==='provider_unavailable'?503:out.status==='invalid_data'||out.status==='input_incomplete'?400:out.status==='error'?502:200; return sendApiResult(res,httpStatus,out,requestId); }
+    if(u.pathname==='/api/rules/discover-source'){ const out=await discoverRuleSources({id:input.id,query:input.query,count:input.count,provider:input.provider},{env:process.env}); const httpStatus=out.status==='provider_unavailable'?503:out.status==='invalid_data'||out.status==='input_incomplete'?400:out.status==='error'?502:200; return sendApiResult(res,httpStatus,out,requestId); }
+    if(u.pathname==='/api/rules/verify-source'){ const out=await verifyDiscoveredRuleSource({id:input.id,url:input.url,discovered_by:input.discovered_by},{env:process.env}); const httpStatus=out.status==='provider_unavailable'?503:out.status==='invalid_data'||out.status==='input_incomplete'?400:out.status==='error'?502:200; return sendApiResult(res,httpStatus,out,requestId); }
+    if(u.pathname==='/api/rules/intelligence/scan'){ const out=await scanRuleIntelligence({id:input.id,query:input.query,count:input.count,fetchSources:input.fetch_sources!==false},{env:process.env}); const httpStatus=out.status==='provider_unavailable'?503:out.status==='invalid_data'||out.status==='input_incomplete'?400:out.status==='error'?502:200; return sendApiResult(res,httpStatus,out,requestId); }
+    if(u.pathname==='/api/rules/validate') return sendApiResult(res,200,validateRulePack(input.rule_pack||input),requestId);
+    if(u.pathname==='/api/rules/observe'){ const out=await ingestRuleObservation(input,{env:process.env}); return sendApiResult(res,out.status==='invalid_data'?400:out.status==='input_incomplete'?400:200,out,requestId); }
+    if(u.pathname==='/api/rules/candidate'){ const out=await createRuleCandidate({current_rule_id:input.current_rule_id,proposed:input.proposed,evidence_observation_ids:input.evidence_observation_ids}); return sendApiResult(res,out.status==='invalid_data'?400:200,out,requestId); }
+    if(u.pathname==='/api/rules/candidate/structured'){ const out=await createStructuredRuleCandidate({current_rule_id:input.current_rule_id,proposed:input.proposed,evidence_observation_ids:input.evidence_observation_ids,change_case_id:input.change_case_id,affected_algorithms:input.affected_algorithms},{env:process.env}); return sendApiResult(res,out.status==='invalid_data'||out.status==='input_incomplete'?400:200,out,requestId); }
+    if(u.pathname==='/api/rules/tests/generate'){ const out=generateRuleTests({current:input.current,candidate:input.candidate}); return sendApiResult(res,out.status==='invalid_data'||out.status==='input_incomplete'?400:200,out,requestId); }
+    if(u.pathname==='/api/rules/evaluate-structured'){ const out=evaluateStructuredRuleCandidate({current:input.current,candidate:input.candidate,tests:input.tests}); return sendApiResult(res,out.status==='invalid_data'||out.status==='input_incomplete'?400:200,out,requestId); }
+    if(u.pathname==='/api/rules/evaluate'){ const out=await evaluateAndMaybePromoteRule({current:input.current,candidate:input.candidate,impacted_tests:Array.isArray(input.impacted_tests)?input.impacted_tests:[],env:process.env}); return sendApiResult(res,out.status==='invalid_data'?400:200,out,requestId); }
+    if(u.pathname==='/api/rules/rollback'){ const out=await rollbackRuleChange(input.rule_id,{env:process.env,reason:String(input.reason||'rule_rollback')}); return sendApiResult(res,out.status==='partial'?409:out.status==='invalid_data'?400:200,out,requestId); }
+    if(u.pathname==='/api/import/commerce-snapshot'){ const out=normalizeCommerceSnapshot({connector:input.connector,native:input.native,operation:input.operation}); return sendApiResult(res,out.status==='invalid_data'?400:200,out,requestId); }
+    if(u.pathname==='/api/commerce/reconcile'){ const out=reconcileCanonicalCommerce({entities:input.entities,expectedTotals:input.expected_totals,tolerance:input.tolerance}); return sendApiResult(res,out.status==='invalid_data'?400:200,out,requestId); }
+    if(u.pathname==='/api/commerce/intelligence'){ const out=input.use_store===true?await analyzeCanonicalStore({env:process.env,expectedTotals:input.expected_totals,tolerance:input.tolerance,includeRecords:input.include_records===true}):analyzeCanonicalCommerce({entities:input.entities,expectedTotals:input.expected_totals,tolerance:input.tolerance,includeRecords:input.include_records===true}); const httpStatus=out.status==='invalid_data'?400:out.status==='input_incomplete'?400:200; return sendApiResult(res,httpStatus,out,requestId); }
+    if(u.pathname==='/api/commerce/ingest'){ const out=await ingestCanonicalSnapshot({snapshot:input.snapshot,runId:input.run_id,env:process.env}); return sendApiResult(res,out.status==='invalid_data'||out.status==='input_incomplete'?400:200,out,requestId); }
+    if(u.pathname==='/api/commerce/sync'){ const out=await syncCommerceConnector({connector:input.connector,input,connectorFactoryOptions:{env:process.env},persistCanonical:input.persist_canonical===true}); const httpStatus=out.status==='provider_unavailable'?503:out.status==='invalid_data'||out.status==='input_incomplete'?400:out.status==='error'?502:200; return sendApiResult(res,httpStatus,out,requestId); }
+    if(u.pathname==='/api/publishing/book/validate'){ const out=validateBook(input); return sendApiResult(res,out.status==='invalid_data'||out.status==='input_incomplete'?400:200,out,requestId); }
+    if(u.pathname==='/api/publishing/kdp/package'){ const out=buildKdpPackage(input); return sendApiResult(res,out.status==='invalid_data'||out.status==='input_incomplete'?400:200,out,requestId); }
+    if(u.pathname==='/api/publishing/youtube/campaign'){ const out=buildYoutubeCampaign(input); return sendApiResult(res,out.status==='invalid_data'||out.status==='input_incomplete'?400:200,out,requestId); }
+    if(u.pathname==='/api/publishing/youtube/channel'){ const out=await youtubeChannel({env:process.env}); return sendApiResult(res,out.status==='provider_unavailable'?503:out.status==='invalid_data'||out.status==='input_incomplete'?400:out.status==='error'?502:200,out,requestId); }
+    if(u.pathname==='/api/publishing/youtube/video'){ const out=await youtubeVideo({video_id:input.video_id,env:process.env}); return sendApiResult(res,out.status==='provider_unavailable'?503:out.status==='invalid_data'||out.status==='input_incomplete'?400:out.status==='error'?502:200,out,requestId); }
+    if(u.pathname==='/api/publishing/youtube/analytics'){ const out=await youtubeAnalytics({start_date:input.start_date,end_date:input.end_date,metrics:input.metrics,dimensions:input.dimensions,env:process.env}); return sendApiResult(res,out.status==='provider_unavailable'?503:out.status==='invalid_data'||out.status==='input_incomplete'?400:out.status==='error'?502:200,out,requestId); }
+    if(u.pathname==='/api/publishing/youtube/upload-session'){ const out=await youtubeUploadSession({metadata:input.metadata,content_type:input.content_type,content_length:input.content_length,env:process.env}); return sendApiResult(res,out.status==='provider_unavailable'?503:out.status==='invalid_data'||out.status==='input_incomplete'?400:out.status==='error'?502:200,out,requestId); }
+    if(u.pathname==='/api/evolution/feedback'){
+      const result=await submitFeedback({...input,request_id:requestId});
+      return sendApiResult(res,result.status==='invalid_data'?400:result.status==='input_incomplete'?400:200,result,requestId);
+    }
+    if(u.pathname==='/api/evolution/evolve'){
+      const result=await evolve({evaluation_records:Array.isArray(input.evaluation_records)?input.evaluation_records:[]});
+      if(result.promotion?.active_policy) activeRecommendationPolicy=result.promotion.active_policy;
+      else if(result.promotion?.status==='verified' && result.active_policy) activeRecommendationPolicy=result.active_policy;
+      return sendApiResult(res,result.status==='invalid_data'?400:result.status==='error'?500:200,result,requestId);
+    }
+    if(u.pathname==='/api/evolution/rollback'){
+      const result=await rollbackEvolution({reason:String(input.reason||'manual_rollback')});
+      if(result.active_policy) activeRecommendationPolicy=result.active_policy;
+      return sendApiResult(res,result.status==='error'?500:result.status==='partial'?409:200,result,requestId);
+    }
+    if(u.pathname==='/api/media/request'){
+      const result=await requestMedia({operation:input.operation,input:input.input,requestId});
+      await recordUsage({operation:u.pathname,status:result.status,request_id:requestId});
+      return sendApiResult(res,result.status==='provider_unavailable'?503:result.status==='error'?502:200,result,requestId);
+    }
+    const fn=routes[u.pathname];
+    if(!fn) return send(res,404,{status:'error',error:'not_found'});
+    const result=fn(input);
+    await recordUsage({operation:u.pathname,status:result.status,request_id:requestId});
+    return sendApiResult(res,200,result,requestId);
+  }catch(error){
+    const code=error.statusCode||500;
+    const production=String(process.env.NOVESSA_ENV||'').toLowerCase()==='production';
+    if (production && code >= 500) return send(res,500,{status:'error',error:'internal_server_error'});
+    return send(res,code,{status:'error',error:String(error.message||error)});
+  }
+});
+server.listen(PORT,()=>console.log(`Novessa Core 0.4.9 listening on ${PORT}`));

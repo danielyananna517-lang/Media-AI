@@ -1,0 +1,85 @@
+name: Novessa Core verification
+
+on:
+  push:
+    branches:
+      - novessa-core-0.4.9-vercel
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'novessa-core/**'
+      - '.github/workflows/novessa-core-verify.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Build Core
+        working-directory: novessa-core
+        run: |
+          node build.mjs
+          node production.mjs
+      - name: Syntax check generated runtime
+        working-directory: novessa-core
+        run: |
+          node --check server.mjs
+          node --check public/app.js
+          test -s public/index.html
+          test -s public/styles.css
+      - name: Generated server startup diagnostic
+        working-directory: novessa-core
+        env:
+          NOVESSA_ENV: development
+        run: |
+          rm -f /tmp/novessa-core-start.log /tmp/novessa-core-health.json
+          node server.mjs > /tmp/novessa-core-start.log 2>&1 &
+          PID=$!
+          trap 'kill $PID 2>/dev/null || true' EXIT
+          for i in $(seq 1 15); do
+            if curl -fsS http://127.0.0.1:8787/health > /tmp/novessa-core-health.json; then
+              echo "Generated server started successfully."
+              cat /tmp/novessa-core-health.json
+              exit 0
+            fi
+            if ! kill -0 $PID 2>/dev/null; then
+              echo "Generated server exited before health check."
+              cat /tmp/novessa-core-start.log
+              exit 1
+            fi
+            sleep 1
+          done
+          echo "Generated server did not become healthy."
+          cat /tmp/novessa-core-start.log
+          exit 1
+      - name: Run Core tests
+        working-directory: novessa-core
+        run: npm test -- --test-timeout=15000
+      - name: Production UI action smoke test
+        working-directory: novessa-core
+        env:
+          NOVESSA_ENV: production
+          NOVESSA_UI_TOKEN: test-ui-token
+        run: |
+          node server.mjs > /tmp/novessa-core.log 2>&1 &
+          PID=$!
+          trap 'kill $PID 2>/dev/null || true' EXIT
+          for i in $(seq 1 20); do
+            if curl -fsS http://127.0.0.1:8787/health > /tmp/health.json; then break; fi
+            sleep 1
+          done
+          grep -q '"status":"ok"' /tmp/health.json
+          curl -fsS -X POST -H 'content-type: application/json' --data '{"price":100,"unit_cost":40,"sales":10,"commission_percent":10,"logistics_per_unit":5,"storage_per_unit":2,"tax_percent":0,"ad_spend":30}' http://127.0.0.1:8787/ui/api/action/unit-economics > /tmp/unit-economics.json
+          grep -q '"status"' /tmp/unit-economics.json
+          grep -q '"verification_status"' /tmp/unit-economics.json

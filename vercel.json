@@ -1,10 +1,19 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "functions": {
-    "api/index.mjs": { "maxDuration": 120 }
+    "api/index.mjs": {
+      "maxDuration": 120
+    }
   },
   "rewrites": [
-    { "source": "/api/:path*", "destination": "/api/index.mjs" },
-    { "source": "/((?!api/).*)", "destination": "/api/index.mjs" }
-  ]
+    {
+      "source": "/api/:path*",
+      "destination": "/api/index.mjs"
+    },
+    {
+      "source": "/((?!api/).*)",
+      "destination": "/api/index.mjs"
+    }
+  ],
+  "ignoreCommand": "if [ \"$VERCEL_GIT_COMMIT_REF\" = \"novessa-core-0.4.9-vercel\" ]; then exit 0; else exit 1; fi"
 }
