@@ -1121,6 +1121,7 @@ const decisionCenterScript = `
     }catch{out.textContent=m.failed;}
   };
   byId('dcPriceCalculate')?.addEventListener('click',calculatePriceDiscount);
+  byId('dcReverseCalculate')?.addEventListener('click',reverseCalculate);
   const clickTab=name=>document.querySelector('.tab[data-tab="'+name+'"]')?.click();
   byId('dcCalculate')?.addEventListener('click',calculate);
   byId('dcFinance')?.addEventListener('click',()=>clickTab('finance'));
