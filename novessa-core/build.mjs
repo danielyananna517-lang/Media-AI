@@ -843,6 +843,16 @@ writeFileSync(stylePath, style);
 
 
 // === NOVESSA DECISION CENTER v1 ===
+const portfolioAnalyzerHtml = String.raw`
+<section class="novessa-portfolio-analyzer" id="novessa-portfolio-analyzer" data-novessa-portfolio-analyzer style="margin-top:24px">
+  <div class="dc-hero" style="margin-bottom:16px"><div><div class="dc-eyebrow">NOVESSA • PORTFOLIO PROFIT MAP</div><h2>Ապրանքների շահույթի քարտեզ</h2><p class="dc-subtitle">Ներմուծիր քո իրական ապրանքների CSV-ը։ NOVESSA-ն կհաշվի միայն տրված թվերը, կդասավորի ապրանքները և բաց տվյալները չի լրացնի իր կողմից։</p></div><div class="dc-truth" id="paStatus">Տվյալ դեռ չկա</div></div>
+  <div class="dc-grid">
+    <article class="dc-panel dc-panel-primary"><div class="dc-section-tag">1 • ՏՎՅԱԼՆԵՐ</div><h3>CSV ներմուծում</h3><p>Առաջին տողը թող լինի սյունակների վերնագրերը։ Աջակցվում են հայերեն, ռուսերեն և անգլերեն հիմնական անվանումները։</p><div class="dc-actions" style="flex-wrap:wrap"><button id="paTemplate" type="button">Ներբեռնել CSV ձևանմուշ</button><label class="secondary" style="display:inline-flex;align-items:center;gap:8px;cursor:pointer;padding:10px 14px;border-radius:10px">Ընտրել CSV<input id="paFile" type="file" accept=".csv,text/csv" hidden></label></div><div id="paFileName" class="dc-price-help"></div><div id="paPreview" class="dc-price-result"><div class="dc-result-empty">Ֆայլ ընտրելուց հետո այստեղ կերևա տողերի քանակը։</div></div></article>
+    <article class="dc-panel"><div class="dc-section-tag">2 • ԱՐԴՅՈՒՆՔ</div><h3>Շահույթի ամփոփում</h3><div id="paSummary" class="dc-price-result"><div class="dc-result-empty">Ամփոփում չկա։</div></div><div class="dc-actions" style="margin-top:12px"><button id="paAnalyze" type="button" disabled>Վերլուծել ապրանքները</button></div></article>
+  </div>
+  <article class="dc-panel" style="margin-top:16px"><div class="dc-section-tag">3 • ԴԱՍԱԿԱՐԳՈՒՄ</div><div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap"><h3 style="margin:0">Ապրանքների վարկանիշ</h3><span id="paRankMeta" class="dc-price-help">Դեռ չկա</span></div><div id="paRanking" style="overflow:auto;margin-top:12px"><div class="dc-result-empty">Վարկանիշը կհայտնվի հաշվարկից հետո։</div></div></article>
+  <div class="dc-note" style="margin-top:16px"><span>✓</span><p><strong>NOVESSA rule:</strong> բաց տվյալը մնում է PARTIAL / NOT VERIFIED։ Ոչ մի շահույթ չի հորինվում։</p></div>
+</section>`;
 const decisionCenterHtml = `
 <section class="novessa-decision-center" data-novessa-decision-center>
   <div class="dc-hero">
@@ -933,74 +943,38 @@ const decisionCenterHtml = `
     </div>
   </div>
 </section>`;
-
-<section class="novessa-portfolio-analyzer" id="novessa-portfolio-analyzer" data-novessa-portfolio-analyzer style="margin-top:24px">
-  <div class="dc-hero" style="margin-bottom:16px">
-    <div>
-      <div class="dc-eyebrow">NOVESSA • PORTFOLIO PROFIT MAP</div>
-      <h2>Ապրանքների շահույթի քարտեզ</h2>
-      <p class="dc-subtitle">Ներմուծիր քո իրական ապրանքների CSV-ը։ NOVESSA-ն կդասավորի դրանք ըստ հաշվարկված շահույթի, ցույց կտա թերի տվյալները և չի լրացնի բաց թվերը իր կողմից։</p>
-    </div>
-    <div class="dc-truth" id="paStatus">Տվյալ դեռ չկա</div>
-  </div>
-
-  <div class="dc-grid">
-    <article class="dc-panel dc-panel-primary">
-      <div class="dc-panel-head">
-        <div>
-          <div class="dc-section-tag">1 • ՏՎՅԱԼՆԵՐ</div>
-          <h3>CSV / Excel տվյալների ներմուծում</h3>
-          <p>CSV-ի առաջին տողը պետք է լինի սյունակների վերնագրերը։ Աջակցվում են հայերեն, ռուսերեն և անգլերեն հիմնական անվանումները։</p>
-        </div>
-      </div>
-      <div class="dc-actions" style="flex-wrap:wrap">
-        <button id="paTemplate" type="button">Ներբեռնել CSV ձևանմուշ</button>
-        <label class="secondary" style="display:inline-flex;align-items:center;gap:8px;cursor:pointer;padding:10px 14px;border-radius:10px">
-          Ընտրել CSV
-          <input id="paFile" type="file" accept=".csv,text/csv" hidden>
-        </label>
-      </div>
-      <div id="paFileName" class="dc-price-help" aria-live="polite"></div>
-      <div id="paPreview" class="dc-price-result" aria-live="polite">
-        <div class="dc-result-empty">Ֆայլ ընտրելուց հետո այստեղ կերևա ներմուծված տողերի քանակը։</div>
-      </div>
-    </article>
-
-    <article class="dc-panel">
-      <div class="dc-section-tag">2 • ԱՐԴՅՈՒՆՔ</div>
-      <h3>Շահույթի ամփոփում</h3>
-      <div id="paSummary" class="dc-price-result">
-        <div class="dc-result-empty">Ամփոփում չկա։</div>
-      </div>
-      <div class="dc-actions" style="margin-top:12px">
-        <button id="paAnalyze" type="button" disabled>Վերլուծել ապրանքները</button>
-      </div>
-      <p class="dc-price-help">Հաշվարկը կատարվում է NOVESSA Core deterministic Unit Economics-ով՝ միայն ներմուծված թվերից։</p>
-    </article>
-  </div>
-
-  <article class="dc-panel" style="margin-top:16px">
-    <div class="dc-section-tag">3 • ԴԱՍԱԿԱՐԳՈՒՄ</div>
-    <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap">
-      <h3 style="margin:0">Ապրանքների վարկանիշ</h3>
-      <span id="paRankMeta" class="dc-price-help">Դեռ չկա</span>
-    </div>
-    <div id="paRanking" style="overflow:auto;margin-top:12px">
-      <div class="dc-result-empty">Վարկանիշը կհայտնվի հաշվարկից հետո։</div>
-    </div>
-  </article>
-
-  <div class="dc-note" style="margin-top:16px">
-    <span>✓</span>
-    <p><strong>NOVESSA rule:</strong> բաց կամ անբավարար տվյալը մնում է PARTIAL / NOT VERIFIED։ Ոչ մի ապրանքի շահույթ չի հորինվում։</p>
-  </div>
-</section>
 if(!index.includes('data-novessa-decision-center')) {
   index = index.replace(/(<main\b[^>]*>)/, match => match + decisionCenterHtml);
 }
 
+
+if(!index.includes('data-novessa-portfolio-analyzer')) {
+  index = index.replace(/(<main\\b[^>]*>)/, match => match + portfolioAnalyzerHtml);
+}
+const portfolioAnalyzerScript = String.raw`
+<script data-novessa-portfolio-script>
+(function(){
+  const byId=id=>document.getElementById(id),root=document.querySelector('[data-novessa-portfolio-analyzer]');if(!root)return;
+  let mappedRows=[];
+  const norm=v=>String(v??'').toLowerCase().trim().replace(/[\\u00a0_\\-\\/]+/g,' ').replace(/\\s+/g,' ');
+  const aliases={name:['product','product name','name','товар','название','наименование','ապրանք','ապրանքի անվանում','անվանում'],sku:['sku','артикул','արտիկул','կոդ','product code'],price:['price','цена','գին'],unit_cost:['unit cost','cost','себестоимость','себестоимость ед','ինքնարժեք'],sales:['sales','units sold','quantity sold','продажи','количество продаж','վաճառք','վաճառքի քանակ'],commission_percent:['commission','commission percent','комиссия','комиссия %','միջնորդավճար','միջնորդավճար %'],logistics_per_unit:['logistics','logistics per unit','логистика','логистика ед','լոգիստիկա','լոգիստիկա մեկ միավոր'],storage_per_unit:['storage','storage per unit','хранение','хранение ед','պահեստ','պահեստավորում','պահեստավորում մեկ միավոր'],tax_percent:['tax','tax percent','налог','налог %','հարկ','հարկ %'],ad_spend:['ad spend','ads','advertising','реклама','расход на рекламу','գովազդ','գովազդի ծախս']};
+  const aliasMap={};Object.entries(aliases).forEach(([k,v])=>v.forEach(a=>aliasMap[norm(a)]=k));
+  const num=v=>{const s=String(v??'').trim().replace(/\\s/g,'').replace(',','.');if(!s)return NaN;const n=Number(s);return Number.isFinite(n)?n:NaN;};
+  const parseLine=(line,d)=>{const out=[];let cell='',q=false;for(let i=0;i<line.length;i++){const ch=line[i];if(ch==='"'){if(q&&line[i+1]==='"'){cell+='"';i++;continue;}q=!q;continue;}if(ch===d&&!q){out.push(cell.trim());cell='';}else cell+=ch;}out.push(cell.trim());return out;};
+  const parseCsv=raw=>{const lines=String(raw||'').replace(/^\\uFEFF/,'').split(/\\r?\\n/).filter(x=>x.trim());if(!lines.length)return{headers:[],rows:[]};const first=lines[0],d=(first.match(/,/g)||[]).length>=(first.match(/;/g)||[]).length?',':';';return{headers:parseLine(first,d),rows:lines.slice(1).map(x=>parseLine(x,d))};};
+  const mapRows=p=>{const cols=p.headers.map(h=>aliasMap[norm(h)]||null);return p.rows.map(row=>{const x={};cols.forEach((f,i)=>{if(f)x[f]=row[i]??'';});return{name:String(x.name||'').trim(),sku:String(x.sku||'').trim(),price:num(x.price),cost:num(x.unit_cost),sales:num(x.sales),commission_percent:num(x.commission_percent),logistics_per_unit:num(x.logistics_per_unit),storage_per_unit:num(x.storage_per_unit),tax_percent:num(x.tax_percent),ad_spend:num(x.ad_spend)};});};
+  const esc=v=>String(v??'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+  const money=v=>Number.isFinite(Number(v))?Number(v).toLocaleString(undefined,{maximumFractionDigits:2}):'—';
+  const download=(name,value,mime)=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([value],{type:mime}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);};
+  const status=(t,k)=>{const e=byId('paStatus');if(e){e.textContent=t;e.dataset.status=k||'';}};
+  const renderSummary=s=>{byId('paSummary').innerHTML='<div class="dc-metrics"><div class="dc-metric"><span>Ապրանքներ</span><strong>'+s.rows_total+'</strong></div><div class="dc-metric"><span>Ստուգված</span><strong>'+s.rows_verified+'</strong></div><div class="dc-metric"><span>Թերի</span><strong>'+s.rows_incomplete+'</strong></div><div class="dc-metric"><span>Կորստաբեր</span><strong>'+s.loss_making_rows+'</strong></div><div class="dc-metric"><span>Վաճառք</span><strong>'+money(s.total_sales)+'</strong></div><div class="dc-metric"><span>Ընդհանուր շահույթ</span><strong>'+money(s.total_profit)+'</strong></div><div class="dc-metric"><span>Weighted margin</span><strong>'+money(s.weighted_margin_percent)+'%</strong></div></div>';};
+  const renderRanking=r=>{const el=byId('paRanking'),top=Array.isArray(r)?r.slice(0,20):[];byId('paRankMeta').textContent=top.length+' ստուգված ապրանք / առավելագույնը 20';if(!top.length){el.innerHTML='<div class="dc-result-empty">Չկա բավարար ստուգված տվյալ վարկանիշի համար։</div>';return;}el.innerHTML='<table style="width:100%;border-collapse:collapse"><thead><tr><th style="padding:8px;text-align:left">#</th><th style="padding:8px;text-align:left">Ապրանք</th><th style="padding:8px;text-align:left">SKU</th><th style="padding:8px;text-align:right">Շահույթ/միավոր</th><th style="padding:8px;text-align:right">Մարժա</th><th style="padding:8px;text-align:right">Ընդհանուր շահույթ</th></tr></thead><tbody>'+top.map(x=>'<tr><td style="padding:8px">'+x.rank+'</td><td style="padding:8px">'+esc(x.name||'—')+'</td><td style="padding:8px">'+esc(x.sku||'—')+'</td><td style="padding:8px;text-align:right">'+money(x.unit_profit)+'</td><td style="padding:8px;text-align:right">'+money(x.margin_percent)+'%</td><td style="padding:8px;text-align:right"><strong>'+money(x.total_profit)+'</strong></td></tr>').join('')+'</tbody></table>';};
+  byId('paTemplate')?.addEventListener('click',()=>download('novessa-portfolio-template.csv','Product,SKU,Price,Unit Cost,Sales,Commission %,Logistics / Unit,Storage / Unit,Tax %,Ad Spend\\n','text/csv;charset=utf-8'));
+  byId('paFile')?.addEventListener('change',async e=>{const f=e.target.files?.[0];if(!f)return;byId('paFileName').textContent='Ֆայլ՝ '+f.name;try{mappedRows=mapRows(parseCsv(await f.text())).slice(0,500);byId('paPreview').innerHTML='<div class="dc-metrics"><div class="dc-metric"><span>Տողեր</span><strong>'+mappedRows.length+'</strong></div><div class="dc-metric"><span>Սահման</span><strong>500</strong></div></div>';byId('paAnalyze').disabled=!mappedRows.length;status(mappedRows.length?'Բեռնված է '+mappedRows.length+' տող':'Տվյալ չի ճանաչվել',mappedRows.length?'ok':'bad');}catch{mappedRows=[];byId('paAnalyze').disabled=true;status('CSV-ը չհաջողվեց կարդալ','bad');}});
+  byId('paAnalyze')?.addEventListener('click',async()=>{if(!mappedRows.length)return;const b=byId('paAnalyze');b.disabled=true;b.textContent='Հաշվում եմ…';status('Core հաշվարկ…','loading');try{const r=await fetch('/ui/api/action/portfolio-analysis',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({rows:mappedRows})});const body=await r.json();if(!r.ok)throw new Error(body?.error||'portfolio_analysis_failed');renderSummary(body.summary||{});renderRanking(body.ranking||[]);status(body.status==='verified'?'Վերլուծությունը ստուգված է':'Վերլուծությունը մասամբ է ստուգված',body.status==='verified'?'ok':'partial');}catch(err){status(String(err.message||'Վերլուծությունը չհաջողվեց'),'bad');byId('paSummary').textContent='Core արդյունքը հասանելի չէ։ Հորինված թիվ չի ցուցադրվում։';}finally{b.disabled=false;b.textContent='Վերլուծել ապրանքները';}});
+})();
+</script>`;
 if(!index.includes('data-novessa-portfolio-script')) index=index.replace('</body>',portfolioAnalyzerScript+'</body>');
-const portfolioAnalyzerScript = \n<script data-novessa-portfolio-script>\n(function(){\n  const root=document.querySelector('[data-novessa-portfolio-analyzer]');\n  if(!root) return;\n  const byId=id=>document.getElementById(id);\n  let mappedRows=[];\n\n  const normalize=v=>String(v??'').toLowerCase().trim()\n    .replace(/[%№]/g,'')\n    .replace(/[\\u00a0_\\-\\/]+/g,' ')\n    .replace(/\\s+/g,' ');\n\n  const aliases={\n    name:['product','product name','name','товар','название','наименование','ապրանք','ապրանքի անվանում','անվանում'],\n    sku:['sku','артикул','արտիկուլ','կոդ','product code'],\n    price:['price','цена','գին'],\n    unit_cost:['unit cost','cost','себестоимость','себестоимость ед','ինքնարժեք','ինքնարժեք մեկ միավորի'],\n    sales:['sales','units sold','quantity sold','продажи','количество продаж','վաճառք','վաճառքի քանակ'],\n    commission_percent:['commission','commission percent','комиссия','комиссия %','միջնորդավճար','միջնորդավճար %'],\n    logistics_per_unit:['logistics','logistics per unit','логистика','логистика ед','լոգիստիկա','լոգիստիկա մեկ միավոր'],\n    storage_per_unit:['storage','storage per unit','хранение','хранение ед','պահեստ','պահեստավորում','պահեստավորում մեկ միավոր'],\n    tax_percent:['tax','tax percent','налог','налог %','հարկ','հարկ %'],\n    ad_spend:['ad spend','ads','advertising','реклама','расход на рекламу','գովազդ','գովազդի ծախս']\n  };\n  const aliasMap={};\n  Object.entries(aliases).forEach(([field,list])=>list.forEach(a=>aliasMap[normalize(a)]=field));\n\n  const escapeHtml=v=>String(v??'').replace(/[&<>\"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[m]));\n  const toNumber=v=>{\n    const s=String(v??'').trim().replace(/\\s/g,'').replace(',','.');\n    if(!s) return NaN;\n    const n=Number(s);\n    return Number.isFinite(n)?n:NaN;\n  };\n  const delimiterFor=line=>{\n    let commas=0,semis=0,inQuotes=false;\n    for(let i=0;i<line.length;i++){\n      const ch=line[i];\n      if(ch==='\"'&&line[i+1]==='\"'){i++;continue;}\n      if(ch==='\"'){inQuotes=!inQuotes;continue;}\n      if(!inQuotes){if(ch===',')commas++;if(ch===';')semis++;}\n    }\n    return semis>commas?';':',';\n  };\n  const parseCsv=raw=>{\n    const cleaned=String(raw||'').replace(/^\\uFEFF/,'');\n    const lines=cleaned.split(/\\r?\\n/).filter(line=>line.trim()!=='');\n    if(!lines.length) return {headers:[],rows:[]};\n    const delimiter=delimiterFor(lines[0]);\n    const parseLine=line=>{\n      const cells=[];let cell='',inQuotes=false;\n      for(let i=0;i<line.length;i++){\n        const ch=line[i];\n        if(ch==='\"'){\n          if(inQuotes&&line[i+1]==='\"'){cell+='\"';i++;continue;}\n          inQuotes=!inQuotes;continue;\n        }\n        if(ch===delimiter&&!inQuotes){cells.push(cell.trim());cell='';}\n        else cell+=ch;\n      }\n      cells.push(cell.trim());\n      return cells;\n    };\n    const headers=parseLine(lines[0]);\n    return {headers,rows:lines.slice(1).map(parseLine).filter(r=>r.some(v=>String(v).trim()!=='').length>0)};\n  };\n  const mapRows=parsed=>{\n    const fieldByColumn=parsed.headers.map(h=>aliasMap[normalize(h)]||null);\n    return parsed.rows.map(row=>{\n      const raw={};\n      fieldByColumn.forEach((field,i)=>{if(field)raw[field]=row[i]??'';});\n      return {\n        name:String(raw.name||'').trim(),\n        sku:String(raw.sku||'').trim(),\n        price:toNumber(raw.price),\n        cost:toNumber(raw.unit_cost),\n        sales:toNumber(raw.sales),\n        commission_percent:toNumber(raw.commission_percent),\n        logistics_per_unit:toNumber(raw.logistics_per_unit),\n        storage_per_unit:toNumber(raw.storage_per_unit),\n        tax_percent:toNumber(raw.tax_percent),\n        ad_spend:toNumber(raw.ad_spend)\n      };\n    });\n  };\n  const download=(filename,text,mime)=>{\n    const a=document.createElement('a');\n    a.href=URL.createObjectURL(new Blob([text],{type:mime}));\n    a.download=filename;a.click();\n    setTimeout(()=>URL.revokeObjectURL(a.href),1000);\n  };\n  const setStatus=(text,kind)=>{\n    const el=byId('paStatus');if(el){el.textContent=text;el.dataset.status=kind||'';}\n  };\n  const renderPreview=(count)=>{\n    const el=byId('paPreview');if(!el)return;\n    el.innerHTML='<div class=\"dc-metrics\"><div class=\"dc-metric\"><span>Տողեր</span><strong>'+count+'</strong></div><div class=\"dc-metric\"><span>Core limit</span><strong>500</strong></div></div>';\n  };\n  const renderSummary=summary=>{\n    const el=byId('paSummary');if(!el)return;\n    const money=v=>Number.isFinite(Number(v))?Number(v).toLocaleString(undefined,{maximumFractionDigits:2}):'—';\n    el.innerHTML='<div class=\"dc-metrics\">'+\n      '<div class=\"dc-metric\"><span>Ապրանքներ</span><strong>'+summary.rows_total+'</strong></div>'+\n      '<div class=\"dc-metric\"><span>Ստուգված</span><strong>'+summary.rows_verified+'</strong></div>'+\n      '<div class=\"dc-metric\"><span>Թերի</span><strong>'+summary.rows_incomplete+'</strong></div>'+\n      '<div class=\"dc-metric\"><span>Կորստաբեր</span><strong>'+summary.loss_making_rows+'</strong></div>'+\n      '<div class=\"dc-metric\"><span>Ընդհանուր վաճառք</span><strong>'+money(summary.total_sales)+'</strong></div>'+\n      '<div class=\"dc-metric\"><span>Ընդհանուր շահույթ</span><strong>'+money(summary.total_profit)+'</strong></div>'+\n      '<div class=\"dc-metric\"><span>Weighted margin</span><strong>'+money(summary.weighted_margin_percent)+'%</strong></div>'+\n    '</div>';\n  };\n  const renderRanking=ranking=>{\n    const el=byId('paRanking');if(!el)return;\n    const top=Array.isArray(ranking)?ranking.slice(0,20):[];\n    byId('paRankMeta').textContent=top.length+' ստուգված ապրանք / ցուցադրվում է առավելագույնը 20';\n    if(!top.length){el.innerHTML='<div class=\"dc-result-empty\">Չկա բավարար ստուգված ապրանք վարկանիշ կազմելու համար։</div>';return;}\n    const money=v=>Number.isFinite(Number(v))?Number(v).toLocaleString(undefined,{maximumFractionDigits:2}):'—';\n    el.innerHTML='<table style=\"width:100%;border-collapse:collapse\"><thead><tr><th style=\"text-align:left;padding:8px\">#</th><th style=\"text-align:left;padding:8px\">Ապրանք</th><th style=\"text-align:left;padding:8px\">SKU</th><th style=\"text-align:right;padding:8px\">Շահույթ/միավոր</th><th style=\"text-align:right;padding:8px\">Մարժա</th><th style=\"text-align:right;padding:8px\">Ընդհանուր շահույթ</th></tr></thead><tbody>'+\n      top.map(r=>'<tr><td style=\"padding:8px\">'+r.rank+'</td><td style=\"padding:8px\">'+escapeHtml(r.name||'—')+'</td><td style=\"padding:8px\">'+escapeHtml(r.sku||'—')+'</td><td style=\"padding:8px;text-align:right\">'+money(r.unit_profit)+'</td><td style=\"padding:8px;text-align:right\">'+money(r.margin_percent)+'%</td><td style=\"padding:8px;text-align:right\"><strong>'+money(r.total_profit)+'</strong></td></tr>').join('')+\n      '</tbody></table>';\n  };\n\n  byId('paTemplate')?.addEventListener('click',()=>{\n    const headers=['Product','SKU','Price','Unit Cost','Sales','Commission %','Logistics / Unit','Storage / Unit','Tax %','Ad Spend'];\n    download('novessa-portfolio-template.csv',headers.join(',')+'\\\\n','text/csv;charset=utf-8');\n  });\n\n  byId('paFile')?.addEventListener('change',async e=>{\n    const file=e.target.files?.[0];if(!file)return;\n    const out=byId('paFileName');if(out)out.textContent='Ֆայլ՝ '+file.name;\n    try{\n      const parsed=parseCsv(await file.text());\n      mappedRows=mapRows(parsed).slice(0,500);\n      renderPreview(mappedRows.length);\n      byId('paAnalyze').disabled=!mappedRows.length;\n      setStatus(mappedRows.length?('Բեռնված է '+mappedRows.length+' տող'):'Տվյալ չի ճանաչվել',mappedRows.length?'ok':'bad');\n    }catch{\n      mappedRows=[];byId('paAnalyze').disabled=true;setStatus('CSV-ը չհաջողվեց կարդալ','bad');\n    }\n  });\n\n  byId('paAnalyze')?.addEventListener('click',async()=>{\n    if(!mappedRows.length)return;\n    const btn=byId('paAnalyze');btn.disabled=true;btn.textContent='Հաշվում եմ…';setStatus('Core հաշվարկ…','loading');\n    try{\n      const r=await fetch('/ui/api/action/portfolio-analysis',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({rows:mappedRows})});\n      const body=await r.json();\n      if(!r.ok)throw new Error(body?.error||'portfolio_analysis_failed');\n      renderSummary(body.summary||{});\n      renderRanking(body.ranking||[]);\n      setStatus(body.status==='verified'?'Վերլուծությունը ստուգված է':'Վերլուծությունը մասամբ է ստուգված',body.status==='verified'?'ok':'partial');\n      const meta=byId('paRankMeta');if(meta)meta.textContent=(Array.isArray(body.ranking)?body.ranking.length:0)+' ստուգված ապրանք / ցուցադրվում է առավելագույնը 20';\n    }catch(err){\n      setStatus(String(err.message||'Վերլուծությունը չհաջողվեց'),'bad');\n      const s=byId('paSummary');if(s)s.textContent='Core արդյունքը հասանելի չէ։ Հորինված թիվ չի ցուցադրվում։';\n    }finally{\n      btn.disabled=false;btn.textContent='Վերլուծել ապրանքները';\n    }\n  });\n})();\n</script>;
 const decisionCenterScript = `
 <script>
 (function(){
