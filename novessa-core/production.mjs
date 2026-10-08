@@ -561,6 +561,7 @@ export function productionCapabilities(){
     operator:{ai_provider:'google-gemini',deterministic_metrics:['unit_economics','rnp'],approval:true,external_write_actions:true},
     product_analysis:{unified_workspace:true,deterministic_economics:true,market_evidence:true},
     reverse_calculation:{deterministic:true,target_types:['unit_profit','margin','total_profit']},
+    portfolio_analysis:{deterministic:true,max_rows:500,ranking:true,source:'supplied_product_rows'},
     market_research:{provider:'NOVESSA discovery service',real_evidence_only:true},
     book:{workspace:true,plan:true,write:true,epub:true,pdf:true,kdp_package:true},
     sheets:{xlsx_export:true,maximum_rows:5000},
