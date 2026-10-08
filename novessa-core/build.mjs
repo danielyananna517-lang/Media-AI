@@ -921,10 +921,18 @@ const decisionCenterHtml = `
       <article class="dc-panel dc-price-panel">
         <div class="dc-section-tag" data-dc="priceTag">4 • ԳԻՆ ԵՎ ԶԵՂՉ</div>
         <h3 data-dc="priceTitle">Գին և զեղչ</h3>
-        <p class="dc-price-help" data-dc="priceHelp">Մուտքագրիր գինը և զեղչի տոկոսը։ Հաշվարկը կատարվում է գործող Core pricing route-ով։</p>
+        <p class="dc-price-help" data-dc="priceHelp">Մուտքագրիր գինը, ծախսերը, վաճառքի քանակը, նպատակային մարժան և զեղչը ձեռքով։ Core-ը կհաշվի միայն քո մուտքագրած թվերից։</p>
         <div class="dc-price-fields">
           <label><span data-dc="listPrice">Գին</span><input id="dcListPrice" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0"></label>
           <label><span data-dc="discountPercent">Զեղչ, %</span><input id="dcDiscountPercent" type="number" inputmode="decimal" step="0.01" min="0" max="100" placeholder="0"></label>
+          <label><span data-dc="pricingUnitCost">Ինքնարժեք</span><input id="dcPriceUnitCost" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0"></label>
+          <label><span data-dc="pricingTargetMargin">Նպատակային մարժա, %</span><input id="dcPriceTargetMargin" type="number" inputmode="decimal" step="0.01" min="0" max="99.99" placeholder="0"></label>
+          <label><span data-dc="pricingSales">Վաճառքի քանակ</span><input id="dcPriceSales" type="number" inputmode="numeric" step="1" min="1" placeholder="0"></label>
+          <label><span data-dc="pricingCommission">Միջնորդավճար, %</span><input id="dcPriceCommission" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0"></label>
+          <label><span data-dc="pricingLogistics">Լոգիստիկա / միավոր</span><input id="dcPriceLogistics" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0"></label>
+          <label><span data-dc="pricingStorage">Պահեստավորում / միավոր</span><input id="dcPriceStorage" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0"></label>
+          <label><span data-dc="pricingTax">Հարկ, %</span><input id="dcPriceTax" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0"></label>
+          <label><span data-dc="pricingAds">Գովազդի ծախս</span><input id="dcPriceAds" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0"></label>
         </div>
         <button id="dcPriceCalculate" type="button" data-dc="calculateDiscount">Հաշվել</button>
         <div id="dcPriceResult" class="dc-price-result" aria-live="polite"></div>
@@ -1004,7 +1012,7 @@ const decisionCenterScript = `
       failed:'Core հաշվարկը չհաջողվեց. արդյունքը չեմ փոխարինում հորինված թվով.',
       resultTitle:'Core հաշվարկի արդյունք',source:'Source: NOVESSA Core',
       priceTag:'4 • ԳԻՆ ԵՎ ԶԵՂՉ',priceTitle:'Գին և զեղչ',priceHelp:'Մուտքագրիր գինը և զեղչի տոկոսը։ Հաշվարկը կատարվում է գործող Core pricing route-ով.',
-      listPrice:'Գին',discountPercent:'Զեղչ, %',calculateDiscount:'Հաշվել',reverseTag:'5 • ՀԵՏ ՀԱՇՎԱՐԿ',reverseTitle:'Հետ հաշվարկել նպատակային գինը',reverseHelp:'Օգտագործում է վերևի Unit Economics թվերը և հաշվարկում է այն գինը, որը պետք է նպատակին հասնելու համար։',reverseTarget:'Նպատակի տեսակ',reverseTargetValue:'Նպատակային արժեք',reverseCalculate:'Հետ հաշվարկել գինը',reverseUnitProfit:'Շահույթ / միավոր',reverseMargin:'Մարժա, %',reverseTotalProfit:'Ընդհանուր շահույթ',reverseFailed:'Հետ հաշվարկը չհաջողվեց։'
+      listPrice:'Գին',discountPercent:'Զեղչ, %',pricingUnitCost:'Ինքնարժեք',pricingTargetMargin:'Նպատակային մարժա, %',pricingSales:'Վաճառքի քանակ',pricingCommission:'Միջնորդավճար, %',pricingLogistics:'Լոգիստիկա / միավոր',pricingStorage:'Պահեստավորում / միավոր',pricingTax:'Հարկ, %',pricingAds:'Գովազդի ծախս',calculateDiscount:'Հաշվել',reverseTag:'5 • ՀԵՏ ՀԱՇՎԱՐԿ',reverseTitle:'Հետ հաշվարկել նպատակային գինը',reverseHelp:'Օգտագործում է վերևի Unit Economics թվերը և հաշվարկում է այն գինը, որը պետք է նպատակին հասնելու համար։',reverseTarget:'Նպատակի տեսակ',reverseTargetValue:'Նպատակային արժեք',reverseCalculate:'Հետ հաշվարկել գինը',reverseUnitProfit:'Շահույթ / միավոր',reverseMargin:'Մարժա, %',reverseTotalProfit:'Ընդհանուր շահույթ',reverseFailed:'Հետ հաշվարկը չհաջողվեց։'
     },
     ru:{
       eyebrow:'NOVESSA • ЦЕНТР БИЗНЕС-РЕШЕНИЙ',title:'Решения, а не просто dashboard',
@@ -1028,7 +1036,7 @@ const decisionCenterScript = `
       failed:'Расчёт Core не выполнен. Я не заменяю его выдуманными цифрами.',
       resultTitle:'Результат расчёта Core',source:'Source: NOVESSA Core',
       priceTag:'4 • ЦЕНА И СКИДКА',priceTitle:'Цена и скидка',priceHelp:'Введи цену и процент скидки. Расчёт выполняется через рабочий Core pricing route.',
-      listPrice:'Цена',discountPercent:'Скидка, %',calculateDiscount:'Рассчитать',reverseTag:'5 • ОБРАТНЫЙ РАСЧЁТ',reverseTitle:'Рассчитать целевую цену',reverseHelp:'Использует поля Unit Economics выше и рассчитывает цену, необходимую для выбранной цели.',reverseTarget:'Тип цели',reverseTargetValue:'Целевое значение',reverseCalculate:'Рассчитать цену',reverseUnitProfit:'Прибыль / ед.',reverseMargin:'Маржа, %',reverseTotalProfit:'Общая прибыль',reverseFailed:'Обратный расчёт не выполнен.'
+      listPrice:'Цена',discountPercent:'Скидка, %',pricingUnitCost:'Себестоимость',pricingTargetMargin:'Целевая маржа, %',pricingSales:'Количество продаж',pricingCommission:'Комиссия, %',pricingLogistics:'Логистика / ед.',pricingStorage:'Хранение / ед.',pricingTax:'Налог, %',pricingAds:'Расход на рекламу',calculateDiscount:'Рассчитать',reverseTag:'5 • ОБРАТНЫЙ РАСЧЁТ',reverseTitle:'Рассчитать целевую цену',reverseHelp:'Использует поля Unit Economics выше и рассчитывает цену, необходимую для выбранной цели.',reverseTarget:'Тип цели',reverseTargetValue:'Целевое значение',reverseCalculate:'Рассчитать цену',reverseUnitProfit:'Прибыль / ед.',reverseMargin:'Маржа, %',reverseTotalProfit:'Общая прибыль',reverseFailed:'Обратный расчёт не выполнен.'
     },
     en:{
       eyebrow:'NOVESSA • BUSINESS DECISION CENTER',title:'Decisions, not just a dashboard',
@@ -1052,7 +1060,7 @@ const decisionCenterScript = `
       failed:'Core calculation failed. I will not replace it with invented numbers.',
       resultTitle:'Core calculation result',source:'Source: NOVESSA Core',
       priceTag:'4 • PRICE & DISCOUNT',priceTitle:'Price & discount',priceHelp:'Enter the price and discount percentage. The calculation uses the working Core pricing route.',
-      listPrice:'Price',discountPercent:'Discount, %',calculateDiscount:'Calculate',reverseTag:'5 • REVERSE CALCULATION',reverseTitle:'Calculate the target price',reverseHelp:'Uses the Unit Economics fields above and calculates the price required to reach your selected target.',reverseTarget:'Target type',reverseTargetValue:'Target value',reverseCalculate:'Calculate price',reverseUnitProfit:'Unit profit',reverseMargin:'Margin, %',reverseTotalProfit:'Total profit',reverseFailed:'Reverse calculation failed.'
+      listPrice:'Price',discountPercent:'Discount, %',pricingUnitCost:'Unit cost',pricingTargetMargin:'Target margin, %',pricingSales:'Sales quantity',pricingCommission:'Commission, %',pricingLogistics:'Logistics / unit',pricingStorage:'Storage / unit',pricingTax:'Tax, %',pricingAds:'Ad spend',calculateDiscount:'Calculate',reverseTag:'5 • REVERSE CALCULATION',reverseTitle:'Calculate the target price',reverseHelp:'Uses the Unit Economics fields above and calculates the price required to reach your selected target.',reverseTarget:'Target type',reverseTargetValue:'Target value',reverseCalculate:'Calculate price',reverseUnitProfit:'Unit profit',reverseMargin:'Margin, %',reverseTotalProfit:'Total profit',reverseFailed:'Reverse calculation failed.'
     }
   };
   const lang=()=>document.documentElement.lang==='ru'?'ru':document.documentElement.lang==='en'?'en':'hy';
@@ -1144,18 +1152,49 @@ const decisionCenterScript = `
   };
   const priceNum=id=>{const v=Number(byId(id)?.value);return Number.isFinite(v)?v:null;};
   const calculatePriceDiscount=async()=>{
-    const m=textMap[lang()],price=priceNum('dcListPrice'),discount=priceNum('dcDiscountPercent'),out=byId('dcPriceResult');
-    if(price===null||discount===null||price<0||discount<0||discount>100){out.textContent=m.invalid;return;}
+    const m=textMap[lang()];
+    const ids=['dcListPrice','dcDiscountPercent','dcPriceUnitCost','dcPriceTargetMargin','dcPriceSales','dcPriceCommission','dcPriceLogistics','dcPriceStorage','dcPriceTax','dcPriceAds'];
+    const [price,discount,unitCost,targetMargin,sales,commission,logistics,storage,tax,ads]=ids.map(priceNum);
+    const out=byId('dcPriceResult');
+    if(price===null||discount===null||unitCost===null||targetMargin===null||sales===null||commission===null||logistics===null||storage===null||tax===null||ads===null||
+       price<0||discount<0||discount>100||unitCost<0||targetMargin<0||targetMargin>=100||sales<=0||commission<0||logistics<0||storage<0||tax<0||ads<0){
+      out.textContent=m.invalid;
+      return;
+    }
     out.textContent='…';
     try{
-      const r=await fetch('/ui/api/action/pricing',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({list_price:price,discount_percent:discount})});
+      const payload={
+        current_price:price,
+        target_margin_percent:targetMargin,
+        discount_percent:discount,
+        unit_cost:unitCost,
+        sales,
+        commission_percent:commission,
+        logistics_per_unit:logistics,
+        storage_per_unit:storage,
+        tax_percent:tax,
+        ad_spend:ads
+      };
+      const r=await fetch('/ui/api/action/pricing-decision',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)});
       const body=await r.json();
       if(!r.ok){out.textContent=body?.error||m.failed;return;}
-      const source=body?.data??body?.result??body;
-      const flat={}; const visit=(obj,prefix='')=>{if(!obj||typeof obj!=='object')return;for(const [k,v] of Object.entries(obj)){const key=prefix?prefix+'.'+k:k;if(v&&typeof v==='object')visit(v,key);else if(v!==undefined&&v!==null)flat[key]=v;}};
-      visit(source);
-      const rows=Object.entries(flat).filter(([k])=>/price|discount/i.test(k)).slice(0,8).map(([k,v])=>'<div class="dc-price-row"><span>'+k+'</span><strong>'+String(v)+'</strong></div>').join('');
-      out.innerHTML=rows||'<div class="dc-price-row"><span>Core</span><strong>'+JSON.stringify(source)+'</strong></div>';
+      const result=body?.data??body?.result??body;
+      const decision=result?.decision||{};
+      const refs=result?.price_references||{};
+      const discountResult=result?.discount||{};
+      const rows=[
+        ['Գործող գին',decision.current_price],
+        ['Կարգավիճակ',decision.status],
+        ['Ընթացիկ շահույթ / միավոր',decision.current_unit_profit],
+        ['Ընթացիկ մարժա',decision.current_margin_percent===undefined?undefined:String(decision.current_margin_percent)+'%'],
+        ['Break-even գին',refs.break_even_price],
+        ['Նպատակային մարժայի գին',refs.target_margin_price],
+        ['Զեղչված գին',discountResult.price],
+        ['Զեղչված շահույթ / միավոր',discountResult.unit_profit],
+        ['Զեղչված մարժա',discountResult.margin_percent===undefined?undefined:String(discountResult.margin_percent)+'%'],
+        ['Հաջորդ քայլ',decision.next_action]
+      ].filter(([,v])=>v!==undefined&&v!==null);
+      out.innerHTML=rows.map(([k,v])=>'<div class="dc-price-row"><span>'+String(k)+'</span><strong>'+String(v)+'</strong></div>').join('');
     }catch{out.textContent=m.failed;}
   };
   byId('dcPriceCalculate')?.addEventListener('click',calculatePriceDiscount);
