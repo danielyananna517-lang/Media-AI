@@ -20,7 +20,7 @@ async function waitForHealth(child){
 async function call(payload){
   const r=await fetch(base+'/ui/api/action/reverse-profit',{
     method:'POST',
-    headers:{'content-type':'application/json','x-novessa-ui-token':'test-ui-token'},
+    headers:{'content-type':'application/json'},
     body:JSON.stringify(payload)
   });
   const text=await r.text();
