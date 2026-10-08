@@ -162,6 +162,71 @@ export async function analyzeProduct(input={},deps={}){
 }
 
 
+export function analyzeProductPortfolio(input={}){
+  const rows=Array.isArray(input.rows)?input.rows:[];
+  if(!rows.length)return out('input_incomplete',{error:'portfolio_analysis_requires_rows'});
+  if(rows.length>500)return out('invalid_data',{error:'portfolio_analysis_max_500_rows'});
+  const results=[];
+  let totalSales=0,totalRevenue=0,totalProfit=0,lossCount=0,verifiedCount=0,incompleteCount=0;
+  for(let index=0;index<rows.length;index++){
+    const raw=rows[index]?.product&&typeof rows[index].product==='object'?rows[index].product:rows[index];
+    const name=text(raw?.name||raw?.product||('Ապրանք '+(index+1))).trim();
+    const sku=text(raw?.sku).trim();
+    const numbers={
+      price:Number(raw?.price),
+      unit_cost:Number(raw?.cost??raw?.unit_cost),
+      sales:Number(raw?.sales),
+      commission_percent:Number(raw?.commission??raw?.commission_percent),
+      logistics_per_unit:Number(raw?.logistics??raw?.logistics_per_unit),
+      storage_per_unit:Number(raw?.storage??raw?.storage_per_unit),
+      tax_percent:Number(raw?.tax??raw?.tax_percent),
+      ad_spend:Number(raw?.ads??raw?.ad_spend)
+    };
+    const missing=Object.entries(numbers).filter(([,v])=>!Number.isFinite(v)).map(([k])=>k);
+    if(missing.length){
+      incompleteCount++;
+      results.push({rank:null,index:index+1,product:{name,sku},status:'input_incomplete',missing});
+      continue;
+    }
+    const economics=unitEconomics(numbers);
+    const unitProfit=firstNumber(economics,['unit_profit','profit_per_unit','net_profit','profit']);
+    const margin=firstNumber(economics,['profit_margin','margin']);
+    const revenue=firstNumber(economics,['revenue','sales_revenue']);
+    const totalProfit=firstNumber(economics,['total_profit'])??(Number.isFinite(unitProfit)?unitProfit*numbers.sales:NaN);
+    const rowStatus=economics.status||'partial';
+    if(rowStatus==='verified'){
+      verifiedCount++;
+      totalSales+=numbers.sales;
+      if(Number.isFinite(revenue))totalRevenue+=revenue;
+      if(Number.isFinite(totalProfit))totalProfit+=totalProfit;
+      if(Number.isFinite(unitProfit)&&unitProfit<0)lossCount++;
+    }
+    results.push({rank:null,index:index+1,product:{name,sku},status:rowStatus,economics,decision:{profit_signal:Number.isFinite(unitProfit)?(unitProfit<0?'loss_making':'positive'):'unknown',unit_profit:unitProfit,margin_percent:margin,total_profit:totalProfit}});
+  }
+  const verifiedRows=results.filter(r=>r.status==='verified'&&Number.isFinite(r.decision?.total_profit));
+  verifiedRows.sort((a,b)=>b.decision.total_profit-a.decision.total_profit);
+  verifiedRows.forEach((r,i)=>{r.rank=i+1;});
+  const weightedMargin=totalRevenue>0?(totalProfit/totalRevenue*100):NaN;
+  const status=verifiedCount===rows.length?'verified':verifiedCount>0?'partial':'input_incomplete';
+  return out(status,{
+    rows:results,
+    ranking:verifiedRows.map(r=>({rank:r.rank,index:r.index,name:r.product.name,sku:r.product.sku,unit_profit:r.decision.unit_profit,margin_percent:r.decision.margin_percent,total_profit:r.decision.total_profit})),
+    summary:{
+      rows_total:rows.length,
+      rows_verified:verifiedCount,
+      rows_incomplete:incompleteCount,
+      loss_making_rows:lossCount,
+      total_sales:totalSales,
+      total_revenue:Number.isFinite(totalRevenue)?Number(totalRevenue.toFixed(6)):null,
+      total_profit:Number.isFinite(totalProfit)?Number(totalProfit.toFixed(6)):null,
+      weighted_margin_percent:Number.isFinite(weightedMargin)?Number(weightedMargin.toFixed(6)):null
+    },
+    provenance:'NOVESSA Core deterministic portfolio analysis',
+    note:'Only supplied product economics are calculated; missing data is never invented.'
+  });
+}
+
+
 export function reverseProfit(input={}){
   const targetType=text(input.target_type||input.target||'unit_profit').trim().toLowerCase();
   const targetValue=Number(input.target_value??input.target_unit_profit??input.target_margin_percent??input.target_total_profit);
