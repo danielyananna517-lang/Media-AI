@@ -192,16 +192,16 @@ export function analyzeProductPortfolio(input={}){
     const unitProfit=firstNumber(economics,['unit_profit','profit_per_unit','net_profit','profit']);
     const margin=firstNumber(economics,['profit_margin','margin']);
     const revenue=firstNumber(economics,['revenue','sales_revenue']);
-    const totalProfit=firstNumber(economics,['total_profit'])??(Number.isFinite(unitProfit)?unitProfit*numbers.sales:NaN);
+    const rowTotalProfit=firstNumber(economics,['total_profit'])??(Number.isFinite(unitProfit)?unitProfit*numbers.sales:NaN);
     const rowStatus=economics.status||'partial';
     if(rowStatus==='verified'){
       verifiedCount++;
       totalSales+=numbers.sales;
       if(Number.isFinite(revenue))totalRevenue+=revenue;
-      if(Number.isFinite(totalProfit))totalProfit+=totalProfit;
+      if(Number.isFinite(rowTotalProfit))totalProfit+=rowTotalProfit;
       if(Number.isFinite(unitProfit)&&unitProfit<0)lossCount++;
     }
-    results.push({rank:null,index:index+1,product:{name,sku},status:rowStatus,economics,decision:{profit_signal:Number.isFinite(unitProfit)?(unitProfit<0?'loss_making':'positive'):'unknown',unit_profit:unitProfit,margin_percent:margin,total_profit:totalProfit}});
+    results.push({rank:null,index:index+1,product:{name,sku},status:rowStatus,economics,decision:{profit_signal:Number.isFinite(unitProfit)?(unitProfit<0?'loss_making':'positive'):'unknown',unit_profit:unitProfit,margin_percent:margin,total_profit:rowTotalProfit}});
   }
   const verifiedRows=results.filter(r=>r.status==='verified'&&Number.isFinite(r.decision?.total_profit));
   verifiedRows.sort((a,b)=>b.decision.total_profit-a.decision.total_profit);
