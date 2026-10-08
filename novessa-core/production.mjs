@@ -282,6 +282,99 @@ export function reverseProfit(input={}){
   ,provenance:'NOVESSA Core deterministic reverse profit calculation'});
 }
 
+export function pricingDecision(input={}){
+  const currentPrice=Number(input.current_price??input.price);
+  const targetMarginPercent=Number(input.target_margin_percent??input.target_margin);
+  const discountPercent=Number(input.discount_percent??input.discount??0);
+  const fields={
+    unit_cost:Number(input.unit_cost??input.cost),
+    commission_percent:Number(input.commission_percent??input.commission),
+    logistics_per_unit:Number(input.logistics_per_unit??input.logistics),
+    storage_per_unit:Number(input.storage_per_unit??input.storage),
+    tax_percent:Number(input.tax_percent??input.tax),
+    ad_spend:Number(input.ad_spend??input.ads),
+    sales:Number(input.sales)
+  };
+  const missing=[];
+  if(!Number.isFinite(currentPrice)) missing.push('current_price');
+  if(!Number.isFinite(targetMarginPercent)) missing.push('target_margin_percent');
+  for(const [k,v] of Object.entries(fields)) if(!Number.isFinite(v)) missing.push(k);
+  if(missing.length) return out('input_incomplete',{error:'pricing_decision_requires_current_price_target_margin_and_economics_fields',missing});
+  if(currentPrice<0||targetMarginPercent<0||discountPercent<0||discountPercent>100||Object.values(fields).some(v=>v<0))
+    return out('invalid_data',{error:'pricing_decision_fields_must_be_non_negative_and_discount_at_most_100_percent'});
+  if(targetMarginPercent>=100) return out('invalid_data',{error:'target_margin_percent_must_be_below_100'});
+  const commission=fields.commission_percent/100;
+  const tax=fields.tax_percent/100;
+  if(commission+tax>=1) return out('invalid_data',{error:'commission_plus_tax_must_be_below_100_percent'});
+  if(fields.sales<=0) return out('input_incomplete',{error:'pricing_decision_requires_positive_sales'});
+  const adPerUnit=fields.ad_spend/fields.sales;
+  const fixedUnitCost=fields.unit_cost+fields.logistics_per_unit+fields.storage_per_unit+adPerUnit;
+  const keepRate=1-commission-tax;
+  const targetMargin=targetMarginPercent/100;
+  const denominator=keepRate-targetMargin;
+  if(denominator<=0) return out('invalid_data',{error:'target_margin_is_not_mathematically_reachable'});
+  const currentUnitProfit=currentPrice*keepRate-fixedUnitCost;
+  const currentMarginPercent=currentPrice>0?(currentUnitProfit/currentPrice*100):0;
+  const breakEvenPrice=fixedUnitCost/keepRate;
+  const targetPrice=fixedUnitCost/denominator;
+  const discountedPrice=currentPrice*(1-discountPercent/100);
+  const discountedUnitProfit=discountedPrice*keepRate-fixedUnitCost;
+  const discountedMarginPercent=discountedPrice>0?(discountedUnitProfit/discountedPrice*100):0;
+  const status=currentUnitProfit<0?'loss':currentMarginPercent+1e-9<targetMarginPercent?'weak':'profitable';
+  const nextAction=status==='loss'
+    ? 'Բարձրացնել գինը կամ նվազեցնել ծախսերը՝ առնվազն break-even-ից վեր անցնելու համար'
+    : status==='weak'
+    ? 'Գինը վերանայել նպատակային մարժային հասնելու համար'
+    : discountPercent>0&&discountedUnitProfit<0
+    ? 'Այս զեղչը վնասաբեր է․ նվազեցնել զեղչը կամ փոխել գինը'
+    : 'Գինը համապատասխանում է սահմանված նպատակային մարժային';
+  return out('verified',{
+    decision:{
+      status,
+      current_price:currentPrice,
+      current_margin_percent:Number(currentMarginPercent.toFixed(6)),
+      current_unit_profit:Number(currentUnitProfit.toFixed(6)),
+      target_margin_percent:targetMarginPercent,
+      next_action:nextAction
+    },
+    price_references:{
+      break_even_price:Number(breakEvenPrice.toFixed(6)),
+      target_margin_price:Number(targetPrice.toFixed(6)),
+      price_range:{
+        min:Number(breakEvenPrice.toFixed(6)),
+        max:Number(targetPrice.toFixed(6)),
+        basis:'break-even to target-margin reference range; not a market-price claim'
+      }
+    },
+    discount:{
+      percent:discountPercent,
+      price:Number(discountedPrice.toFixed(6)),
+      unit_profit:Number(discountedUnitProfit.toFixed(6)),
+      margin_percent:Number(discountedMarginPercent.toFixed(6))
+    },
+    economics:{
+      revenue:Number((currentPrice*fields.sales).toFixed(6)),
+      commission:Number((currentPrice*commission*fields.sales).toFixed(6)),
+      tax:Number((currentPrice*tax*fields.sales).toFixed(6)),
+      logistics:Number((fields.logistics_per_unit*fields.sales).toFixed(6)),
+      storage:Number((fields.storage_per_unit*fields.sales).toFixed(6)),
+      ad_spend:Number(fields.ad_spend.toFixed(6))
+    },
+    assumptions:{
+      sales:fields.sales,
+      ad_spend_per_unit:Number(adPerUnit.toFixed(6)),
+      unit_cost:fields.unit_cost,
+      commission_percent:fields.commission_percent,
+      tax_percent:fields.tax_percent,
+      logistics_per_unit:fields.logistics_per_unit,
+      storage_per_unit:fields.storage_per_unit,
+      target_margin_percent:targetMarginPercent,
+      discount_percent:discountPercent
+    },
+    provenance:'NOVESSA Core deterministic pricing decision'
+  });
+}
+
 function actionSecret(){
   return String(process.env.NOVESSA_OPERATOR_ACTION_SECRET||process.env.NOVESSA_CORE_SHARED_SECRET||'').trim();
 }
@@ -561,6 +654,7 @@ export function productionCapabilities(){
     operator:{ai_provider:'google-gemini',deterministic_metrics:['unit_economics','rnp'],approval:true,external_write_actions:true},
     product_analysis:{unified_workspace:true,deterministic_economics:true,market_evidence:true},
     reverse_calculation:{deterministic:true,target_types:['unit_profit','margin','total_profit']},
+    pricing_decision:{deterministic:true,target_margin_required:true,market_price_not_invented:true},
     portfolio_analysis:{deterministic:true,max_rows:500,ranking:true,source:'supplied_product_rows'},
     market_research:{provider:'NOVESSA discovery service',real_evidence_only:true},
     book:{workspace:true,plan:true,write:true,epub:true,pdf:true,kdp_package:true},
@@ -585,7 +679,7 @@ if(!server.includes(capabilitiesMarker)){
   server=server.replace("    if(req.method==='GET'&&u.pathname==='/api/product/plans')","    if(req.method==='GET'&&u.pathname==='/api/production/capabilities') return send(res,200,__novessaProduction.productionCapabilities());"+newline+"    if(req.method==='GET'&&u.pathname==='/api/product/plans')");
 }
 if(!server.includes("const productionUiActions=['production-operator'")){
-  const productionUiHandlers="\n      const productionUiActions=['production-operator','production-approve','production-execute','book-plan','book-write','book-export','sheets-xlsx','workspace-load','workspace-save','product-analysis','reverse-profit','portfolio-analysis'];\n      if(productionUiActions.includes(actionName)){\n        if(actionName==='workspace-load'||actionName==='workspace-save'){\n          const access=verifyUiAccess({headers:req.headers,env:process.env});\n          if(access.status!=='verified') return send(res,access.http_status||401,{status:access.status,error:access.error||'ui_auth_failed'});\n        }\n        let uiInput;\n        try{uiInput=await readJson(req);}catch(error){return send(res,error.statusCode||400,{status:'error',error:String(error.message||error)});}\n        let out;\n        if(actionName==='production-operator') out=await __novessaProduction.operatorRun(uiInput);\n        else if(actionName==='product-analysis') out=await __novessaProduction.analyzeProduct(uiInput);\n        else if(actionName==='reverse-profit') out=__novessaProduction.reverseProfit(uiInput);\n        else if(actionName==='portfolio-analysis') out=__novessaProduction.analyzeProductPortfolio(uiInput);\n        else if(actionName==='workspace-load') out=await __novessaProduction.workspaceLoad(uiInput);\n        else if(actionName==='workspace-save') out=await __novessaProduction.workspaceSave(uiInput);\n        else if(actionName==='production-approve') out=__novessaProduction.approveAction(String(uiInput.approval_token||''));\n        else if(actionName==='production-execute') out=await __novessaProduction.executeApprovedAction(String(uiInput.approval_token||''));\n        else if(actionName==='book-plan') out=await __novessaProduction.bookPlan(uiInput);\n        else if(actionName==='book-write') out=await __novessaProduction.bookWrite(uiInput);\n        else if(actionName==='sheets-xlsx') {\n          const generated=__novessaProduction.buildXlsx(uiInput);\n          if(generated?.status==='verified'&&generated.content){\n            res.writeHead(200,{'content-type':generated.media_type,'content-disposition':'attachment; filename=\"'+generated.filename+'\"','cache-control':'no-store','x-content-type-options':'nosniff'});\n            return res.end(generated.content);\n          }\n          out=generated;\n        }\n        else {\n          const generated=__novessaProduction.bookExport(uiInput);\n          if(generated?.status==='verified'&&generated.content){\n            const filename=String(generated.filename).replace(/[^A-Za-z0-9._-]/g,'_');\n            res.writeHead(200,{'content-type':generated.media_type,'content-disposition':'attachment; filename=\"'+filename+'\"','cache-control':'no-store','x-content-type-options':'nosniff'});\n            return res.end(generated.content);\n          }\n          out=generated;\n        }\n        const httpStatus=out.status==='invalid_data'||out.status==='input_incomplete'?400:out.status==='provider_unavailable'?503:out.status==='error'?502:200;\n        return send(res,httpStatus,out);\n      }\n      ";
+  const productionUiHandlers="\n      const productionUiActions=['production-operator','production-approve','production-execute','book-plan','book-write','book-export','sheets-xlsx','workspace-load','workspace-save','product-analysis','reverse-profit','portfolio-analysis','pricing-decision'];\n      if(productionUiActions.includes(actionName)){\n        if(actionName==='workspace-load'||actionName==='workspace-save'){\n          const access=verifyUiAccess({headers:req.headers,env:process.env});\n          if(access.status!=='verified') return send(res,access.http_status||401,{status:access.status,error:access.error||'ui_auth_failed'});\n        }\n        let uiInput;\n        try{uiInput=await readJson(req);}catch(error){return send(res,error.statusCode||400,{status:'error',error:String(error.message||error)});}\n        let out;\n        if(actionName==='production-operator') out=await __novessaProduction.operatorRun(uiInput);\n        else if(actionName==='product-analysis') out=await __novessaProduction.analyzeProduct(uiInput);\n        else if(actionName==='reverse-profit') out=__novessaProduction.reverseProfit(uiInput);\n        else if(actionName==='portfolio-analysis') out=__novessaProduction.analyzeProductPortfolio(uiInput);\n        else if(actionName==='pricing-decision') out=__novessaProduction.pricingDecision(uiInput);\n        else if(actionName==='workspace-load') out=await __novessaProduction.workspaceLoad(uiInput);\n        else if(actionName==='workspace-save') out=await __novessaProduction.workspaceSave(uiInput);\n        else if(actionName==='production-approve') out=__novessaProduction.approveAction(String(uiInput.approval_token||''));\n        else if(actionName==='production-execute') out=await __novessaProduction.executeApprovedAction(String(uiInput.approval_token||''));\n        else if(actionName==='book-plan') out=await __novessaProduction.bookPlan(uiInput);\n        else if(actionName==='book-write') out=await __novessaProduction.bookWrite(uiInput);\n        else if(actionName==='sheets-xlsx') {\n          const generated=__novessaProduction.buildXlsx(uiInput);\n          if(generated?.status==='verified'&&generated.content){\n            res.writeHead(200,{'content-type':generated.media_type,'content-disposition':'attachment; filename=\"'+generated.filename+'\"','cache-control':'no-store','x-content-type-options':'nosniff'});\n            return res.end(generated.content);\n          }\n          out=generated;\n        }\n        else {\n          const generated=__novessaProduction.bookExport(uiInput);\n          if(generated?.status==='verified'&&generated.content){\n            const filename=String(generated.filename).replace(/[^A-Za-z0-9._-]/g,'_');\n            res.writeHead(200,{'content-type':generated.media_type,'content-disposition':'attachment; filename=\"'+filename+'\"','cache-control':'no-store','x-content-type-options':'nosniff'});\n            return res.end(generated.content);\n          }\n          out=generated;\n        }\n        const httpStatus=out.status==='invalid_data'||out.status==='input_incomplete'?400:out.status==='provider_unavailable'?503:out.status==='error'?502:200;\n        return send(res,httpStatus,out);\n      }\n      ";
   if(!productionUiHandlers) throw new Error("production UI handler template not found");
   const insertMarker="      let uiInput;"+newline;
   const markerPos=server.indexOf(insertMarker);
@@ -593,7 +687,8 @@ if(!server.includes("const productionUiActions=['production-operator'")){
   server=server.slice(0,markerPos)+productionUiHandlers+newline+server.slice(markerPos);
 }
 if(!server.includes("if(u.pathname==='/api/production/reverse-profit')")){
-  const productionApiRoutes="\n    if(u.pathname==='/api/production/reverse-profit'){const out=__novessaProduction.reverseProfit(input);return sendApiResult(res,out.status==='input_incomplete'||out.status==='invalid_data'?400:out.status==='error'?502:200,out,requestId);}\n    if(u.pathname==='/api/production/portfolio-analysis'){const out=__novessaProduction.analyzeProductPortfolio(input);return sendApiResult(res,out.status==='input_incomplete'||out.status==='invalid_data'?400:out.status==='error'?502:200,out,requestId);}\n     if(u.pathname==='/api/production/product-analysis'){const out=await __novessaProduction.analyzeProduct(input);return sendApiResult(res,out.status==='provider_unavailable'?503:out.status==='input_incomplete'?400:out.status==='error'?502:200,out,requestId);}\n    if(u.pathname==='/api/production/workspace/load') return sendApiResult(res,200,await __novessaProduction.workspaceLoad(input),requestId);\n    if(u.pathname==='/api/production/workspace/save') return sendApiResult(res,200,await __novessaProduction.workspaceSave(input),requestId);\n    if(u.pathname==='/api/production/operator'){const out=await __novessaProduction.operatorRun(input);return sendApiResult(res,out.status==='provider_unavailable'?503:out.status==='input_incomplete'?400:out.status==='error'?502:200,out,requestId);}\n    if(u.pathname==='/api/production/action/approve') return sendApiResult(res,200,__novessaProduction.approveAction(String(input.approval_token||'')),requestId);\n    if(u.pathname==='/api/production/action/execute') return sendApiResult(res,200,await __novessaProduction.executeApprovedAction(String(input.approval_token||'')),requestId);\n    if(u.pathname==='/api/production/market-research'){const out=await __novessaProduction.marketResearch(input);return sendApiResult(res,out.status==='provider_unavailable'?503:out.status==='input_incomplete'?400:out.status==='error'?502:200,out,requestId);}\n    if(u.pathname==='/api/production/rnp') return sendApiResult(res,200,__novessaProduction.rnp(input),requestId);\n    if(u.pathname==='/api/production/book/plan'){const out=await __novessaProduction.bookPlan(input);return sendApiResult(res,out.status==='provider_unavailable'?503:out.status==='input_incomplete'?400:out.status==='error'?502:200,out,requestId);}\n    if(u.pathname==='/api/production/book/write'){const out=await __novessaProduction.bookWrite(input);return sendApiResult(res,out.status==='provider_unavailable'?503:out.status==='input_incomplete'?400:out.status==='error'?502:200,out,requestId);}\n    if(u.pathname==='/api/production/sheets/export'){const generated=__novessaProduction.buildXlsx(input);if(generated.status!=='verified')return sendApiResult(res,400,generated,requestId);res.writeHead(200,{'content-type':generated.media_type,'content-disposition':'attachment; filename=\"'+generated.filename+'\"','cache-control':'no-store','x-content-type-options':'nosniff','x-request-id':requestId});return res.end(generated.content);}\n    if(u.pathname==='/api/production/book/export'){const generated=__novessaProduction.bookExport(input);if(generated.status!=='verified')return sendApiResult(res,generated.status==='input_incomplete'?400:400,generated,requestId);if(input.format==='kdp')return sendApiResult(res,200,generated,requestId);res.writeHead(200,{'content-type':generated.media_type,'content-disposition':'attachment; filename=\"'+String(generated.filename).replace(/[^A-Za-z0-9._-]/g,'_')+'\"','cache-control':'no-store','x-content-type-options':'nosniff','x-request-id':requestId});return res.end(generated.content);}\n";
+  const productionApiRoutes="\n    if(u.pathname==='/api/production/reverse-profit'){const out=__novessaProduction.reverseProfit(input);return sendApiResult(res,out.status==='input_incomplete'||out.status==='invalid_data'?400:out.status==='error'?502:200,out,requestId);}\n    if(u.pathname==='/api/production/portfolio-analysis'){const out=__novessaProduction.analyzeProductPortfolio(input);return sendApiResult(res,out.status==='input_incomplete'||out.status==='invalid_data'?400:out.status==='error'?502:200,out,requestId);}
+    if(u.pathname==='/api/production/pricing-decision'){const out=__novessaProduction.pricingDecision(input);return sendApiResult(res,out.status==='input_incomplete'||out.status==='invalid_data'?400:out.status==='error'?502:200,out,requestId);}\n     if(u.pathname==='/api/production/product-analysis'){const out=await __novessaProduction.analyzeProduct(input);return sendApiResult(res,out.status==='provider_unavailable'?503:out.status==='input_incomplete'?400:out.status==='error'?502:200,out,requestId);}\n    if(u.pathname==='/api/production/workspace/load') return sendApiResult(res,200,await __novessaProduction.workspaceLoad(input),requestId);\n    if(u.pathname==='/api/production/workspace/save') return sendApiResult(res,200,await __novessaProduction.workspaceSave(input),requestId);\n    if(u.pathname==='/api/production/operator'){const out=await __novessaProduction.operatorRun(input);return sendApiResult(res,out.status==='provider_unavailable'?503:out.status==='input_incomplete'?400:out.status==='error'?502:200,out,requestId);}\n    if(u.pathname==='/api/production/action/approve') return sendApiResult(res,200,__novessaProduction.approveAction(String(input.approval_token||'')),requestId);\n    if(u.pathname==='/api/production/action/execute') return sendApiResult(res,200,await __novessaProduction.executeApprovedAction(String(input.approval_token||'')),requestId);\n    if(u.pathname==='/api/production/market-research'){const out=await __novessaProduction.marketResearch(input);return sendApiResult(res,out.status==='provider_unavailable'?503:out.status==='input_incomplete'?400:out.status==='error'?502:200,out,requestId);}\n    if(u.pathname==='/api/production/rnp') return sendApiResult(res,200,__novessaProduction.rnp(input),requestId);\n    if(u.pathname==='/api/production/book/plan'){const out=await __novessaProduction.bookPlan(input);return sendApiResult(res,out.status==='provider_unavailable'?503:out.status==='input_incomplete'?400:out.status==='error'?502:200,out,requestId);}\n    if(u.pathname==='/api/production/book/write'){const out=await __novessaProduction.bookWrite(input);return sendApiResult(res,out.status==='provider_unavailable'?503:out.status==='input_incomplete'?400:out.status==='error'?502:200,out,requestId);}\n    if(u.pathname==='/api/production/sheets/export'){const generated=__novessaProduction.buildXlsx(input);if(generated.status!=='verified')return sendApiResult(res,400,generated,requestId);res.writeHead(200,{'content-type':generated.media_type,'content-disposition':'attachment; filename=\"'+generated.filename+'\"','cache-control':'no-store','x-content-type-options':'nosniff','x-request-id':requestId});return res.end(generated.content);}\n    if(u.pathname==='/api/production/book/export'){const generated=__novessaProduction.bookExport(input);if(generated.status!=='verified')return sendApiResult(res,generated.status==='input_incomplete'?400:400,generated,requestId);if(input.format==='kdp')return sendApiResult(res,200,generated,requestId);res.writeHead(200,{'content-type':generated.media_type,'content-disposition':'attachment; filename=\"'+String(generated.filename).replace(/[^A-Za-z0-9._-]/g,'_')+'\"','cache-control':'no-store','x-content-type-options':'nosniff','x-request-id':requestId});return res.end(generated.content);}\n";
   if(!productionApiRoutes) throw new Error("production API route template not found");
   const routeMarker="    if(u.pathname.startsWith('/api/connectors/shopify/'))";
   const routePos=server.indexOf(routeMarker);
