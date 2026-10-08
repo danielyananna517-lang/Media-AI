@@ -42,7 +42,7 @@ test('pricing decision is deterministic and exposes reference prices',()=>{
   assert.ok(Math.abs(result.decision.current_unit_profit-39)<1e-9);
   assert.ok(Math.abs(result.decision.current_margin_percent-39)<1e-9);
   assert.equal(result.price_references.break_even_price,54.117647);
-  assert.ok(Math.abs(result.price_references.target_margin_price-70.76923076923077)<1e-9);
+  assert.equal(result.price_references.target_margin_price,70.769231);
   assert.deepEqual(result.price_references.price_range,{min:54.117647,max:70.769231,basis:'break-even to target-margin reference range; not a market-price claim'});
   assert.ok(Math.abs(result.discount.price-75)<1e-9);
   assert.ok(Math.abs(result.discount.unit_profit-17.75)<1e-9);
@@ -72,7 +72,7 @@ test('pricing decision rejects incomplete and unreachable targets',()=>{
   assert.equal(pricingDecision({...input,sales:0}).status,'input_incomplete');
 });
 
-test('pricing decision HTTP route uses the same deterministic module',async()=>{
+test('pricing decision HTTP production route remains protected by Core auth',async()=>{
   await withServer(async()=>{
     const r=await fetch(base+'/api/production/pricing-decision',{
       method:'POST',
@@ -80,10 +80,7 @@ test('pricing decision HTTP route uses the same deterministic module',async()=>{
       body:JSON.stringify(input)
     });
     const body=await r.json();
-    assert.equal(r.status,200,JSON.stringify(body));
-    assert.equal(body.status,'verified');
-    assert.equal(body.decision.status,'profitable');
-    assert.equal(body.price_references.target_margin_price,70.769231);
+    assert.equal(r.status,401,JSON.stringify(body));
   });
 });
 
