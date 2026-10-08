@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 
 const port=8787;
 const base=`http://127.0.0.1:${port}`;
@@ -34,6 +35,12 @@ async function withServer(fn){
   });
   try{await waitForHealth(child);return await fn();}finally{child.kill('SIGTERM');}
 }
+
+test('portfolio analyzer UI is included in generated Core',async()=>{
+  const html=readFileSync('public/index.html','utf8');
+  assert.match(html,/data-novessa-portfolio-analyzer/);
+  assert.match(html,/data-novessa-portfolio-script/);
+});
 
 test('portfolio analysis ranks supplied products by total profit',async()=>{
   await withServer(async()=>{
