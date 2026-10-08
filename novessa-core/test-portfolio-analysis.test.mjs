@@ -40,6 +40,8 @@ test('portfolio analyzer UI is included in generated Core',async()=>{
   const html=readFileSync('public/index.html','utf8');
   assert.match(html,/data-novessa-portfolio-analyzer/);
   assert.match(html,/data-novessa-portfolio-script/);
+  assert.match(html,/data-pa-use=/);
+  assert.match(html,/Active Product-ին/);
 });
 
 test('portfolio analysis ranks supplied products by total profit',async()=>{
