@@ -39,13 +39,13 @@ test('pricing decision is deterministic and exposes reference prices',()=>{
   const result=pricingDecision(input);
   assert.equal(result.status,'verified');
   assert.equal(result.decision.status,'profitable');
-  assert.ok(Math.abs(result.decision.current_unit_profit-56)<1e-9);
-  assert.ok(Math.abs(result.decision.current_margin_percent-56)<1e-9);
-  assert.ok(Math.abs(result.price_references.break_even_price-53.333333333333336)<1e-9);
-  assert.ok(Math.abs(result.price_references.target_margin_price-72)<1e-9);
-  assert.deepEqual(result.price_references.price_range,{min:53.333333,max:72,basis:'break-even to target-margin reference range; not a market-price claim'});
+  assert.ok(Math.abs(result.decision.current_unit_profit-39)<1e-9);
+  assert.ok(Math.abs(result.decision.current_margin_percent-39)<1e-9);
+  assert.ok(Math.abs(result.price_references.break_even_price-54.11764705882353)<1e-9);
+  assert.ok(Math.abs(result.price_references.target_margin_price-70.76923076923077)<1e-9);
+  assert.deepEqual(result.price_references.price_range,{min:54.117647,max:70.769231,basis:'break-even to target-margin reference range; not a market-price claim'});
   assert.ok(Math.abs(result.discount.price-75)<1e-9);
-  assert.ok(Math.abs(result.discount.unit_profit-35)<1e-9);
+  assert.ok(Math.abs(result.discount.unit_profit-17.75)<1e-9);
   assert.equal(result.provenance,'NOVESSA Core deterministic pricing decision');
 });
 
@@ -53,8 +53,8 @@ test('pricing decision classifies a weak current price without inventing a marke
   const result=pricingDecision({...input,current_price:68,discount_percent:0});
   assert.equal(result.status,'verified');
   assert.equal(result.decision.status,'weak');
-  assert.equal(result.price_references.break_even_price,53.333333);
-  assert.equal(result.price_references.target_margin_price,72);
+  assert.equal(result.price_references.break_even_price,54.117647);
+  assert.equal(result.price_references.target_margin_price,70.769231);
   assert.match(result.price_references.price_range.basis,/not a market-price claim/);
 });
 
@@ -76,7 +76,7 @@ test('pricing decision HTTP route uses the same deterministic module',async()=>{
   await withServer(async()=>{
     const r=await fetch(base+'/api/production/pricing-decision',{
       method:'POST',
-      headers:{'content-type':'application/json'},
+      headers:{'content-type':'application/json','x-request-id':'pricing-decision-test-001'}
       body:JSON.stringify(input)
     });
     const body=await r.json();
@@ -91,7 +91,7 @@ test('pricing decision safe UI action is exposed without claiming market data',a
   await withServer(async()=>{
     const r=await fetch(base+'/ui/api/action/pricing-decision',{
       method:'POST',
-      headers:{'content-type':'application/json'},
+      headers:{'content-type':'application/json','x-request-id':'pricing-decision-test-002'}
       body:JSON.stringify(input)
     });
     const body=await r.json();

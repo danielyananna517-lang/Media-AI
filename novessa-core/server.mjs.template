@@ -178,7 +178,7 @@ const server=http.createServer(async(req,res)=>{
       const production=String(process.env.NOVESSA_ENV||'').toLowerCase()==='production';
       const token=String(req.headers['x-novessa-ui-token']||'');
       const actionName=decodeURIComponent(u.pathname.slice('/ui/api/action/'.length));
-      const safeActions=['pricing','unit-economics','profit-guardian','scenario','sales-funnel','business-health','product-card','seo','card-design','infographic','book-validate','kdp-package','youtube-campaign','publishing-capabilities','product-analysis','reverse-profit','portfolio-analysis'];
+      const safeActions=['pricing','unit-economics','profit-guardian','scenario','sales-funnel','business-health','product-card','seo','card-design','infographic','book-validate','kdp-package','youtube-campaign','publishing-capabilities','product-analysis','reverse-profit','portfolio-analysis','pricing-decision'];
       const access=verifyUiAccess({headers:req.headers,env:process.env});
       if(access.status!=='verified' && !(production && !token && safeActions.includes(actionName))){
         return send(res,access.http_status||401,{status:access.status,error:access.error||'ui_auth_failed'});
