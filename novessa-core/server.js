@@ -84,7 +84,7 @@ async function callMediaAI(message) {
       const response = await fetch(BASE + '/ui/api/run', {
         method: 'POST',
         headers: { 'content-type': 'application/json', accept: 'application/json' },
-        body: JSON.stringify({ operation: 'chat', input: { message: message } }),
+        body: JSON.stringify({ operation: 'chat', input: { message: CHAT_RULES + '\n\n' + message } }),
         signal: controller.signal
       });
       const raw = await response.text();
@@ -201,8 +201,7 @@ app.post('/api/v1/chat', async function (req, res) {
       if (!m || !['user', 'assistant', 'model'].includes(m.role) || typeof m.text !== 'string') return '';
       return (m.role === 'user' ? 'Օգտատեր' : 'NOVESSA') + ': ' + m.text.slice(0, 2000);
     }).filter(Boolean).join('\n') : '';
-    const prompt = CHAT_RULES + (history ? '\n\nՆախորդ զրույցը:\n' + history : '') +
-      '\n\nՕգտատիրոջ ընթացիկ հարցը:\n' + message;
+    const prompt = (history ? 'Նախորդ զրույցը:\n' + history : '') + '\n\nՕգտատիրոջ ընթացիկ հարցը:\n' + message;
     return res.json({ success: true, reply: await callMediaAI(prompt), provider: 'NOVESSA Media AI Worker' });
   } catch (e) {
     const status = Number(e.status) || 500;
