@@ -7,7 +7,7 @@ const PORT = process.env.PORT || 8080;
 app.use(cors());
 app.use(express.json());
 
-// Frontend (AI Chat + Unit Economics + SEO Generator Pro)
+// Frontend (AI Chat + Unit Economics + SEO Generator Pro Max)
 app.get('/', (req, res) => {
   res.send(`
     <!DOCTYPE html>
@@ -89,8 +89,8 @@ app.get('/', (req, res) => {
                     <h4 style="margin-bottom: 15px; color: #f1f5f9; border-bottom: 1px solid #334155; padding-bottom: 8px;">Հաշվարկի Արդյունքներ</h4>
                     <div class="result-row"><span>Ընդհանուր Ծախսեր:</span> <span id="resTotalCost">0 AMD</span></div>
                     <div class="result-row"><span>Զուտ Շահույթ (Net Profit):</span> <span id="resProfit" style="color: #4ade80;">0 AMD</span></div>
-                    <div class="result-row"><span>Շահութաբերության Մարժա (Margin):</span> <span id="resMargin">0%</span></div>
-                    <div class="result-row"><span>ROI (Եկամտաբերություն):</span> <span id="resRoi">0%</span></div>
+                    <div class="result-row"><span>Շահութաբերության Մարժա (Margin):</span> <span id="resMargin">0.0%</span></div>
+                    <div class="result-row"><span>ROI (Եկամտաբերություն):</span> <span id="resRoi">0.0%</span></div>
                 </div>
             </div>
         </div>
@@ -272,3 +272,4 @@ app.post('/api/v1/chat', async (req, res) => {
 app.listen(PORT, () => {
   console.log(`🚀 NOVESSA Cloud Pro Max Backend live on port ${PORT}`);
 });
+
