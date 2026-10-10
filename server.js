@@ -93,52 +93,50 @@ app.get('/health', (req, res) => {
   res.json({ 
     status: 'online', 
     service: 'NOVESSA Cloud Core API', 
-    groqReady: !!process.env.GROQ_API_KEY,
+    geminiReady: !!process.env.GEMINI_API_KEY,
     timestamp: new Date() 
   });
 });
 
-// Free AI API Router (Groq / Llama-3)
+// Free AI API Router (Google Gemini)
 app.post('/api/v1/chat', async (req, res) => {
   try {
     const { message } = req.body;
     if (!message) return res.status(400).json({ error: 'Message required' });
 
-    let responseText = "";
-    const apiKey = process.env.GROQ_API_KEY;
+    const apiKey = process.env.GEMINI_API_KEY;
 
     if (apiKey) {
       try {
-        const aiResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+        const aiResponse = await fetch(url, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${apiKey}`
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            model: 'llama-3.3-70b-versatile',
-            messages: [
-              { role: 'system', content: 'Դուք NOVESSA AI մասնագետն եք, որն օգնում է մարքեթփլեյսների (Wildberries, Ozon), Excel-ի, Unit Economics-ի, SEO-ի և վաճառքների կառավարման հարցերում։ Պատասխանեք հայերեն կամ ռուսերեն՝ ըստ օգտատիրոջ լեզվի:' },
-              { role: 'user', content: message }
-            ],
-            temperature: 0.7
+            contents: [{
+              parts: [{
+                text: `Դուք NOVESSA AI մասնագետն եք, որն օգնում է մարքեթփլեյսների (Wildberries, Ozon), Excel-ի, Unit Economics-ի, SEO-ի և վաճառքների կառավարման հարցերում։ Պատասխանեք հայերեն կամ ռուսերեն՝ ըստ օգտատիրոջ լեզվի:\n\nՕգտատիրոջ հարցը: ${message}`
+              }]
+            }]
           })
         });
 
         const aiData = await aiResponse.json();
-        if (aiData.choices && aiData.choices.length > 0) {
-          responseText = aiData.choices[0].message.content;
+        if (aiData.candidates && aiData.candidates.length > 0) {
+          const replyText = aiData.candidates[0].content.parts[0].text;
+          return res.json({ success: true, reply: replyText });
         } else {
-          responseText = "AI-ն չկարողացավ մշակել պատասխանը:";
+          return res.json({ success: true, reply: "AI-ն չկարողացավ մշակել պատասխանը:" });
         }
       } catch (aiErr) {
-        responseText = "Անվճար AI կապի սխալ: " + aiErr.message;
+        return res.json({ success: true, reply: "Google Gemini AI կապի սխալ: " + aiErr.message });
       }
     } else {
-      responseText = `NOVESSA AI (Առանց API բանալու): Խնդրում ենք Render-ում ավելացնել GROQ_API_KEY-ը անվճար AI-ն ակտիվացնելու համար: (Ձեր հարցումը: "${message}")`;
+      return res.json({ 
+        success: true, 
+        reply: `NOVESSA AI: Խնդրում ենք Render-ում ավելացնել GEMINI_API_KEY-ը անվճար AI-ն ակտիվացնելու համար: (Ձեր հարցումը: "${message}")` 
+      });
     }
-
-    res.json({ success: true, reply: responseText });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
