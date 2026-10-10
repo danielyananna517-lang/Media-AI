@@ -7,7 +7,7 @@ const PORT = process.env.PORT || 8080;
 app.use(cors());
 app.use(express.json());
 
-// Frontend (AI Chat + Unit Economics + SEO Generator Pro Max)
+// Frontend (AI Chat + Unit Economics + SEO Generator Pro Max Audit)
 app.get('/', (req, res) => {
   res.send(`<!DOCTYPE html>
 <html lang="hy">
@@ -40,7 +40,7 @@ app.get('/', (req, res) => {
         button.send-btn:hover, .action-btn:hover { background: #0369a1; }
 
         /* Calculator & SEO Styles */
-        .panel-container { padding: 25px; overflow-y: auto; max-width: 650px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; gap: 15px; }
+        .panel-container { padding: 25px; overflow-y: auto; max-width: 700px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; gap: 15px; }
         .form-group { display: flex; flex-direction: column; gap: 5px; }
         .form-group label { font-size: 14px; color: #94a3b8; }
         .result-box { background: #1e293b; padding: 20px; border-radius: 12px; border: 1px solid #334155; margin-top: 5px; white-space: pre-wrap; font-size: 14px; line-height: 1.6; }
@@ -51,13 +51,13 @@ app.get('/', (req, res) => {
 <body>
     <header>
         <h1>✨ NOVESSA AI Platform Pro Max</h1>
-        <p>Անվճար ամպային AI օգնական, Յունիտ Էկոնոմիկա և SEO Քարտերի Գեներատոր</p>
+        <p>Անվճար ամպային AI օգնական, Յունիտ Էկոնոմիկա և SEO Քարտերի Գեներատոր + Աուդիտ</p>
     </header>
 
     <div class="nav-tabs">
         <button class="tab-btn active" onclick="switchTab('chat')">💬 AI Զրույց</button>
         <button class="tab-btn" onclick="switchTab('calc')">📊 Unit Economics</button>
-        <button class="tab-btn" onclick="switchTab('seo')">🔍 SEO & Քարտ Գեներատոր</button>
+        <button class="tab-btn" onclick="switchTab('seo')">🔍 SEO Քարտ & Աուդիտ</button>
     </div>
 
     <!-- Chat Section -->
@@ -97,15 +97,15 @@ app.get('/', (req, res) => {
     <!-- SEO Generator Section -->
     <div id="seo-section" class="content-section">
         <div class="panel-container">
-            <h3 style="color: #38bdf8; margin-bottom: 5px;">Wildberries / Ozon SEO Քարտի Գեներատոր</h3>
+            <h3 style="color: #38bdf8; margin-bottom: 5px;">Wildberries / Ozon SEO Քարտ + Ներքին Աուդիտ</h3>
             
-            <div class="form-group"><label>Ապրանքի անվանումը կամ կատեգորիան:</label><input type="text" id="prodName" placeholder="Օրինակ՝ Կանացի պայուսակ, տաք գիշերազգեստ..."></div>
-            <div class="form-group"><label>Հիմնական հատկանիշներ և առավելություններ:</label><textarea id="prodFeatures" rows="3" placeholder="Օրինակ՝ էկոկաշի, ջրակայուն, մեծ տարողություն, շատ գույներ..."></textarea></div>
+            <div class="form-group"><label>Ապրանքի անվանումը կամ կատեգորիան:</label><input type="text" id="prodName" placeholder="Օրինակ՝ Կանացի տաք գիշերազգեստ..."></div>
+            <div class="form-group"><label>Հայտնի հատկանիշներ (գույն, նյութ, չափսեր և այլն):</label><textarea id="prodFeatures" rows="3" placeholder="Օրինակ՝ ֆլիս, տաբատով комплект, տարբեր գույներ..."></textarea></div>
 
-            <button class="action-btn" onclick="generateSeoCard()">✨ Գեներատոր SEO Տեքստ և Բանալի Բառեր</button>
+            <button class="action-btn" onclick="generateSeoCard()">✨ Գեներացնել Քարտը և Կատարել Աուդիտ</button>
 
             <div class="result-box" id="seoResult">
-                Այստեղ կհայտնվի գեներացված SEO վերնագիրը, բանալի բառերը և նկարագրությունը...
+                Այստեղ կհայտնվի գնորդի համար պատրաստի քարտը և ներքին SEO ստուգման արդյունքները...
             </div>
         </div>
     </div>
@@ -159,15 +159,28 @@ app.get('/', (req, res) => {
                 return;
             }
 
-            resultBox.textContent = 'Նովեսսան մշակում է SEO օպտիմիզացված քարտը...';
+            resultBox.textContent = 'Նովեսսան մշակում է SEO քարտը և իրականացնում ներքին աուդիտ...';
+
+            const promptText = "Դուք NOVESSA AI expert-ն եք: Ստեղծեք Wildberries / Ozon-ի համար SEO քարտ հետևյալ 2 ԱՌԱՆՁԻՆ բաժիններով:\\n\\n" +
+                "Ապրանք: " + name + "\\n" +
+                "Տվյալներ: " + features + "\\n\\n" +
+                "Տրամադրեք պատասխանը հետևյալ ՃՇԳՐԻՏ ԿԱՌՈՒՑՎԱԾՔՈՎ:\\n\\n" +
+                "=== ԲԱԺԻՆ 1: ԳՆՈՐԴԻ ՀԱՄԱՐ ՊԱՏՐԱՍՏԻ ՔԱՐՏ ===\\n" +
+                "1. SEO Վերնագիր (Title, max 60 նիշ, ռուսերեն)\\n" +
+                "2. Բանալի բառեր (Keywords / Search tags - 10-15 հատ, ռուսերեն)\\n" +
+                "3. Վաճառող նկարագրություն (Գրագետ, ռուսերեն, emoji-ներով, առանց չհաստատված չափազանցությունների)\\n" +
+                "4. Ինֆոգրաֆիկայի առաջարկներ (3-4 հիմնական սլայդ)\\n\\n" +
+                "=== ԲԱԺԻՆ 2: ՆԵՐՔԻՆ SEO ՍՏՈՒԳՈՒՄ ԵՎ ԱՈՒԴԻՏ ===\\n" +
+                "(Նշում. Այս բաժինը ներկայացնել հայերենով)\\n" +
+                "• ⚠️ Չհաստատված պնդումներ/ռիսկեր (ի՞նչն է պետք ճշտել մատակարարից կամ ապրանքից նախքան հրապարակելը - օր. նյութի փափկություն, բաղադրություն, խնամք):\\n" +
+                "• 🔍 Բացակայող ապրանքային տվյալներ (որոնք անհրաժեշտ է ավելացնել Ozon/WB-ի ֆիլտրերում):\\n" +
+                "• 💡 Հրապարակումից առաջ անհրաժեշտ ուղղումներ և խորհուրդներ:";
 
             try {
                 const response = await fetch('/api/v1/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        message: "Ստեղծիր Wildberries և Ozon մարքեթփլեյսների համար իդեալական SEO ապրանքային քարտ հետևյալ տվյալներով:\\nԱպրանք: " + name + "\\nՀատկանիշներ: " + features + "\\n\\nՏրամադրիր հետևյալ կառուցվածքով՝\\n1. SEO վերնագիր (առավելագույնը 60 նշան, հարուստ բանալի բառերով)\\n2. Բանալի բառեր (Keywords / Search tags - 10-15 հատ)\\n3. Գրավիչ վաճառող նկարագրություն (Bullet points-ով և նկարագրական տեքստով)"
-                    })
+                    body: JSON.stringify({ message: promptText })
                 });
                 const data = await response.json();
                 resultBox.textContent = data.reply;
