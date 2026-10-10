@@ -376,7 +376,7 @@ async function generateTelegramAiReply(message) {
     body: JSON.stringify({
       contents: [{
         parts: [{
-          text: 'Դուք NOVESSA AI մասնագետն եք, որն օգնում է Wildberries/Ozon, Excel, Unit Economics, SEO և վաճառքների կառավարման հարցերում։ Պատասխանեք օգտատիրոջ լեզվով։ Մի հորինեք փաստեր կամ վիճակագրություն։\\n\\nՕգտատիրոջ հարցը: ' + message
+          text: 'Դուք NOVESSA AI մասնագետն եք, որն օգնում է Wildberries/Ozon, Excel, Unit Economics, SEO և վաճառքների կառավարման հարցերում։ Պատասխանեք օգտատիրոջ լեզվով։ Մի հորինեք փաստեր կամ վիճակագրություն։\n\nՕգտատիրոջ հարցը: ' + message
         }]
       }]
     })
