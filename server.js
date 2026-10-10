@@ -146,7 +146,7 @@ app.get('/', (req, res) => {
             const roi = cogs > 0 ? (profit / cogs) * 100 : 0;
 
             document.getElementById('resTotalCost').textContent = totalCost.toFixed(0) + ' AMD';
-            document.getElementById('resProfit').textContent = profit.textContent = profit.toFixed(0) + ' AMD';
+            document.getElementById('resProfit').textContent = profit.toFixed(0) + ' AMD';
             document.getElementById('resMargin').textContent = margin.toFixed(1) + '%';
             document.getElementById('resRoi').textContent = roi.toFixed(1) + '%';
         }
