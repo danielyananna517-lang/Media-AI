@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="hy"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>NOVESSA AI</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#0f172a;color:#f8fafc;font:15px/1.5 "Segoe UI",Arial,sans-serif}header{background:#1e293b;padding:18px;text-align:center;border-bottom:1px solid #334155}h1{margin:0;color:#38bdf8;font-size:23px}header p,.muted{color:#94a3b8;font-size:13px}nav{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;background:#1e293b;padding:9px}button{cursor:pointer;font:inherit;border:0;border-radius:8px;padding:10px 15px;background:#0284c7;color:white;font-weight:700}nav button{background:transparent;color:#94a3b8;border-bottom:2px solid transparent}nav button.active{color:#38bdf8;border-color:#38bdf8}main{max-width:850px;margin:auto;padding:16px}section{display:none;background:#1e293b;border:1px solid #334155;border-radius:13px;padding:18px}section.active{display:block}h2{margin:0 0 8px;color:#38bdf8}label{display:block;margin:12px 0 5px;color:#cbd5e1}input,textarea,select{width:100%;padding:11px;border-radius:8px;background:#0f172a;color:white;border:1px solid #475569;font:inherit}textarea{min-height:90px;resize:vertical}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.secondary{background:#334155}.result{white-space:pre-wrap;overflow-wrap:anywhere;background:#0b1220;border-radius:9px;padding:14px;margin-top:13px;min-height:60px}.status{max-width:850px;margin:12px auto 0;padding:10px 15px;color:#94a3b8;font-size:13px}@media(max-width:550px){main{padding:10px}section{padding:13px}}
+</style></head><body>
+<header><h1>✨ NOVESSA AI Platform Pro Max</h1><p>AI Զրույց · Unit Economics · Wildberries / Ozon SEO Քարտ & Աուդիտ</p></header>
+<nav><button class="active" data-tab="chat">💬 AI Զրույց</button><button data-tab="calc">📊 Unit Economics</button><button data-tab="seo">🔍 SEO Քարտ & Աուդիտ</button></nav>
+<div id="status" class="status">Ստուգվում է AI կապը…</div><main>
+<section id="chat" class="active"><h2>AI Զրույց</h2><p class="muted">Գրիր հարցդ քո լեզվով։ Զրույցն օգտագործում է նույն Media AI ծառայությունը, ինչ SEO գործիքը։</p><div id="chatlog" class="result">Ողջույն։ Ինչո՞վ օգնեմ։</div><label for="chatInput">Հաղորդագրություն</label><textarea id="chatInput" placeholder="Գրիր հարցը այստեղ…"></textarea><div class="actions"><button id="sendChat">Ուղարկել</button><button id="clearChat" class="secondary">Մաքրել</button></div></section>
+<section id="calc"><h2>Unit Economics</h2><p class="muted">Հաշվարկը կատարվում է տեղային՝ առանց AI հարցման։ Գումարները մուտքագրիր նույն արժույթով։</p>
+<label for="price">Վաճառքի գին</label><input id="price" type="number" min="0" value="5000">
+<label for="cogs">Ապրանքի ինքնարժեք</label><input id="cogs" type="number" min="0" value="1500">
+<label for="commission">Հանձնաժողով (%)</label><input id="commission" type="number" min="0" max="100" value="15">
+<label for="logistics">Լոգիստիկա և փաթեթավորում</label><input id="logistics" type="number" min="0" value="400">
+<label for="adsTax">Գովազդ և հարկեր՝ միասին (%)</label><input id="adsTax" type="number" min="0" max="100" value="10">
+<label for="other">Այլ ծախսեր</label><input id="other" type="number" min="0" value="0">
+<div class="actions"><button id="calculate">Հաշվել շահույթը</button></div><div id="calcResult" class="result"></div><p class="muted">Սա պարզ հաշվարկ է․ վերադարձների և չներառված ծախսերի դեպքում իրական շահույթը կարող է տարբեր լինել։</p></section>
+<section id="seo"><h2>Wildberries / Ozon SEO Քարտ + Ներքին Աուդիտ</h2><p class="muted">Ապրանքի քարտը՝ վաճառող ռուսերենով, ներքին աուդիտը՝ հայերենով։ Չհաստատված տվյալները չեն վերածվում գնորդին տրվող խոստումների։</p>
+<label for="platform">Հարթակ</label><select id="platform"><option value="both">Wildberries և Ozon՝ առանձին</option><option value="wb">Միայն Wildberries</option><option value="ozon">Միայն Ozon</option></select>
+<label for="name">Ապրանքի անվանումը</label><input id="name" placeholder="Օրինակ՝ Сумка женская через плечо">
+<label for="features">Հաստատված հատկանիշներ</label><textarea id="features" placeholder="Գույն, նյութ, չափս, կոմպլեկտացիա՝ միայն հայտնի տվյալները…"></textarea>
+<label for="keywords">Լրացուցիչ բանալի բառեր (ըստ ցանկության)</label><textarea id="keywords" style="min-height:60px" placeholder="Կարող ես թողնել դատարկ։"></textarea>
+<div class="actions"><button id="generate">✨ Գեներացնել SEO քարտ և աուդիտ</button></div><div id="seoResult" class="result">Արդյունքը կհայտնվի այստեղ։</div></section>
+</main>
+<script>
+(function(){
+var history=[];
+function el(id){return document.getElementById(id);}
+document.querySelectorAll('[data-tab]').forEach(function(btn){btn.addEventListener('click',function(){document.querySelectorAll('[data-tab]').forEach(function(b){b.classList.toggle('active',b===btn);});document.querySelectorAll('main section').forEach(function(s){s.classList.toggle('active',s.id===btn.dataset.tab);});if(btn.dataset.tab==='calc')calc();});});
+async function send(url,body){var r=await fetch(url,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});var d=await r.json().catch(function(){return {};});if(!r.ok||d.success===false)throw new Error(d.error||('HTTP '+r.status));return d;}
+function append(role,text){var row=document.createElement('p');var strong=document.createElement('b');strong.textContent=role+': ';var span=document.createElement('span');span.textContent=text;row.appendChild(strong);row.appendChild(span);el('chatlog').appendChild(row);el('chatlog').scrollTop=el('chatlog').scrollHeight;}
+async function chat(){var m=el('chatInput').value.trim();if(!m)return;el('chatInput').value='';append('Դու',m);history.push({role:'user',text:m});el('sendChat').disabled=true;try{var d=await send('/api/v1/chat',{message:m,history:history});append('NOVESSA AI',d.reply||'Պատասխան չկա։');history.push({role:'assistant',text:d.reply||''});history=history.slice(-12);}catch(e){append('Սխալ',e.message);}finally{el('sendChat').disabled=false;}}
+el('sendChat').addEventListener('click',chat);el('chatInput').addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();chat();}});el('clearChat').addEventListener('click',function(){history=[];el('chatlog').textContent='';append('NOVESSA AI','Զրույցը մաքրված է։');});
+function n(id){var v=Number(el(id).value);return Number.isFinite(v)?Math.max(0,v):0;}
+function calc(){var p=n('price'),c=n('cogs'),comm=Math.min(100,n('commission')),log=n('logistics'),ad=Math.min(100,n('adsTax')),other=n('other');var fee=p*comm/100,extra=p*ad/100,total=c+fee+log+extra+other,profit=p-total;el('calcResult').textContent='Հանձնաժողով՝ '+fee.toFixed(2)+'\nԳովազդ և հարկեր՝ '+extra.toFixed(2)+'\nԸնդհանուր ծախսեր՝ '+total.toFixed(2)+'\nՇահույթ՝ '+profit.toFixed(2)+'\nՄարժա՝ '+(p?profit/p*100:0).toFixed(1)+'%\nROI՝ '+(c?profit/c*100:0).toFixed(1)+'%';}
+el('calculate').addEventListener('click',calc);['price','cogs','commission','logistics','adsTax','other'].forEach(function(id){el(id).addEventListener('input',calc);});
+el('generate').addEventListener('click',async function(){var name=el('name').value.trim();if(!name){el('seoResult').textContent='Լրացրու ապրանքի անվանումը։';el('name').focus();return;}var b=el('generate');b.disabled=true;b.textContent='Գեներացվում է…';el('seoResult').textContent='Կազմվում է քարտը և ներքին աուդիտը…';try{var d=await send('/api/v1/seo',{name:name,features:el('features').value.trim(),keywords:el('keywords').value.trim(),platform:el('platform').value});el('seoResult').textContent=d.reply||'Պատասխան չստացվեց։';}catch(e){el('seoResult').textContent='SEO գեներացումը չհաջողվեց։ '+e.message;}finally{b.disabled=false;b.textContent='✨ Գեներացնել SEO քարտ և աուդիտ';}});
+calc();
+async function check(){try{var r=await fetch('/health');var d=await r.json();el('status').textContent=d.aiReachable?'AI կապը հասանելի է · Media AI '+(d.mediaAiVersion||''):'Կայքը հասանելի է, AI կապը պետք է ստուգել․ '+(d.aiMessage||'');el('status').style.color=d.aiReachable?'#4ade80':'#fbbf24';}catch(e){el('status').textContent='AI կապի ստուգումը չհաջողվեց։';}}
+check();
+})();
+</script></body></html>
