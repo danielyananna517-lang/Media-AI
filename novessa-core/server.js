@@ -100,20 +100,42 @@ async function callMediaAI(message) {
 
 const CHAT_RULES = 'Դու NOVESSA AI-ի օգնականն ես։ Պատասխանիր օգտատիրոջ լեզվով՝ ջերմ, պարզ և գործնական։ Օգնում ես Wildberries/Ozon, SEO, ապրանքային քարտեր, Excel, Unit Economics և վաճառքների վերլուծություն թեմաներով։ Մի հորինիր փաստեր, վիճակագրություն, թարմ տվյալներ կամ երաշխիքներ։';
 
-function seoPrompt(input) {
-  const platform = input.platform === 'wb' ? 'Միայն Wildberries' :
-    input.platform === 'ozon' ? 'Միայն Ozon' : 'Wildberries և Ozon՝ առանձին ենթաբաժիններով';
-  return 'Դու NOVESSA AI-ի պրոֆեսիոնալ marketplace SEO և վաճառքային copywriting մասնագետն ես։\n' +
-    'Հարթակ՝ ' + platform + '\n' +
-    'Ապրանք՝ ' + input.name + '\n' +
-    'Հայտնի հատկանիշներ՝ ' + (input.features || 'Չեն տրամադրվել') + '\n' +
-    'Լրացուցիչ բառեր/տվյալներ՝ ' + (input.keywords || 'Չկան') + '\n\n' +
-    'Ստեղծիր հետևյալ կառուցվածքով արդյունք։ Գնորդի համար պատրաստի քարտը գրիր ռուսերեն, ներքին աուդիտը՝ հայերեն։\n\n' +
-    '=== ԲԱԺԻՆ 1. ԳՆՈՐԴԻ ՀԱՄԱՐ ՊԱՏՐԱՍՏԻ ՔԱՐՏ ===\n' +
-    'Յուրաքանչյուր ընտրված հարթակի համար՝ SEO վերնագիր, 10–15 առաջարկվող բանալի բառ, գրավիչ բնական վաճառող նկարագրություն, 3–4 ինֆոգրաֆիկայի սլայդի գաղափար և հայտնի հատկանիշներ։\n\n' +
-    '=== ԲԱԺԻՆ 2. ՆԵՐՔԻՆ SEO ԱՈՒԴԻՏ (ՀԱՅԵՐԵՆ) ===\n' +
-    'Հաստատված տվյալներ, բացակայող տվյալներ, չհաստատված պնդումներ/ռիսկեր, SEO բառերի կարգավիճակ, հրապարակումից առաջ կոնկրետ գործողություններ։\n\n' +
-    'Խիստ կանոններ։ Մի հորինիր գույն, չափս, կազմ, քաշ, կոմպլեկտացիա, սեզոն, փափկություն, դիմացկունություն, խնամք կամ արտադրողի խոստումներ։ Մի հորինիր որոնման ծավալներ, բարձր հաճախականության կարգավիճակ, CTR, կոնվերսիա, վերադարձների տոկոս կամ վաճառքի աճի թվեր։ Եթե իրական որոնման տվյալներ չկան, գրիր, որ հաճախականությունը ստուգված չէ։ Բացակայող տվյալները նշիր ներքին աուդիտում, ոչ թե գնորդի վաճառող նկարագրության մեջ։ Գրիր հստակ, կառուցվածքային և գործնական։';
+function buildSeoTasks(input) {
+  const platforms = input.platform === 'wb' ? ['Wildberries'] :
+    input.platform === 'ozon' ? ['Ozon'] : ['Wildberries', 'Ozon'];
+  const tasks = [];
+
+  for (const platform of platforms) {
+    tasks.push({
+      heading: '### ' + platform + ' — SEO վերնագիր և բանալի բառեր',
+      message:
+        'Ты специалист по SEO-карточкам ' + platform + '. Отвечай ТОЛЬКО на русском языке, кратко и строго по структуре.\\n' +
+        'Товар: ' + input.name + '\\n' +
+        'Подтвержденные характеристики: ' + (input.features || 'не указаны') + '\\n' +
+        'Дополнительные ключевые слова: ' + (input.keywords || 'нет') + '\\n' +
+        'Выведи только: 1) SEO-заголовок, 2) ровно 8 подходящих поисковых фраз через запятую. Не указывай частотность и не выдумывай свойства. Не добавляй пояснений.'
+    });
+    tasks.push({
+      heading: '### ' + platform + ' — վաճառող նկարագրություն և ինֆոգրաֆիկա',
+      message:
+        'Составь для карточки товара на ' + platform + ' краткий продающий текст ТОЛЬКО НА РУССКОМ языке.\\n' +
+        'Товар: ' + input.name + '\\n' +
+        'Подтвержденные характеристики: ' + (input.features || 'не указаны') + '\\n' +
+        'Ключевые слова при необходимости: ' + (input.keywords || 'нет') + '\\n' +
+        'Формат: «Описание» — 2-3 привлекательных предложения; затем «Инфографика» — 3 коротких идеи слайдов. Общий ответ до 120 слов. Используй только подтвержденные факты. Не выдумывай размер, материал, качество, функции, преимущества, долговечность или гарантии.'
+    });
+  }
+
+  tasks.push({
+    heading: '### Ներքին SEO աուդիտ — հայերեն',
+    message:
+      'Կատարիր ապրանքի SEO ներքին աուդիտ ՀԱՅԵՐԵՆՈՎ։\\n' +
+      'Ապրանք՝ ' + input.name + '\\n' +
+      'Հաստատված տվյալներ՝ ' + (input.features || 'չեն տրամադրվել') + '\\n' +
+      'Լրացուցիչ բառեր՝ ' + (input.keywords || 'չկան') + '\\n' +
+      'Գրիր կարճ բաժիններով՝ 1) հայտնի տվյալներ, 2) ինչն է բացակայում, 3) ինչ պնդումներ չպետք է ավելացնել առանց հաստատման, 4) որոնման բառերի կարգավիճակ՝ նշիր, որ հաճախականությունը ստուգված չէ, եթե աղբյուր չկա, 5) հրապարակումից առաջ 3 կոնկրետ քայլ։ Մի հորինիր վիճակագրություն։ Պահպանիր պատասխանը մինչև 120 բառ։'
+  });
+  return tasks;
 }
 
 app.get('/health', async function (_req, res) {
@@ -165,7 +187,24 @@ app.post('/api/v1/seo', async function (req, res) {
       keywords: text(req.body?.keywords ?? '', 'Լրացուցիչ բառերը', 3000, true),
       platform: ['wb', 'ozon', 'both'].includes(req.body?.platform) ? req.body.platform : 'both'
     };
-    return res.json({ success: true, reply: await callMediaAI(seoPrompt(input)), provider: 'NOVESSA Media AI Worker', platform: input.platform });
+    const tasks = buildSeoTasks(input);
+    const sections = [];
+    // Keep each generation intentionally short: the connected Worker has a
+    // compact chat output budget, so separate calls prevent chopped-off cards.
+    for (const task of tasks) {
+      const reply = await callMediaAI(task.message);
+      if (!reply || reply.trim().length < 20) {
+        throw fail('SEO պատասխանի մի մասը չափազանց կարճ էր։ Խնդրում ենք կրկին փորձել։', 502);
+      }
+      sections.push(task.heading + '\\n' + reply.trim());
+    }
+    return res.json({
+      success: true,
+      reply: sections.join('\\n\\n'),
+      provider: 'NOVESSA Media AI Worker',
+      platform: input.platform,
+      sectionsGenerated: sections.length
+    });
   } catch (e) {
     const status = Number(e.status) || 500;
     console.error('[NOVESSA seo]', status, e.message);
