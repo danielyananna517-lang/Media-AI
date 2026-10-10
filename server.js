@@ -7,7 +7,7 @@ const PORT = process.env.PORT || 8080;
 app.use(cors());
 app.use(express.json());
 
-// Frontend (AI Chat + Unit Economics + SEO Generator Pro Max Audit)
+// Frontend (AI Chat + Unit Economics + SEO Generator Pro Max Audit + Excel Export)
 app.get('/', (req, res) => {
   res.send(`<!DOCTYPE html>
 <html lang="hy">
@@ -38,6 +38,8 @@ app.get('/', (req, res) => {
         input, select, textarea { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: #fff; font-size: 15px; outline: none; }
         button.send-btn, .action-btn { padding: 12px 24px; border-radius: 8px; border: none; background: #0284c7; color: #fff; font-weight: bold; cursor: pointer; transition: 0.2s; }
         button.send-btn:hover, .action-btn:hover { background: #0369a1; }
+        .export-btn { background: #10b981; margin-top: 10px; }
+        .export-btn:hover { background: #059669; }
 
         /* Calculator & SEO Styles */
         .panel-container { padding: 25px; overflow-y: auto; max-width: 700px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; gap: 15px; }
@@ -51,7 +53,7 @@ app.get('/', (req, res) => {
 <body>
     <header>
         <h1>✨ NOVESSA AI Platform Pro Max</h1>
-        <p>Անվճար ամպային AI օգնական, Յունիտ Էկոնոմիկա և SEO Քարտերի Գեներատոր + Աուդիտ</p>
+        <p>Անվճար ամպային AI օգնական, Յունիտ Էկոնոմիկա, SEO Քարտեր և Excel Export</p>
     </header>
 
     <div class="nav-tabs">
@@ -90,6 +92,7 @@ app.get('/', (req, res) => {
                 <div class="result-row"><span>Զուտ Շահույթ (Net Profit):</span> <span id="resProfit" style="color: #4ade80;">0 AMD</span></div>
                 <div class="result-row"><span>Շահութաբերության Մարժա (Margin):</span> <span id="resMargin">0.0%</span></div>
                 <div class="result-row"><span>ROI (Եկամտաբերություն):</span> <span id="resRoi">0.0%</span></div>
+                <button class="action-btn export-btn" onclick="exportCalcExcel()">📥 Ներբեռնել Excel (CSV)</button>
             </div>
         </div>
     </div>
@@ -104,8 +107,9 @@ app.get('/', (req, res) => {
 
             <button class="action-btn" onclick="generateSeoCard()">✨ Գեներացնել Քարտը և Կատարել Աուդիտ</button>
 
-            <div class="result-box" id="seoResult">
-                Այստեղ կհայտնվի գնորդի համար պատրաստի քարտը և ներքին SEO ստուգման արդյունքները...
+            <div class="result-box">
+                <div id="seoResult">Այստեղ կհայտնվի գնորդի համար պատրաստի քարտը և ներքին SEO ստուգման արդյունքները...</div>
+                <button class="action-btn export-btn" onclick="exportSeoExcel()">📥 Ներբեռնել SEO Քարտը (CSV)</button>
             </div>
         </div>
     </div>
@@ -142,12 +146,54 @@ app.get('/', (req, res) => {
             const roi = cogs > 0 ? (profit / cogs) * 100 : 0;
 
             document.getElementById('resTotalCost').textContent = totalCost.toFixed(0) + ' AMD';
-            document.getElementById('resProfit').textContent = profit.toFixed(0) + ' AMD';
+            document.getElementById('resProfit').textContent = profit.textContent = profit.toFixed(0) + ' AMD';
             document.getElementById('resMargin').textContent = margin.toFixed(1) + '%';
             document.getElementById('resRoi').textContent = roi.toFixed(1) + '%';
         }
 
         window.onload = calculateUnit;
+
+        function exportCalcExcel() {
+            const price = document.getElementById('price').value;
+            const cogs = document.getElementById('cogs').value;
+            const totalCost = document.getElementById('resTotalCost').textContent;
+            const profit = document.getElementById('resProfit').textContent;
+            const margin = document.getElementById('resMargin').textContent;
+            const roi = document.getElementById('resRoi').textContent;
+
+            let csvContent = "\uFEFF"; // UTF-8 BOM Excel-ի համար
+            csvContent += "Parametr;Ardyunq\n";
+            csvContent += `Vachorqi Gin (Retail Price);${price} AMD\n`;
+            csvContent += `Inqnarpjeq (COGS);${cogs} AMD\n`;
+            csvContent += `Endhanur Caxser;${totalCost}\n`;
+            csvContent += `Zut Shahuyt (Net Profit);${profit}\n`;
+            csvContent += `Margin;${margin}\n`;
+            csvContent += `ROI;${roi}\n`;
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = "Novessa_Unit_Economics.csv";
+            link.click();
+        }
+
+        function exportSeoExcel() {
+            const seoText = document.getElementById('seoResult').textContent;
+            if (!seoText || seoText.includes('Այստեղ կհայտնվի')) {
+                alert('Նախ գեներացրեք SEO քարտը։');
+                return;
+            }
+
+            let csvContent = "\uFEFF"; // UTF-8 BOM
+            csvContent += "NOVESSA AI SEO Card & Audit Export\n\n";
+            csvContent += `"${seoText.replace(/"/g, '""')}"\n`;
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = "Novessa_SEO_Card_Audit.csv";
+            link.click();
+        }
 
         async function generateSeoCard() {
             const name = document.getElementById('prodName').value.trim();
