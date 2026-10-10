@@ -98,7 +98,7 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Free AI API Router (Google Gemini 2.5 Flash)
+// Free AI API Router (Google Gemini 3.8 Flash)
 app.post('/api/v1/chat', async (req, res) => {
   try {
     const { message } = req.body;
@@ -111,7 +111,7 @@ app.post('/api/v1/chat', async (req, res) => {
     }
 
     try {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`;
       const aiResponse = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
