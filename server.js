@@ -225,7 +225,7 @@ app.get('/health', (req, res) => {
   });
 });
 
-// AI API Router (Gemini 1.5 Flash)
+// AI API Router (Gemini 2.0 Flash)
 app.post('/api/v1/chat', async (req, res) => {
   try {
     const { message } = req.body;
@@ -234,7 +234,7 @@ app.post('/api/v1/chat', async (req, res) => {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) return res.json({ success: true, reply: "GEMINI_API_KEY-ը բացակայում է Render-ում:" });
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
     const aiResponse = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
