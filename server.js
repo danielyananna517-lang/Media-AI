@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const crypto = require('node:crypto');
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -311,6 +312,165 @@ app.post('/api/v1/chat', async (req, res) => {
   }
 });
 
+
+// Telegram integration: Mini App menu can be configured independently.
+// Moving direct-message handling to Render is an explicit opt-in, so a current
+// BotConsol webhook is not overwritten automatically.
+const TELEGRAM_BOT_TOKEN = String(process.env.TELEGRAM_BOT_TOKEN || '').trim();
+const TELEGRAM_WEBHOOK_MODE = String(process.env.TELEGRAM_WEBHOOK_MODE || '').trim().toLowerCase();
+const TELEGRAM_MINI_APP_URL = String(
+  process.env.TELEGRAM_MINI_APP_URL ||
+  process.env.RENDER_EXTERNAL_URL ||
+  'https://novessa-backend.onrender.com'
+).trim().replace(/\/+$/, '');
+const TELEGRAM_WEBHOOK_SECRET = String(
+  process.env.TELEGRAM_WEBHOOK_SECRET ||
+  (TELEGRAM_BOT_TOKEN
+    ? crypto.createHash('sha256').update(TELEGRAM_BOT_TOKEN).digest('hex')
+    : '')
+).trim();
+
+async function telegramApi(method, payload) {
+  if (!TELEGRAM_BOT_TOKEN) throw new Error('TELEGRAM_BOT_TOKEN is not configured');
+  const response = await fetch('https://api.telegram.org/bot' + TELEGRAM_BOT_TOKEN + '/' + method, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok || data.ok !== true) {
+    // Do not log tokens or request URLs, which contain the bot token.
+    throw new Error('Telegram API ' + method + ' failed with HTTP ' + response.status);
+  }
+  return data.result;
+}
+
+async function sendTelegramText(chatId, message, replyMarkup) {
+  const text = String(message || 'Պատասխան չստացվեց։');
+  const chunks = text.match(/[\s\S]{1,3500}/g) || ['Պատասխան չստացվեց։'];
+  for (let i = 0; i < chunks.length; i++) {
+    const payload = { chat_id: chatId, text: chunks[i] };
+    if (i === 0 && replyMarkup) payload.reply_markup = replyMarkup;
+    await telegramApi('sendMessage', payload);
+  }
+}
+
+function novessaWebAppKeyboard() {
+  return {
+    keyboard: [[{
+      text: '🚀 Բացել NOVESSA Platform',
+      web_app: { url: TELEGRAM_MINI_APP_URL }
+    }]],
+    resize_keyboard: true,
+    is_persistent: true
+  };
+}
+
+async function generateTelegramAiReply(message) {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) return 'AI ծառայության բանալին դեռ կարգավորված չէ Render-ում։';
+  const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=' + encodeURIComponent(apiKey);
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{
+        parts: [{
+          text: 'Դուք NOVESSA AI մասնագետն եք, որն օգնում է Wildberries/Ozon, Excel, Unit Economics, SEO և վաճառքների կառավարման հարցերում։ Պատասխանեք օգտատիրոջ լեզվով։ Մի հորինեք փաստեր կամ վիճակագրություն։\\n\\nՕգտատիրոջ հարցը: ' + message
+        }]
+      }]
+    })
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok || data.error) {
+    console.error('[Telegram AI] Provider request failed with HTTP ' + response.status);
+    return 'Այս պահին AI պատասխանը ստանալ չհաջողվեց։ Խնդրում եմ փորձիր մի փոքր ուշ։';
+  }
+  return data.candidates?.[0]?.content?.parts?.[0]?.text ||
+    'AI-ը դատարկ պատասխան է վերադարձրել։ Խնդրում եմ հարցը մի փոքր այլ կերպ ձևակերպիր։';
+}
+
+async function processTelegramUpdate(update) {
+  const message = update && (update.message || update.edited_message);
+  if (!message || !message.chat || message.chat.type !== 'private') return;
+  const text = String(message.text || '').trim();
+  if (!text) {
+    await sendTelegramText(message.chat.id, 'Առայժմ ուղարկիր տեքստային հարց կամ բացիր NOVESSA հարթակը կոճակով։', novessaWebAppKeyboard());
+    return;
+  }
+
+  const command = text.split(/\s+/)[0].split('@')[0].toLowerCase();
+  if (command === '/start' || command === '/platform') {
+    await sendTelegramText(
+      message.chat.id,
+      'Ողջույն։ 🌸 NOVESSA-ն քո AI օգնականն է։ Կարող ես այստեղ գրել հարցդ կամ բացել հարթակը՝ AI Զրույց, Unit Economics և SEO Քարտ & Աուդիտ բաժիններով։',
+      novessaWebAppKeyboard()
+    );
+    return;
+  }
+  if (command === '/help') {
+    await sendTelegramText(message.chat.id, 'Ուղղակի գրիր հարցդ։ Հարթակը բացելու համար օգտագործիր 🚀 Բացել NOVESSA Platform կոճակը։', novessaWebAppKeyboard());
+    return;
+  }
+
+  const reply = await generateTelegramAiReply(text);
+  await sendTelegramText(message.chat.id, reply, novessaWebAppKeyboard());
+}
+
+app.post('/telegram/webhook', (req, res) => {
+  if (!TELEGRAM_BOT_TOKEN || TELEGRAM_WEBHOOK_MODE !== 'render') {
+    return res.status(503).json({ ok: false, error: 'Telegram webhook is not enabled on Render.' });
+  }
+  const supplied = String(req.get('X-Telegram-Bot-Api-Secret-Token') || '');
+  const expected = Buffer.from(TELEGRAM_WEBHOOK_SECRET);
+  const actual = Buffer.from(supplied);
+  if (!supplied || actual.length !== expected.length || !crypto.timingSafeEqual(actual, expected)) {
+    return res.status(401).json({ ok: false, error: 'Unauthorized webhook request.' });
+  }
+  res.sendStatus(200);
+  processTelegramUpdate(req.body).catch(err => {
+    console.error('[Telegram update] Processing failed: ' + (err?.message || 'unknown error'));
+  });
+});
+
+async function configureTelegram() {
+  if (!TELEGRAM_BOT_TOKEN) {
+    console.log('[Telegram] Not configured; website remains available.');
+    return;
+  }
+  if (!/^https:\/\/.+/i.test(TELEGRAM_MINI_APP_URL)) {
+    console.error('[Telegram] Mini App URL must use HTTPS.');
+    return;
+  }
+
+  try {
+    await telegramApi('setChatMenuButton', {
+      menu_button: {
+        type: 'web_app',
+        text: 'Բացել NOVESSA',
+        web_app: { url: TELEGRAM_MINI_APP_URL }
+      }
+    });
+    console.log('[Telegram] Mini App menu button configured.');
+
+    if (TELEGRAM_WEBHOOK_MODE !== 'render') {
+      console.log('[Telegram] Existing webhook left unchanged. Set TELEGRAM_WEBHOOK_MODE=render only when ready to move direct messages to Render.');
+      return;
+    }
+
+    await telegramApi('setWebhook', {
+      url: TELEGRAM_MINI_APP_URL + '/telegram/webhook',
+      secret_token: TELEGRAM_WEBHOOK_SECRET,
+      allowed_updates: ['message'],
+      drop_pending_updates: false
+    });
+    console.log('[Telegram] Direct-message webhook configured for Render.');
+  } catch (err) {
+    console.error('[Telegram] Setup failed: ' + (err?.message || 'unknown error'));
+  }
+}
+
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 NOVESSA Cloud Pro Max Backend live on port ${PORT}`);
+  configureTelegram().catch(err => console.error('[Telegram] Setup failed: ' + (err?.message || 'unknown error')));
 });
