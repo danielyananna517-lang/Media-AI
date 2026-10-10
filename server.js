@@ -7,7 +7,7 @@ const PORT = process.env.PORT || 8080;
 app.use(cors());
 app.use(express.json());
 
-// Frontend (AI Chat + Unit Economics Calculator Pro)
+// Frontend (AI Chat + Unit Economics + SEO Generator Pro)
 app.get('/', (req, res) => {
   res.send(`
     <!DOCTYPE html>
@@ -15,7 +15,7 @@ app.get('/', (req, res) => {
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>NOVESSA AI Platform - Pro Edition</title>
+        <title>NOVESSA AI Platform Pro Max</title>
         <style>
             * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; }
             body { background: #0f172a; color: #f8fafc; display: flex; flex-direction: column; height: 100vh; }
@@ -23,8 +23,8 @@ app.get('/', (req, res) => {
             header h1 { color: #38bdf8; font-size: 22px; }
             header p { color: #94a3b8; font-size: 13px; margin-top: 3px; }
             
-            .nav-tabs { display: flex; background: #1e293b; border-bottom: 1px solid #334155; justify-content: center; }
-            .tab-btn { padding: 12px 25px; background: none; border: none; color: #94a3b8; font-size: 15px; font-weight: bold; cursor: pointer; border-bottom: 3px solid transparent; transition: 0.2s; }
+            .nav-tabs { display: flex; background: #1e293b; border-bottom: 1px solid #334155; justify-content: center; flex-wrap: wrap; }
+            .tab-btn { padding: 12px 20px; background: none; border: none; color: #94a3b8; font-size: 14px; font-weight: bold; cursor: pointer; border-bottom: 3px solid transparent; transition: 0.2s; }
             .tab-btn.active { color: #38bdf8; border-bottom-color: #38bdf8; background: #0f172a; }
 
             .content-section { display: none; flex: 1; flex-direction: column; overflow: hidden; }
@@ -36,34 +36,35 @@ app.get('/', (req, res) => {
             .ai-message { background: #334155; color: #f1f5f9; align-self: flex-start; border-bottom-left-radius: 2px; }
 
             #input-container { padding: 15px; background: #1e293b; display: flex; gap: 10px; border-top: 1px solid #334155; }
-            input, select { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: #fff; font-size: 15px; outline: none; }
-            button.send-btn { padding: 12px 24px; border-radius: 8px; border: none; background: #0284c7; color: #fff; font-weight: bold; cursor: pointer; transition: 0.2s; }
-            button.send-btn:hover { background: #0369a1; }
+            input, select, textarea { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: #fff; font-size: 15px; outline: none; }
+            button.send-btn, .action-btn { padding: 12px 24px; border-radius: 8px; border: none; background: #0284c7; color: #fff; font-weight: bold; cursor: pointer; transition: 0.2s; }
+            button.send-btn:hover, .action-btn:hover { background: #0369a1; }
 
-            /* Calculator Styles */
-            .calc-container { padding: 25px; overflow-y: auto; max-width: 600px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; gap: 15px; }
-            .calc-group { display: flex; flex-direction: column; gap: 5px; }
-            .calc-group label { font-size: 14px; color: #94a3b8; }
-            .result-card { background: #1e293b; padding: 20px; border-radius: 12px; border: 1px solid #334155; margin-top: 10px; }
+            /* Calculator & SEO Styles */
+            .panel-container { padding: 25px; overflow-y: auto; max-width: 650px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; gap: 15px; }
+            .form-group { display: flex; flex-direction: column; gap: 5px; }
+            .form-group label { font-size: 14px; color: #94a3b8; }
+            .result-box { background: #1e293b; padding: 20px; border-radius: 12px; border: 1px solid #334155; margin-top: 5px; white-space: pre-wrap; font-size: 14px; line-height: 1.6; }
             .result-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 16px; }
             .result-row span:last-child { font-weight: bold; color: #38bdf8; }
         </style>
     </head>
     <body>
         <header>
-            <h1>✨ NOVESSA AI Platform Pro</h1>
-            <p>Անվճար ամպային AI օգնական և Unit Economics հաշվիչ մարքեթփլեյսների համար</p>
+            <h1>✨ NOVESSA AI Platform Pro Max</h1>
+            <p>Անվճար ամպային AI օգնական, Յունիտ Էկոնոմիկա և SEO Քարտերի Գեներատոր</p>
         </header>
 
         <div class="nav-tabs">
             <button class="tab-btn active" onclick="switchTab('chat')">💬 AI Զրույց</button>
-            <button class="tab-btn" onclick="switchTab('calc')">📊 Unit Economics Հաշվիչ</button>
+            <button class="tab-btn" onclick="switchTab('calc')">📊 Unit Economics</button>
+            <button class="tab-btn" onclick="switchTab('seo')">🔍 SEO & Քարտ Գեներատոր</button>
         </div>
 
         <!-- Chat Section -->
         <div id="chat-section" class="content-section active">
             <div id="chat-container">
-                <div class="message ai-message">Ողջույն, Սյուզաննա ջան։ NOVESSA Pro-ն պատրաստ է աշխատանքի։ Ինչո՞վ կարող եմ օգնել։</div>
+                <div class="message ai-message">Ողջույն, Սյուզաննա ջան։ NOVESSA Pro Max-ը պատրաստ է աշխատանքի։ Ինչո՞վ կարող եմ օգնել։</div>
             </div>
             <div id="input-container">
                 <input type="text" id="userInput" placeholder="Գրեք Ձեր հարցը այստեղ..." onkeydown="if(event.key==='Enter') sendMessage()">
@@ -73,36 +74,39 @@ app.get('/', (req, res) => {
 
         <!-- Calculator Section -->
         <div id="calc-section" class="content-section">
-            <div class="calc-container">
+            <div class="panel-container">
                 <h3 style="color: #38bdf8; margin-bottom: 5px;">Մարքեթփլեյսի Յունիտ Էկոնոմիկա</h3>
                 
-                <div class="calc-group">
-                    <label>Ապրանքի վաճառքի գինը (Retail Price):</label>
-                    <input type="number" id="price" value="5000" oninput="calculateUnit()">
-                </div>
-                <div class="calc-group">
-                    <label>Ապրանքի ինքնարժեք (COGS):</label>
-                    <input type="number" id="cogs" value="1500" oninput="calculateUnit()">
-                </div>
-                <div class="calc-group">
-                    <label>Հանձնաժողով (Commission %):</label>
-                    <input type="number" id="commission" value="15" oninput="calculateUnit()">
-                </div>
-                <div class="calc-group">
-                    <label>Լոգիստիկա և փաթեթավորում (Logistics):</label>
-                    <input type="number" id="logistics" value="400" oninput="calculateUnit()">
-                </div>
-                <div class="calc-group">
-                    <label>Գովազդ և Հարկեր (%):</label>
-                    <input type="number" id="adsTax" value="10" oninput="calculateUnit()">
-                </div>
+                <div class="form-group"><label>Ապրանքի վաճառքի գինը (Retail Price):</label><input type="number" id="price" value="5000"></div>
+                <div class="form-group"><label>Ապրանքի ինքնարժեք (COGS):</label><input type="number" id="cogs" value="1500"></div>
+                <div class="form-group"><label>Հանձնաժողով (Commission %):</label><input type="number" id="commission" value="15"></div>
+                <div class="form-group"><label>Լոգիստիկա և փաթեթավորում (Logistics):</label><input type="number" id="logistics" value="400"></div>
+                <div class="form-group"><label>Գովազդ և Հարկեր (%):</label><input type="number" id="adsTax" value="10"></div>
 
-                <div class="result-card">
+                <button class="action-btn" onclick="calculateUnit()">🧮 Հաշվել Շահույթը</button>
+
+                <div class="result-box">
                     <h4 style="margin-bottom: 15px; color: #f1f5f9; border-bottom: 1px solid #334155; padding-bottom: 8px;">Հաշվարկի Արդյունքներ</h4>
                     <div class="result-row"><span>Ընդհանուր Ծախսեր:</span> <span id="resTotalCost">0 AMD</span></div>
                     <div class="result-row"><span>Զուտ Շահույթ (Net Profit):</span> <span id="resProfit" style="color: #4ade80;">0 AMD</span></div>
                     <div class="result-row"><span>Շահութաբերության Մարժա (Margin):</span> <span id="resMargin">0%</span></div>
                     <div class="result-row"><span>ROI (Եկամտաբերություն):</span> <span id="resRoi">0%</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SEO Generator Section -->
+        <div id="seo-section" class="content-section">
+            <div class="panel-container">
+                <h3 style="color: #38bdf8; margin-bottom: 5px;">Wildberries / Ozon SEO Քարտի Գեներատոր</h3>
+                
+                <div class="form-group"><label>Ապրանքի անվանումը կամ կատեգորիան:</label><input type="text" id="prodName" placeholder="Օրինակ՝ Կանացի պայուսակ, տաք գիշերազգեստ..."></div>
+                <div class="form-group"><label>Հիմնական հատկանիշներ և առավելություններ:</label><textarea id="prodFeatures" rows="3" placeholder="Օրինակ՝ էկոկաշի, ջրակայուն, մեծ տարողություն, շատ գույներ..."></textarea></div>
+
+                <button class="action-btn" onclick="generateSeoCard()">✨ Գեներատոր SEO Տեքստ և Բանալի Բառեր</button>
+
+                <div class="result-box" id="seoResult">
+                    Այստեղ կհայտնվի գեներացված SEO վերնագիրը, բանալի բառերը և նկարագրությունը...
                 </div>
             </div>
         </div>
@@ -114,10 +118,13 @@ app.get('/', (req, res) => {
                 if(tab === 'chat') {
                     document.querySelectorAll('.tab-btn')[0].classList.add('active');
                     document.getElementById('chat-section').classList.add('active');
-                } else {
+                } else if(tab === 'calc') {
                     document.querySelectorAll('.tab-btn')[1].classList.add('active');
                     document.getElementById('calc-section').classList.add('active');
                     calculateUnit();
+                } else {
+                    document.querySelectorAll('.tab-btn')[2].classList.add('active');
+                    document.getElementById('seo-section').classList.add('active');
                 }
             }
 
@@ -139,6 +146,42 @@ app.get('/', (req, res) => {
                 document.getElementById('resProfit').textContent = profit.toFixed(0) + ' AMD';
                 document.getElementById('resMargin').textContent = margin.toFixed(1) + '%';
                 document.getElementById('resRoi').textContent = roi.toFixed(1) + '%';
+            }
+
+            window.onload = calculateUnit;
+
+            async function generateSeoCard() {
+                const name = document.getElementById('prodName').value.trim();
+                const features = document.getElementById('prodFeatures').value.trim();
+                const resultBox = document.getElementById('seoResult');
+
+                if (!name) {
+                    resultBox.textContent = 'Խնդրում ենք լրացնել ապրանքի անվանումը։';
+                    return;
+                }
+
+                resultBox.textContent = 'Նովեսսան մշակում է SEO օպտիմիզացված քարտը...';
+
+                try {
+                    const response = await fetch('/api/v1/chat', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            message: `Ստեղծիր Wildberries և Ozon մարքեթփլեյսների համար իդեալական SEO ապրանքային քարտ հետևյալ տվյալներով:
+Ապրանք: ${name}
+Հատկանիշներ: ${features}
+
+Տրամադրիր հետևյալ կառուցվածքով՝
+1. SEO վերնագիր (առավելագույնը 60 նշան, հարուստ բանալի բառերով)
+2. Բանալի բառեր (Keywords / Search tags - 10-15 հատ)
+3. Գրավիչ վաճառող նկարագրություն (Bullet points-ով և նկարագրական տեքստով)` 
+                        })
+                    });
+                    const data = await response.json();
+                    resultBox.textContent = data.reply;
+                } catch (err) {
+                    resultBox.textContent = 'Սխալ՝ հնարավոր չեղավ կապվել AI սերվերի հետ։';
+                }
             }
 
             async function sendMessage() {
@@ -185,7 +228,7 @@ app.get('/', (req, res) => {
 app.get('/health', (req, res) => {
   res.json({ 
     status: 'online', 
-    service: 'NOVESSA Cloud Pro API', 
+    service: 'NOVESSA Cloud Pro Max API', 
     geminiReady: !!process.env.GEMINI_API_KEY,
     timestamp: new Date() 
   });
@@ -198,135 +241,34 @@ app.post('/api/v1/chat', async (req, res) => {
     if (!message) return res.status(400).json({ error: 'Message required' });
 
     const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) return res.status(503).json({ success: false, reply: "GEMINI_API_KEY-ը բացակայում է Render-ի կարգավորումներից։" });
+    if (!apiKey) return res.json({ success: true, reply: "GEMINI_API_KEY-ը բացակայում է Render-ում:" });
 
-    const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
-    const models = [...new Set([
-      process.env.GEMINI_MODEL || 'gemini-3.8-flash',
-      'gemini-3.5-flash-lite',
-      'gemini-3.6-flash'
-    ])];
-    const promptText = `Դուք NOVESSA AI մասնագետն եք, որն օգնում է մարքեթփլեյսների (Wildberries, Ozon), Excel-ի, Unit Economics-ի, SEO-ի և վաճառքների կառավարման հարցերում։ Պատասխանեք հայերեն կամ ռուսերեն՝ ըստ օգտատիրոջ լեզվի:
-
-Օգտատիրոջ հարցը: ${message}`;
-
-    let lastStatus = 0;
-    let lastErrorCode = '';
-
-    // One bounded retry for the primary model, then fallback models.
-    for (let modelIndex = 0; modelIndex < models.length; modelIndex++) {
-      const model = models[modelIndex];
-      const attempts = modelIndex === 0 ? 2 : 1;
-
-      for (let attempt = 0; attempt < attempts; attempt++) {
-        let aiResponse;
-        let aiData;
-
-        try {
-          const controller = new AbortController();
-          const timeout = setTimeout(() => controller.abort(), 12000);
-          try {
-            aiResponse = await fetch(
-              `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-              {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  contents: [{ parts: [{ text: promptText }] }]
-                }),
-                signal: controller.signal
-              }
-            );
-            aiData = await aiResponse.json().catch(() => ({}));
-          } finally {
-            clearTimeout(timeout);
-          }
-        } catch (err) {
-          lastStatus = 0;
-          lastErrorCode = err.name === 'AbortError' ? 'TIMEOUT' : 'NETWORK_ERROR';
-          console.warn('Gemini request failed', { model, code: lastErrorCode });
-
-          if (attempt + 1 < attempts) {
-            await delay(700);
-            continue;
-          }
-          break;
-        }
-
-        if (aiResponse.ok) {
-          const parts = aiData?.candidates?.[0]?.content?.parts || [];
-          const replyText = parts.map(part => part.text || '').join('').trim();
-          if (replyText) {
-            return res.json({ success: true, reply: replyText, aiPowered: true, model });
-          }
-          return res.status(502).json({
-            success: false,
-            reply: 'Gemini-ն այս հարցման համար ընթեռնելի պատասխան չվերադարձրեց։ Փորձիր հարցը մի փոքր այլ ձևակերպել։'
-          });
-        }
-
-        const error = aiData?.error || {};
-        lastStatus = aiResponse.status;
-        lastErrorCode = error.status || error.code || String(aiResponse.status);
-        console.warn('Gemini API error', { model, status: lastStatus, code: lastErrorCode });
-
-        const transient = [408, 429, 500, 502, 503, 504].includes(aiResponse.status);
-        const modelUnavailable =
-          aiResponse.status === 404 ||
-          /model.*(not found|no longer available|not available|unsupported|not supported)/i.test(error.message || '');
-
-        if (transient) {
-          if (attempt + 1 < attempts) {
-            await delay(700);
-            continue;
-          }
-          break;
-        }
-
-        if (modelUnavailable) break;
-
-        if ([401, 403].includes(aiResponse.status)) {
-          return res.status(502).json({
-            success: false,
-            reply: 'Gemini API-ի բանալու կամ թույլտվության խնդիր կա։ Render-ի GEMINI_API_KEY կարգավորումը պետք է ստուգել։'
-          });
-        }
-
-        return res.status(502).json({
-          success: false,
-          reply: 'Gemini AI-ն չկարողացավ մշակել այս հարցումը։ Փորձենք կրկին ավելի ուշ։'
-        });
-      }
-    }
-
-    if ([408, 429, 500, 502, 503, 504].includes(lastStatus)) {
-      return res.status(503).json({
-        success: false,
-        reply: 'Gemini AI-ն այս պահին ծանրաբեռնված է կամ ժամանակավորապես անհասանելի։ NOVESSA-ի սերվերը առցանց է, բայց AI-ն դեռ պատասխան չի տվել։ Փորձիր նորից մի քանի րոպեից։',
-        providerStatus: lastStatus
-      });
-    }
-
-    if (lastErrorCode === 'TIMEOUT' || lastErrorCode === 'NETWORK_ERROR') {
-      return res.status(503).json({
-        success: false,
-        reply: 'NOVESSA-ն այս պահին չի կարողանում կապ հաստատել Gemini-ի հետ։ Փորձիր կրկին մի փոքր ուշ։'
-      });
-    }
-
-    console.error('No configured Gemini model could answer', {
-      status: lastStatus,
-      code: lastErrorCode
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`;
+    const aiResponse = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{
+          parts: [{
+            text: `Դուք NOVESSA AI մասնագետն եք, որն օգնում է մարքեթփլեյսների (Wildberries, Ozon), Excel-ի, Unit Economics-ի, SEO-ի և վաճառքների կառավարման հարցերում։ Պատասխանեք հայերեն կամ ռուսերեն՝ ըստ օգտատիրոջ լեզվի:\n\nՕգտատիրոջ հարցը: ${message}`
+          }]
+        }]
+      })
     });
-    return res.status(502).json({
-      success: false,
-      reply: 'Gemini-ի հասանելի մոդելներից ոչ մեկը չկարողացավ պատասխանել։ Պետք է ստուգել մոդելի անունն ու API հասանելիությունը։'
-    });
+
+    const aiData = await aiResponse.json();
+    if (aiData.error) return res.json({ success: true, reply: `Google Gemini Սխալ: ${aiData.error.message}` });
+
+    if (aiData.candidates && aiData.candidates.length > 0 && aiData.candidates[0].content) {
+      return res.json({ success: true, reply: aiData.candidates[0].content.parts[0].text });
+    } else {
+      return res.json({ success: true, reply: "AI պատասխանի սխալ ձևաչափ:" });
+    }
   } catch (err) {
     return res.json({ success: true, reply: "Ցանցային սխալ: " + err.message });
   }
 });
 
 app.listen(PORT, () => {
-  console.log(`🚀 NOVESSA Cloud Pro Backend live on port ${PORT}`);
+  console.log(`🚀 NOVESSA Cloud Pro Max Backend live on port ${PORT}`);
 });
