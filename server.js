@@ -198,29 +198,130 @@ app.post('/api/v1/chat', async (req, res) => {
     if (!message) return res.status(400).json({ error: 'Message required' });
 
     const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) return res.json({ success: true, reply: "GEMINI_API_KEY-ը բացակայում է Render-ում:" });
+    if (!apiKey) return res.status(503).json({ success: false, reply: "GEMINI_API_KEY-ը բացակայում է Render-ի կարգավորումներից։" });
 
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`;
-    const aiResponse = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{
-          parts: [{
-            text: `Դուք NOVESSA AI մասնագետն եք, որն օգնում է մարքեթփլեյսների (Wildberries, Ozon), Excel-ի, Unit Economics-ի, SEO-ի և վաճառքների կառավարման հարցերում։ Պատասխանեք հայերեն կամ ռուսերեն՝ ըստ օգտատիրոջ լեզվի:\n\nՕգտատիրոջ հարցը: ${message}`
-          }]
-        }]
-      })
-    });
+    const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+    const models = [...new Set([
+      process.env.GEMINI_MODEL || 'gemini-3.8-flash',
+      'gemini-3.5-flash-lite',
+      'gemini-3.6-flash'
+    ])];
+    const promptText = `Դուք NOVESSA AI մասնագետն եք, որն օգնում է մարքեթփլեյսների (Wildberries, Ozon), Excel-ի, Unit Economics-ի, SEO-ի և վաճառքների կառավարման հարցերում։ Պատասխանեք հայերեն կամ ռուսերեն՝ ըստ օգտատիրոջ լեզվի:
 
-    const aiData = await aiResponse.json();
-    if (aiData.error) return res.json({ success: true, reply: `Google Gemini Սխալ: ${aiData.error.message}` });
+Օգտատիրոջ հարցը: ${message}`;
 
-    if (aiData.candidates && aiData.candidates.length > 0 && aiData.candidates[0].content) {
-      return res.json({ success: true, reply: aiData.candidates[0].content.parts[0].text });
-    } else {
-      return res.json({ success: true, reply: "AI պատասխանի սխալ ձևաչափ:" });
+    let lastStatus = 0;
+    let lastErrorCode = '';
+
+    // One bounded retry for the primary model, then fallback models.
+    for (let modelIndex = 0; modelIndex < models.length; modelIndex++) {
+      const model = models[modelIndex];
+      const attempts = modelIndex === 0 ? 2 : 1;
+
+      for (let attempt = 0; attempt < attempts; attempt++) {
+        let aiResponse;
+        let aiData;
+
+        try {
+          const controller = new AbortController();
+          const timeout = setTimeout(() => controller.abort(), 12000);
+          try {
+            aiResponse = await fetch(
+              `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+              {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  contents: [{ parts: [{ text: promptText }] }]
+                }),
+                signal: controller.signal
+              }
+            );
+            aiData = await aiResponse.json().catch(() => ({}));
+          } finally {
+            clearTimeout(timeout);
+          }
+        } catch (err) {
+          lastStatus = 0;
+          lastErrorCode = err.name === 'AbortError' ? 'TIMEOUT' : 'NETWORK_ERROR';
+          console.warn('Gemini request failed', { model, code: lastErrorCode });
+
+          if (attempt + 1 < attempts) {
+            await delay(700);
+            continue;
+          }
+          break;
+        }
+
+        if (aiResponse.ok) {
+          const parts = aiData?.candidates?.[0]?.content?.parts || [];
+          const replyText = parts.map(part => part.text || '').join('').trim();
+          if (replyText) {
+            return res.json({ success: true, reply: replyText, aiPowered: true, model });
+          }
+          return res.status(502).json({
+            success: false,
+            reply: 'Gemini-ն այս հարցման համար ընթեռնելի պատասխան չվերադարձրեց։ Փորձիր հարցը մի փոքր այլ ձևակերպել։'
+          });
+        }
+
+        const error = aiData?.error || {};
+        lastStatus = aiResponse.status;
+        lastErrorCode = error.status || error.code || String(aiResponse.status);
+        console.warn('Gemini API error', { model, status: lastStatus, code: lastErrorCode });
+
+        const transient = [408, 429, 500, 502, 503, 504].includes(aiResponse.status);
+        const modelUnavailable =
+          aiResponse.status === 404 ||
+          /model.*(not found|no longer available|not available|unsupported|not supported)/i.test(error.message || '');
+
+        if (transient) {
+          if (attempt + 1 < attempts) {
+            await delay(700);
+            continue;
+          }
+          break;
+        }
+
+        if (modelUnavailable) break;
+
+        if ([401, 403].includes(aiResponse.status)) {
+          return res.status(502).json({
+            success: false,
+            reply: 'Gemini API-ի բանալու կամ թույլտվության խնդիր կա։ Render-ի GEMINI_API_KEY կարգավորումը պետք է ստուգել։'
+          });
+        }
+
+        return res.status(502).json({
+          success: false,
+          reply: 'Gemini AI-ն չկարողացավ մշակել այս հարցումը։ Փորձենք կրկին ավելի ուշ։'
+        });
+      }
     }
+
+    if ([408, 429, 500, 502, 503, 504].includes(lastStatus)) {
+      return res.status(503).json({
+        success: false,
+        reply: 'Gemini AI-ն այս պահին ծանրաբեռնված է կամ ժամանակավորապես անհասանելի։ NOVESSA-ի սերվերը առցանց է, բայց AI-ն դեռ պատասխան չի տվել։ Փորձիր նորից մի քանի րոպեից։',
+        providerStatus: lastStatus
+      });
+    }
+
+    if (lastErrorCode === 'TIMEOUT' || lastErrorCode === 'NETWORK_ERROR') {
+      return res.status(503).json({
+        success: false,
+        reply: 'NOVESSA-ն այս պահին չի կարողանում կապ հաստատել Gemini-ի հետ։ Փորձիր կրկին մի փոքր ուշ։'
+      });
+    }
+
+    console.error('No configured Gemini model could answer', {
+      status: lastStatus,
+      code: lastErrorCode
+    });
+    return res.status(502).json({
+      success: false,
+      reply: 'Gemini-ի հասանելի մոդելներից ոչ մեկը չկարողացավ պատասխանել։ Պետք է ստուգել մոդելի անունն ու API հասանելիությունը։'
+    });
   } catch (err) {
     return res.json({ success: true, reply: "Ցանցային սխալ: " + err.message });
   }
