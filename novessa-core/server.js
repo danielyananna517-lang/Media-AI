@@ -29,14 +29,41 @@ function text(value, label, limit, optional) {
   if (value.length > limit) throw fail(label + ' դաշտը չափազանց երկար է։', 413);
   return value;
 }
-function pickReply(data) {
-  if (typeof data === 'string') return data.trim();
-  for (const key of ['reply', 'text', 'output', 'answer', 'responseText', 'generatedText']) {
+function pickReply(data, depth = 0) {
+  if (depth > 5 || data == null) return '';
+  if (typeof data === 'string') {
+    const value = data.trim();
+    // Media AI wraps its actual artifact in a JSON string inside the outer "reply" field.
+    if ((value.startsWith('{') && value.endsWith('}')) || (value.startsWith('[') && value.endsWith(']'))) {
+      try {
+        const parsed = JSON.parse(value);
+        const extracted = pickReply(parsed, depth + 1);
+        if (extracted && extracted !== JSON.stringify(parsed, null, 2)) return extracted;
+      } catch (_) {}
+    }
+    return value;
+  }
+  // Preferred shape returned by the Media AI Worker.
+  if (typeof data?.artifact?.response === 'string' && data.artifact.response.trim()) {
+    return data.artifact.response.trim();
+  }
+  if (typeof data?.reply === 'string' && data.reply.trim()) {
+    const value = data.reply.trim();
+    if ((value.startsWith('{') && value.endsWith('}')) || (value.startsWith('[') && value.endsWith(']'))) {
+      try {
+        const parsed = JSON.parse(value);
+        const extracted = pickReply(parsed, depth + 1);
+        if (extracted) return extracted;
+      } catch (_) {}
+    }
+    return value;
+  }
+  for (const key of ['text', 'output', 'answer', 'responseText', 'generatedText']) {
     if (typeof data?.[key] === 'string' && data[key].trim()) return data[key].trim();
   }
   for (const key of ['result', 'data', 'response', 'output']) {
     if (data?.[key] !== undefined && data[key] !== data) {
-      const nested = pickReply(data[key]);
+      const nested = pickReply(data[key], depth + 1);
       if (nested) return nested;
     }
   }
@@ -44,8 +71,9 @@ function pickReply(data) {
     const c = data.choices[0]?.message?.content || data.choices[0]?.text;
     if (typeof c === 'string' && c.trim()) return c.trim();
   }
-  return JSON.stringify(data, null, 2);
+  return '';
 }
+
 async function callMediaAI(message) {
   if (!BASE) throw fail('Media AI-ի հասցեն կարգավորված չէ։ Ստուգեք NOVESSA_GATEWAY_BASE_URL միջավայրի փոփոխականը։', 503);
   const controller = new AbortController();
