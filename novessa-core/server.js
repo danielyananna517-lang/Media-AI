@@ -76,26 +76,53 @@ function pickReply(data, depth = 0) {
 
 async function callMediaAI(message) {
   if (!BASE) throw fail('Media AI-ի հասցեն կարգավորված չէ։ Ստուգեք NOVESSA_GATEWAY_BASE_URL միջավայրի փոփոխականը։', 503);
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
-  try {
-    const response = await fetch(BASE + '/ui/api/run', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json', accept: 'application/json' },
-      body: JSON.stringify({ operation: 'chat', input: { message: message } }),
-      signal: controller.signal
-    });
-    const raw = await response.text();
-    let data;
-    try { data = raw ? JSON.parse(raw) : {}; } catch (_) { data = { rawText: raw }; }
-    if (!response.ok) throw fail('Media AI հարցման սխալ՝ HTTP ' + response.status + '. ' + (data.error || raw || 'Անհայտ սխալ'), response.status === 429 ? 429 : 502);
-    if (data && data.ok === false) throw fail('Media AI-ը չավարտեց հարցումը՝ ' + String(data.error || data.code || 'provider_unavailable'), 502);
-    return pickReply(data);
-  } catch (e) {
-    if (e.name === 'AbortError') throw fail('Media AI-ի պատասխանի սպասման ժամանակը սպառվեց։', 504);
-    if (e.status) throw e;
-    throw fail('Media AI-ի հետ կապը չհաջողվեց։ ' + (e.message || 'Ցանցային սխալ'), 502);
-  } finally { clearTimeout(timer); }
+  let lastError = null;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+    try {
+      const response = await fetch(BASE + '/ui/api/run', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', accept: 'application/json' },
+        body: JSON.stringify({ operation: 'chat', input: { message: message } }),
+        signal: controller.signal
+      });
+      const raw = await response.text();
+      let data;
+      try { data = raw ? JSON.parse(raw) : {}; } catch (_) { data = { rawText: raw }; }
+      const upstreamCode = String(data?.error || data?.code || '');
+      const isTransient = response.status >= 500 && /internal_error|temporarily|overloaded|timeout/i.test(upstreamCode + ' ' + raw);
+      if (isTransient && attempt === 0) {
+        lastError = new Error('Media AI-ը ժամանակավոր ներքին սխալ է վերադարձրել։');
+        await new Promise(resolve => setTimeout(resolve, 300));
+        continue;
+      }
+      if (!response.ok) throw fail('Media AI հարցման սխալ՝ HTTP ' + response.status + '. ' + (data.error || raw || 'Անհայտ սխալ'), response.status === 429 ? 429 : 502);
+      if (data && data.ok === false) {
+        if (attempt === 0 && /internal_error|temporarily|overloaded|timeout/i.test(upstreamCode)) {
+          lastError = new Error('Media AI-ը ժամանակավոր ներքին սխալ է վերադարձրել։');
+          await new Promise(resolve => setTimeout(resolve, 300));
+          continue;
+        }
+        throw fail('Media AI-ը չավարտեց հարցումը՝ ' + String(data.error || data.code || 'provider_unavailable'), 502);
+      }
+      const reply = pickReply(data);
+      if (!reply) throw fail('Media AI-ը դատարկ պատասխան է վերադարձրել։', 502);
+      return reply;
+    } catch (e) {
+      if (e.name === 'AbortError') throw fail('Media AI-ի պատասխանի սպասման ժամանակը սպառվեց։', 504);
+      if (e.status) throw e;
+      lastError = e;
+      if (attempt === 0) {
+        await new Promise(resolve => setTimeout(resolve, 300));
+        continue;
+      }
+      throw fail('Media AI-ի հետ կապը չհաջողվեց։ ' + (e.message || 'Ցանցային սխալ'), 502);
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+  throw fail('Media AI-ի հետ հարցումը չհաջողվեց։ ' + (lastError?.message || 'Ժամանակավոր սխալ'), 502);
 }
 
 const CHAT_RULES = 'Դու NOVESSA AI-ի օգնականն ես։ Պատասխանիր օգտատիրոջ լեզվով՝ ջերմ, պարզ և գործնական։ Օգնում ես Wildberries/Ozon, SEO, ապրանքային քարտեր, Excel, Unit Economics և վաճառքների վերլուծություն թեմաներով։ Մի հորինիր փաստեր, վիճակագրություն, թարմ տվյալներ կամ երաշխիքներ։';
