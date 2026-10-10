@@ -41,7 +41,6 @@ app.get('/', (req, res) => {
         .export-btn { background: #10b981; margin-top: 10px; }
         .export-btn:hover { background: #059669; }
 
-        /* Calculator & SEO Styles */
         .panel-container { padding: 25px; overflow-y: auto; max-width: 700px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; gap: 15px; }
         .form-group { display: flex; flex-direction: column; gap: 5px; }
         .form-group label { font-size: 14px; color: #94a3b8; }
@@ -77,15 +76,12 @@ app.get('/', (req, res) => {
     <div id="calc-section" class="content-section">
         <div class="panel-container">
             <h3 style="color: #38bdf8; margin-bottom: 5px;">Մարքեթփլեյսի Յունիտ Էկոնոմիկա</h3>
-            
             <div class="form-group"><label>Ապրանքի վաճառքի գինը (Retail Price):</label><input type="number" id="price" value="5000"></div>
             <div class="form-group"><label>Ապրանքի ինքնարժեք (COGS):</label><input type="number" id="cogs" value="1500"></div>
             <div class="form-group"><label>Հանձնաժողով (Commission %):</label><input type="number" id="commission" value="15"></div>
             <div class="form-group"><label>Լոգիստիկա և փաթեթավորում (Logistics):</label><input type="number" id="logistics" value="400"></div>
             <div class="form-group"><label>Գովազդ և Հարկեր (%):</label><input type="number" id="adsTax" value="10"></div>
-
             <button class="action-btn" onclick="calculateUnit()">🧮 Հաշվել Շահույթը</button>
-
             <div class="result-box">
                 <h4 style="margin-bottom: 15px; color: #f1f5f9; border-bottom: 1px solid #334155; padding-bottom: 8px;">Հաշվարկի Արդյունքներ</h4>
                 <div class="result-row"><span>Ընդհանուր Ծախսեր:</span> <span id="resTotalCost">0 AMD</span></div>
@@ -101,12 +97,9 @@ app.get('/', (req, res) => {
     <div id="seo-section" class="content-section">
         <div class="panel-container">
             <h3 style="color: #38bdf8; margin-bottom: 5px;">Wildberries / Ozon SEO Քարտ + Ներքին Աուդիտ</h3>
-            
             <div class="form-group"><label>Ապրանքի անվանումը կամ կատեգորիան:</label><input type="text" id="prodName" placeholder="Օրինակ՝ Կանացի տաք գիշերազգեստ..."></div>
             <div class="form-group"><label>Հայտնի հատկանիշներ (գույն, նյութ, չափսեր և այլն):</label><textarea id="prodFeatures" rows="3" placeholder="Օրինակ՝ ֆլիս, տաբատով комплект, տարբեր գույներ..."></textarea></div>
-
             <button class="action-btn" onclick="generateSeoCard()">✨ Գեներացնել Քարտը և Կատարել Աուդիտ</button>
-
             <div class="result-box">
                 <div id="seoResult">Այստեղ կհայտնվի գնորդի համար պատրաստի քարտը և ներքին SEO ստուգման արդյունքները...</div>
                 <button class="action-btn export-btn" onclick="exportSeoExcel()">📥 Ներբեռնել SEO Քարտը (CSV)</button>
@@ -161,14 +154,14 @@ app.get('/', (req, res) => {
             const margin = document.getElementById('resMargin').textContent;
             const roi = document.getElementById('resRoi').textContent;
 
-            let csvContent = "\uFEFF"; 
+            let csvContent = "\\uFEFF";
             csvContent += "Parametr;Ardyunq\\n";
-            csvContent += \`Vachorqi Gin (Retail Price);\${price} AMD\\n\`;
-            csvContent += \`Inqnarpjeq (COGS);\${cogs} AMD\\n\`;
-            csvContent += \`Endhanur Caxser;\${totalCost}\\n\`;
-            csvContent += \`Zut Shahuyt (Net Profit);\${profit}\\n\`;
-            csvContent += \`Margin;\${margin}\\n\`;
-            csvContent += \`ROI;\${roi}\\n\`;
+            csvContent += "Vachorqi Gin (Retail Price);" + price + " AMD\\n";
+            csvContent += "Inqnarpjeq (COGS);" + cogs + " AMD\\n";
+            csvContent += "Endhanur Caxser;" + totalCost + "\\n";
+            csvContent += "Zut Shahuyt (Net Profit);" + profit + "\\n";
+            csvContent += "Margin;" + margin + "\\n";
+            csvContent += "ROI;" + roi + "\\n";
 
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement("a");
@@ -184,9 +177,9 @@ app.get('/', (req, res) => {
                 return;
             }
 
-            let csvContent = "\uFEFF"; 
+            let csvContent = "\\uFEFF";
             csvContent += "NOVESSA AI SEO Card & Audit Export\\n\\n";
-            csvContent += \`"\${seoText.replace(/"/g, '""')}"\\n\`;
+            csvContent += '"' + seoText.replace(/"/g, '""') + '"\\n';
 
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement("a");
@@ -241,7 +234,6 @@ app.get('/', (req, res) => {
             if (!message) return;
 
             const chatContainer = document.getElementById('chat-container');
-
             const userDiv = document.createElement('div');
             userDiv.className = 'message user-message';
             userDiv.textContent = message;
@@ -265,7 +257,7 @@ app.get('/', (req, res) => {
                 const data = await response.json();
                 loadingDiv.textContent = data.reply;
             } catch (err) {
-                loadingDiv.textContent = 'Կապի սխալ ամպային սերվերի հետ։';
+                loadingDiv.textContent = 'Ցանցային սխալ ամպային սերվերի հետ։';
             }
             chatContainer.scrollTop = chatContainer.scrollHeight;
         }
@@ -300,19 +292,19 @@ app.post('/api/v1/chat', async (req, res) => {
       body: JSON.stringify({
         contents: [{
           parts: [{
-            text: \`Դուք NOVESSA AI մասնագետն եք, որն օգնում է մարքեթփլեյսների (Wildberries, Ozon), Excel-ի, Unit Economics-ի, SEO-ի և վաճառքների կառավարման հարցերում։ Պատասխանեք հայերեն կամ ռուսերեն՝ ըստ օգտատիրոջ լեզվի:\\n\\nՕգտատիրոջ հարցը: \${message}\`
+            text: "Դուք NOVESSA AI մասնագետն եք, որն օգնում է մարքեթփլեյսների (Wildberries, Ozon), Excel-ի, Unit Economics-ի, SEO-ի և վաճառքների կառավարման հարցերում։ Պատասխանեք հայերեն կամ ռուսերեն՝ ըստ օգտատիրոջ լեզվի:\\n\\nՕգտատիրոջ հարցը: " + message
           }]
         }]
       })
     });
 
     const aiData = await aiResponse.json();
-    if (aiData.error) return res.json({ success: true, reply: \`Google Gemini Սխալ: \${aiData.error.message}\` });
+    if (aiData.error) return res.json({ success: true, reply: "Google Gemini Սխալ: " + aiData.error.message });
 
     if (aiData.candidates && aiData.candidates.length > 0 && aiData.candidates[0].content) {
       return res.json({ success: true, reply: aiData.candidates[0].content.parts[0].text });
     } else {
-      return res.json({ success: true, reply: "AI պատասխանի սխալ ձևաչափ:" });
+      return res.json({ success: true, reply: "AI պատասխանի ձևաչափի սխալ:" });
     }
   } catch (err) {
     return res.json({ success: true, reply: "Ցանցային սխալ: " + err.message });
@@ -320,5 +312,5 @@ app.post('/api/v1/chat', async (req, res) => {
 });
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(\`🚀 NOVESSA Cloud Pro Max Backend live on port \${PORT}\`);
+  console.log(`🚀 NOVESSA Cloud Pro Max Backend live on port ${PORT}`);
 });
