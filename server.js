@@ -1,6 +1,5 @@
 const express = require('express');
 const cors = require('cors');
-const path = require('path');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const TelegramBot = require('node-telegram-bot-api');
 
@@ -9,9 +8,6 @@ const app = express();
 // Allow CORS for all requests
 app.use(cors());
 app.use(express.json());
-
-// Serve Static Files from 'public' folder
-app.use(express.static(path.join(__dirname, 'public')));
 
 // Environment Variables
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
@@ -55,7 +51,7 @@ if (TELEGRAM_BOT_TOKEN) {
   });
 }
 
-// Mini App API Endpoint for AI Chat
+// API Endpoint for Chat
 app.post('/api/chat', async (req, res) => {
   try {
     const { message } = req.body;
@@ -70,13 +66,13 @@ app.post('/api/chat', async (req, res) => {
     res.json({ response: responseText });
   } catch (error) {
     console.error("API Chat Error:", error);
-    res.status(500).json({ error: " Failed to generate AI response" });
+    res.status(500).json({ error: "Failed to generate AI response" });
   }
 });
 
-// Fallback to Serve Frontend (Mini App)
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+// Root route
+app.get('/', (req, res) => {
+  res.send('NOVESSA AI Backend is running successfully! 🚀');
 });
 
 const PORT = process.env.PORT || 3000;
