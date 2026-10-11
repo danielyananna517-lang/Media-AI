@@ -12,34 +12,190 @@ app.get('/', (req, res) => {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Novessa Pro Max | E-Commerce Suite</title>
+    <title>Novessa Pro Max | E-Commerce & WB Suite</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0f172a; color: #f8fafc; margin: 0; padding: 20px; }
-        .container { max-width: 1000px; margin: 0 auto; background: #1e293b; padding: 30px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
-        h1 { color: #38bdf8; text-align: center; margin-bottom: 5px; }
-        .subtitle { text-align: center; color: #94a3b8; margin-bottom: 30px; font-size: 14px; }
-        .section { margin-top: 25px; padding: 20px; background: #334155; border-radius: 8px; border-left: 4px solid #38bdf8; }
-        h2 { font-size: 18px; margin-top: 0; color: #f1f5f9; }
-        input, select, textarea, button { padding: 12px; margin: 8px 0; width: 100%; border-radius: 6px; border: 1px solid #475569; background: #1e293b; color: white; box-sizing: border-box; font-size: 14px; }
-        textarea { resize: vertical; height: 80px; }
-        button { background: #0284c7; cursor: pointer; font-weight: bold; transition: background 0.2s; }
-        button:hover { background: #0ea5e9; }
-        .btn-save { background: #10b981; }
-        .btn-save:hover { background: #059669; }
-        .result-box { margin-top: 12px; padding: 15px; background: #0f172a; border-radius: 6px; color: #38bdf8; font-weight: bold; white-space: pre-wrap; line-height: 1.6; }
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
-        .card-preview { background: #0284c7; padding: 20px; border-radius: 10px; text-align: center; color: white; margin-top: 10px; }
-        .badge { background: #ef4444; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; display: inline-block; margin-bottom: 8px; }
+        :root {
+            --bg-base: #0b0f19;
+            --bg-card: #111827;
+            --bg-input: #1f2937;
+            --border-color: #374151;
+            --accent-primary: #38bdf8;
+            --accent-glow: rgba(56, 189, 248, 0.15);
+            --success: #10b981;
+            --text-main: #f9fafb;
+            --text-muted: #9ca3af;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: var(--bg-base);
+            color: var(--text-main);
+            margin: 0;
+            padding: 30px 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            font-size: 32px;
+            background: linear-gradient(135deg, #38bdf8, #818cf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 0 0 8px 0;
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 15px;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+
+        .card:hover {
+            border-color: rgba(56, 189, 248, 0.4);
+        }
+
+        h2 {
+            font-size: 18px;
+            margin-top: 0;
+            margin-bottom: 20px;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px 16px;
+            margin: 6px 0;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-input);
+            color: var(--text-main);
+            box-sizing: border-box;
+            font-size: 14px;
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        textarea { resize: vertical; height: 90px; }
+
+        button {
+            width: 100%;
+            padding: 13px;
+            margin-top: 10px;
+            border-radius: 10px;
+            border: none;
+            background: linear-gradient(135deg, #0284c7, #0369a1);
+            color: white;
+            font-weight: 600;
+            font-size: 15px;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.1s;
+            font-family: inherit;
+            box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3);
+        }
+
+        button:hover { opacity: 0.95; transform: translateY(-1px); }
+        button:active { transform: translateY(0); }
+
+        .btn-save {
+            background: linear-gradient(135deg, #059669, #047857);
+            box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
+        }
+
+        .result-box {
+            margin-top: 16px;
+            padding: 16px;
+            background: var(--bg-base);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            color: var(--accent-primary);
+            font-weight: 500;
+            font-size: 14px;
+            white-space: pre-wrap;
+            line-height: 1.6;
+        }
+
+        /* Card Preview Mockup */
+        .preview-box {
+            background: linear-gradient(135deg, #1e1b4b, #312e81);
+            border: 2px dashed #6366f1;
+            padding: 24px;
+            border-radius: 12px;
+            text-align: center;
+            color: white;
+            margin-top: 16px;
+            box-shadow: 0 8px 25px rgba(99, 102, 241, 0.2);
+        }
+
+        .badge-pill {
+            background: #ef4444;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            display: inline-block;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .history-card {
+            background: var(--bg-input);
+            padding: 14px 18px;
+            margin-top: 10px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            font-size: 13px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        @media (max-width: 768px) {
+            .grid-2, .grid-3 { grid-template-columns: 1fr; }
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🚀 Novessa Pro Max</h1>
-        <div class="subtitle">E-Commerce & WB Pro Suite: Sales Funnel Analytics, Card Infographics & AI</div>
+        <header>
+            <h1>🚀 Novessa Pro Max</h1>
+            <div class="subtitle">Universal E-Commerce, Wildberries/Ozon Suite & AI Analytics</div>
+        </header>
         
         <!-- 1. Funnel Analytics -->
-        <div class="section">
+        <div class="card">
             <h2>📉 1. Վաճառքների Ձագար (Sales Funnel Leak Analytics)</h2>
             <div class="grid-3">
                 <input type="number" id="views" placeholder="Ցուցադրումներ (Views)">
@@ -55,19 +211,19 @@ app.get('/', (req, res) => {
         </div>
 
         <!-- 2. Card Infographics Mockup -->
-        <div class="section">
+        <div class="card">
             <h2>🎨 2. Ապրանքային Քարտի Դիզայն և Ինֆոգրաֆիկա</h2>
             <input type="text" id="cardTitle" placeholder="Ապրանքի անուն (օր.՝ Կանացի Կաշվե Պայուսակ)">
             <div class="grid-2">
                 <input type="text" id="cardBadge" placeholder="Բեջ (օր.՝ Хит продаж / 100% Кожа)">
                 <input type="text" id="cardFeature" placeholder="Գլխավոր առավելություն (օր.՝ Водонепроницаемый)">
             </div>
-            <button onclick="generateCard()">Ստեղծել Քարտի Նախադիտում</button>
+            <button onclick="generateCard()">Ստեղծել Քարտի Պրեմիում Նախադիտում</button>
             <div id="cardResult" style="display:none;"></div>
         </div>
 
         <!-- 3. Universal Unit Economics -->
-        <div class="section">
+        <div class="card">
             <h2>📊 3. Ունիվերսալ Յունիթ-Էկոնոմիկա</h2>
             <input type="text" id="productTitle" placeholder="Ապրանքի անվանում">
             <select id="platform">
@@ -88,20 +244,20 @@ app.get('/', (req, res) => {
                 <input type="number" id="adCost" placeholder="Գովազդ (%) (CAC / ДРР)">
                 <input type="number" id="tax" placeholder="Հարկ (%)">
             </div>
-            <button onclick="calculate()">Հաշվարկել Շահույթը</button>
+            <button onclick="calculate()">Հաշվարկել Մաքուր Շահույթը</button>
             <div id="result" class="result-box" style="display:none;"></div>
-            <button id="saveBtn" class="btn-save" style="display:none;" onclick="saveCalculation()">💾 Պահպանել հիշողության մեջ</button>
+            <button id="saveBtn" class="btn-save" style="display:none; margin-top:12px;" onclick="saveCalculation()">💾 Պահպանել հիշողության մեջ</button>
         </div>
 
         <!-- 4. Memory Bank -->
-        <div class="section">
+        <div class="card">
             <h2>🧠 4. Հիշողության Բանկ</h2>
-            <button onclick="loadHistory()">🔄 Թարմացնել պատմությունը</button>
+            <button onclick="loadHistory()" style="background: #374151;">🔄 Թարմացնել պատմությունը</button>
             <div id="historyList" class="result-box">Սեղմեք թարմացնելու համար...</div>
         </div>
 
         <!-- 5. Gemini AI Copilot -->
-        <div class="section">
+        <div class="card">
             <h2>🤖 5. Gemini AI E-Commerce & WB Խորհրդատու</h2>
             <input type="password" id="geminiKey" placeholder="Gemini API Key (ըստ ցանկության)">
             <textarea id="aiPrompt" placeholder="Հարցրեք վաճառքների, գովազդի կամ SEO-ի մասին..."></textarea>
@@ -143,7 +299,7 @@ app.get('/', (req, res) => {
 
             let resDiv = document.getElementById('cardResult');
             resDiv.style.display = 'block';
-            resDiv.innerHTML = '<div class="card-preview"><div class="badge">' + badge + '</div><h3 style="margin:5px 0;">' + title + '</h3><p style="font-size:14px;">⭐ 100% Օպտիմիզացված Ինֆոգրաֆիկա | ' + feature + '</p></div>';
+            resDiv.innerHTML = '<div class="preview-box"><div class="badge-pill">' + badge + '</div><h3 style="margin:8px 0; font-size:22px;">' + title + '</h3><p style="font-size:14px; opacity:0.9; margin:4px 0;">⭐ 100% Օպտիմիզացված Ինֆոգրաֆիկա | ' + feature + '</p><div style="font-size:12px; margin-top:12px; color:#38bdf8;">✨ Պատրաստ է Canva / AI գեներացիայի համար</div></div>';
         }
 
         function calculate() {
@@ -169,7 +325,7 @@ app.get('/', (req, res) => {
 
             let resDiv = document.getElementById('result');
             resDiv.style.display = 'block';
-            resDiv.innerHTML = "Հարթակ: " + platform + " | Մաքուր շահույթ: " + netProfit.toFixed(2) + " | Մարժա: " + margin + "% | ROI: " + roi + "%";
+            resDiv.innerHTML = "հարթակ: " + platform + " | Մաքուր շահույթ: " + netProfit.toFixed(2) + " | Մարժա: " + margin + "% | ROI: " + roi + "%";
             
             document.getElementById('saveBtn').style.display = 'block';
         }
@@ -200,11 +356,10 @@ app.get('/', (req, res) => {
                     return;
                 }
                 listDiv.innerHTML = data.map((item, index) => 
-                    '<div style="background:#1e293b; padding:10px; margin-top:8px; border-radius:6px; border:1px solid #475569; font-size:13px;">' +
-                    '<b>#' + (index + 1) + ' - ' + item.title + '</b> (' + item.platform + ')<br>' +
-                    'Գինը՝ ' + item.price + ' | Շահույթ՝ <span style="color:#38bdf8;">' + item.netProfit + '</span> | ROI՝ <b>' + item.roi + '%</b><br>' +
-                    '<small style="color:#94a3b8;">' + item.date + '</small>' +
-                    '</div>'
+                    '<div class="history-card"><div>' +
+                    '<b>#' + (index + 1) + ' - ' + item.title + '</b> <span style="color:#9ca3af;">(' + item.platform + ')</span><br>' +
+                    'Գինը՝ ' + item.price + ' | Շահույթ՝ <span style="color:#38bdf8; font-weight:600;">' + item.netProfit + '</span> | ROI՝ <b>' + item.roi + '%</b>' +
+                    '</div><small style="color:#9ca3af;">' + item.date + '</small></div>'
                 ).join('');
             } catch (err) {
                 document.getElementById('historyList').innerHTML = '⚠️ Սխալ պատմությունը բեռնելիս։';
@@ -269,7 +424,7 @@ app.post('/api/ai', async (req, res) => {
       })
     });
     const data = await geminiRes.json();
-    const reply = data.candidates?.[0]?.content?.[0]?.text || 'Պատասխան չստացվեց Gemini-ից:';
+    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Պատասխան չստացվեց Gemini-ից:';
     res.json({ reply });
   } catch (error) {
     res.json({ reply: '⚠️ Սխալ Gemini API հարցման ժամանակ:' });
