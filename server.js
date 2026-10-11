@@ -16,12 +16,13 @@ app.get('/', (req, res) => {
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-base: #0b0f19;
-            --bg-card: #111827;
-            --bg-input: #1f2937;
-            --border-color: #374151;
-            --accent-primary: #38bdf8;
-            --accent-glow: rgba(56, 189, 248, 0.15);
+            --bg-base: #0c0916;
+            --bg-card: #151126;
+            --bg-input: #1e1938;
+            --border-color: #3f326b;
+            --accent-purple: #c084fc;
+            --accent-blue: #38bdf8;
+            --accent-glow: rgba(192, 132, 252, 0.25);
             --success: #10b981;
             --text-main: #f9fafb;
             --text-muted: #9ca3af;
@@ -47,11 +48,12 @@ app.get('/', (req, res) => {
         }
 
         h1 {
-            font-size: 32px;
-            background: linear-gradient(135deg, #38bdf8, #818cf8);
+            font-size: 34px;
+            background: linear-gradient(135deg, #c084fc, #38bdf8);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             margin: 0 0 8px 0;
+            font-weight: 700;
         }
 
         .subtitle {
@@ -65,12 +67,12 @@ app.get('/', (req, res) => {
             border-radius: 16px;
             padding: 24px;
             margin-bottom: 24px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 12px 35px rgba(12, 9, 22, 0.6);
             transition: transform 0.2s ease, border-color 0.2s ease;
         }
 
         .card:hover {
-            border-color: rgba(56, 189, 248, 0.4);
+            border-color: rgba(192, 132, 252, 0.5);
         }
 
         h2 {
@@ -102,7 +104,7 @@ app.get('/', (req, res) => {
         }
 
         input:focus, select:focus, textarea:focus {
-            border-color: var(--accent-primary);
+            border-color: var(--accent-purple);
             box-shadow: 0 0 0 3px var(--accent-glow);
         }
 
@@ -114,14 +116,14 @@ app.get('/', (req, res) => {
             margin-top: 10px;
             border-radius: 10px;
             border: none;
-            background: linear-gradient(135deg, #0284c7, #0369a1);
+            background: linear-gradient(135deg, #7c3aed, #2563eb);
             color: white;
             font-weight: 600;
             font-size: 15px;
             cursor: pointer;
             transition: opacity 0.2s, transform 0.1s;
             font-family: inherit;
-            box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3);
+            box-shadow: 0 4px 15px rgba(124, 58, 237, 0.35);
         }
 
         button:hover { opacity: 0.95; transform: translateY(-1px); }
@@ -135,10 +137,10 @@ app.get('/', (req, res) => {
         .result-box {
             margin-top: 16px;
             padding: 16px;
-            background: var(--bg-base);
+            background: #090612;
             border: 1px solid var(--border-color);
             border-radius: 10px;
-            color: var(--accent-primary);
+            color: #c084fc;
             font-weight: 500;
             font-size: 14px;
             white-space: pre-wrap;
@@ -147,14 +149,14 @@ app.get('/', (req, res) => {
 
         /* Card Preview Mockup */
         .preview-box {
-            background: linear-gradient(135deg, #1e1b4b, #312e81);
-            border: 2px dashed #6366f1;
+            background: linear-gradient(135deg, #2e1065, #1e3a8a);
+            border: 2px dashed #a855f7;
             padding: 24px;
             border-radius: 12px;
             text-align: center;
             color: white;
             margin-top: 16px;
-            box-shadow: 0 8px 25px rgba(99, 102, 241, 0.2);
+            box-shadow: 0 8px 25px rgba(168, 85, 247, 0.25);
         }
 
         .badge-pill {
@@ -252,7 +254,7 @@ app.get('/', (req, res) => {
         <!-- 4. Memory Bank -->
         <div class="card">
             <h2>🧠 4. Հիշողության Բանկ</h2>
-            <button onclick="loadHistory()" style="background: #374151;">🔄 Թարմացնել պատմությունը</button>
+            <button onclick="loadHistory()" style="background: #3f326b;">🔄 Թարմացնել պատմությունը</button>
             <div id="historyList" class="result-box">Սեղմեք թարմացնելու համար...</div>
         </div>
 
@@ -358,7 +360,7 @@ app.get('/', (req, res) => {
                 listDiv.innerHTML = data.map((item, index) => 
                     '<div class="history-card"><div>' +
                     '<b>#' + (index + 1) + ' - ' + item.title + '</b> <span style="color:#9ca3af;">(' + item.platform + ')</span><br>' +
-                    'Գինը՝ ' + item.price + ' | Շահույթ՝ <span style="color:#38bdf8; font-weight:600;">' + item.netProfit + '</span> | ROI՝ <b>' + item.roi + '%</b>' +
+                    'Գինը՝ ' + item.price + ' | Շահույթ՝ <span style="color:#c084fc; font-weight:600;">' + item.netProfit + '</span> | ROI՝ <b>' + item.roi + '%</b>' +
                     '</div><small style="color:#9ca3af;">' + item.date + '</small></div>'
                 ).join('');
             } catch (err) {
