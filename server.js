@@ -12,12 +12,12 @@ app.use(express.json());
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 
-// Initialize Gemini AI with gemini-2.0-flash
+// Initialize Gemini AI with gemini-3.8-flash
 let genAI = null;
 let model = null;
 if (GEMINI_API_KEY) {
   genAI = new GoogleGenerativeAI(GEMINI_API_KEY.trim());
-  model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+  model = genAI.getGenerativeModel({ model: "gemini-3.8-flash" });
 }
 
 // Initialize Telegram Bot
