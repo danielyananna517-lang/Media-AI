@@ -657,7 +657,7 @@ app.get('/', (req, res) => {
             const ws2 = XLSX.utils.aoa_to_sheet(costData);
             XLSX.utils.book_append_sheet(wb, ws2, "Ծախսեր և շահույթ");
 
-            const safeName = String(currentCalc.title || 'Novessa').replace(/[<>:"/\\|?*\u0000-\u001F]/g, '_').slice(0, 80);
+            const safeName = String(currentCalc.title || 'Novessa').replace(/[<>:"|?*\u0000-\u001F]/g, '_').replace(/[\\/]/g, '_').slice(0, 80);
             XLSX.writeFile(wb, safeName + "_Novessa_Report.xlsx");
         }
 
@@ -731,7 +731,7 @@ app.get('/', (req, res) => {
                     return;
                 }
                 doc.addImage(canvas.toDataURL('image/png'), 'PNG', 10, 10, width, height);
-                const safeName = String(currentCalc.title || 'Novessa').replace(/[<>:"/\\|?*\u0000-\u001F]/g, '_').slice(0, 80);
+                const safeName = String(currentCalc.title || 'Novessa').replace(/[<>:"|?*\u0000-\u001F]/g, '_').replace(/[\\/]/g, '_').slice(0, 80);
                 doc.save(safeName + '_Novessa_Report.pdf');
             } catch (error) {
                 alert('PDF ստեղծել չհաջողվեց։ Ստուգեք՝ արդյոք PDF գրադարանները հասանելի են։');
@@ -965,7 +965,7 @@ app.post('/api/remove-background', async (req, res) => {
   }
 
   const imageData = typeof req.body?.imageData === 'string' ? req.body.imageData : '';
-  const match = imageData.match(/^data:(image\\/(?:png|jpeg));base64,([A-Za-z0-9+/=]+)$/);
+  const match = imageData.match(/^data:(image\/(?:png|jpeg));base64,([A-Za-z0-9+/=]+)$/);base64,([A-Za-z0-9+/=]+)$/);
   if (!match) return res.status(400).json({ success: false, error: 'Օգտագործեք վավեր PNG կամ JPEG նկար։' });
 
   const imageBuffer = Buffer.from(match[2], 'base64');
