@@ -12,7 +12,7 @@ app.get('/', (req, res) => {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Novessa Pro Max | E-Commerce Suite</title>
+    <title>Novessa Pro Max | E-Commerce & WB Super Suite</title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -114,9 +114,7 @@ app.get('/', (req, res) => {
             transition: transform 0.2s ease, border-color 0.2s ease;
         }
 
-        .card:hover {
-            border-color: rgba(192, 132, 252, 0.5);
-        }
+        .card:hover { border-color: rgba(192, 132, 252, 0.5); }
 
         h2 { font-size: 20px; margin-top: 0; color: var(--text-main); }
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
@@ -177,6 +175,45 @@ app.get('/', (req, res) => {
             border: 1px solid var(--border-color);
         }
 
+        /* WB Card Mockup Preview */
+        .wb-card-container {
+            position: relative;
+            width: 280px;
+            height: 380px;
+            background: #1e1b4b;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 2px solid #a855f7;
+            margin: 20px auto 0 auto;
+            box-shadow: 0 10px 30px rgba(168, 85, 247, 0.3);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 16px;
+            box-sizing: border-box;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .wb-badge-top {
+            background: #ef4444;
+            color: white;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 20px;
+            align-self: flex-start;
+            text-transform: uppercase;
+        }
+
+        .wb-details-bottom {
+            background: rgba(12, 9, 22, 0.85);
+            backdrop-filter: blur(8px);
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
         .pain-card {
             background: #1e1938;
             border: 1px solid #3f326b;
@@ -186,10 +223,7 @@ app.get('/', (req, res) => {
             cursor: pointer;
             transition: all 0.2s;
         }
-        .pain-card:hover {
-            border-color: #c084fc;
-            transform: translateY(-2px);
-        }
+        .pain-card:hover { border-color: #c084fc; transform: translateY(-2px); }
     </style>
 </head>
 <body>
@@ -198,9 +232,10 @@ app.get('/', (req, res) => {
     <div class="sidebar">
         <div class="logo">🚀 Novessa Pro</div>
         <button class="nav-btn active" onclick="switchPage('home')">🏠 Գլխավոր (Home)</button>
+        <button class="nav-btn" onclick="switchPage('cardStudio')">🎨 Card Studio & Infographics</button>
+        <button class="nav-btn" onclick="switchPage('seoStudio')">✍️ SEO & Keywords Generator</button>
         <button class="nav-btn" onclick="switchPage('painSolver')">💡 Բիզնես-Ցավերի Դիագնոստիկ</button>
         <button class="nav-btn" onclick="switchPage('funnel')">📉 Վաճառքի Ձագար</button>
-        <button class="nav-btn" onclick="switchPage('cardStudio')">🎨 Քարտերի Ստուդիա</button>
         <button class="nav-btn" onclick="switchPage('unitEcon')">📊 Յունիթ Էկոնոմիկա</button>
         <button class="nav-btn" onclick="switchPage('history')">🧠 Հիշողության Բանկ</button>
         <button class="nav-btn" onclick="switchPage('aiCopilot')">🤖 Gemini AI Copilot</button>
@@ -212,20 +247,20 @@ app.get('/', (req, res) => {
         <!-- PAGE 1: HOME DASHBOARD -->
         <div id="home" class="page active">
             <div class="hero-banner">
-                <h1 style="color:white; margin:0 0 10px 0;">Բարի գալուստ Novessa Pro Max</h1>
-                <p style="color:#e2e8f0; font-size:16px; margin:0;">Պրոֆեսիոնալ E-Commerce, Wildberries/Ozon Suite & AI Analytics</p>
+                <h1 style="color:white; margin:0 0 10px 0;">Novessa Pro Max — E-Commerce SaaS</h1>
+                <p style="color:#e2e8f0; font-size:16px; margin:0;">Ամեն ինչ WB/Ozon/E-commerce վաճառքները մասշտաբավորելու և շահույթը ավելացնելու համար</p>
             </div>
             
             <div class="grid-3" style="margin-bottom: 20px;">
-                <div class="card" onclick="switchPage('funnel')" style="cursor:pointer;">
-                    <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=400&q=80" class="img-card">
-                    <h3>📉 Վաճառքի Ձագար</h3>
-                    <p style="color:var(--text-muted); font-size:13px;">Գտեք, թե որտեղ են կորչում փողերը WB/Ozon/E-commerce վաճառքներում։</p>
-                </div>
                 <div class="card" onclick="switchPage('cardStudio')" style="cursor:pointer;">
                     <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=400&q=80" class="img-card">
-                    <h3>🎨 Քարտերի Դիզայն</h3>
-                    <p style="color:var(--text-muted); font-size:13px;">Գեներացրեք գրավիչ ինֆոգրաֆիկա և բեջեր ապրանքների համար։</p>
+                    <h3>🎨 Card Studio & Infographics</h3>
+                    <p style="color:var(--text-muted); font-size:13px;">Ստեղծեք պատրաստի WB/Ozon քարտեր՝ ինֆոգրաֆիկայով ու բեջերով։</p>
+                </div>
+                <div class="card" onclick="switchPage('seoStudio')" style="cursor:pointer;">
+                    <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=400&q=80" class="img-card">
+                    <h3>✍️ SEO & Keywords Studio</h3>
+                    <p style="color:var(--text-muted); font-size:13px;">Վաճառող SEO վերնագրեր և որոնողական նկարագրություններ։</p>
                 </div>
                 <div class="card" onclick="switchPage('unitEcon')" style="cursor:pointer;">
                     <img src="https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=400&q=80" class="img-card">
@@ -236,16 +271,52 @@ app.get('/', (req, res) => {
 
             <div class="card" onclick="switchPage('painSolver')" style="cursor:pointer; border-color:#c084fc;">
                 <h3>💡 Բիզնես-Ցավերի Դիագնոստիկ (Pain Solver)</h3>
-                <p style="color:var(--text-muted); font-size:13px;">Ընտրեք ձեր խնդիրը և ստացեք անհապաղ մասնագիտական լուծում ու գործողությունների պլան։</p>
+                <p style="color:var(--text-muted); font-size:13px;">Ընտրեք ձեր խնդիրը (բարձր ДРР, ցածր CTR, վերադարձներ) և ստացեք անհապաղ բուժումը։</p>
             </div>
         </div>
 
-        <!-- PAGE 2: PAIN SOLVER -->
+        <!-- PAGE 2: CARD STUDIO & INFOGRAPHICS -->
+        <div id="cardStudio" class="page">
+            <div class="card">
+                <h2>🎨 WB/Ozon Քարտերի Դիզայն և Ինֆոգրաֆիկա</h2>
+                <p style="color:var(--text-muted); font-size:14px;">Մուտքագրեք ապրանքի տվյալները կամ տեղադրեք նկարի URL հղումը՝ պատրաստի քարտ ստանալու համար։</p>
+                
+                <input type="text" id="cardProduct" placeholder="Ապրանքի անուն (օր.՝ Կանացի Ջինսեր, Բարձր Գոտկատեղով)">
+                <div class="grid-2">
+                    <input type="text" id="cardBadge" placeholder="Բեջ (օր.՝ ХИТ ПРОДАЖ / 100% ХЛОПОК)">
+                    <input type="text" id="cardBenefit" placeholder="Գլխավոր առավելություն (օր.՝ Идеальная посадка)">
+                </div>
+                <input type="text" id="cardImgUrl" placeholder="Ապրանքի նկարի հղում (URL) (կամ թողեք դատարկ ստանդարտի համար)">
+                
+                <button class="action-btn" onclick="generateWBCard()">Գեներացնել WB/Ozon Քարտը</button>
+                
+                <div id="cardPreviewArea" style="display:none;">
+                    <div id="wbCard" class="wb-card-container">
+                        <div id="wbBadge" class="wb-badge-top">ХИТ ПРОДАЖ</div>
+                        <div class="wb-details-bottom">
+                            <h4 id="wbTitle" style="margin:0 0 4px 0; font-size:15px; color:white;">Կանացի Ջինսեր</h4>
+                            <p id="wbFeature" style="margin:0; font-size:12px; color:#c084fc; font-weight:600;">⭐ Идеальная посадка</p>
+                            <div style="margin-top:6px; font-size:11px; color:#9ca3af;">✅ Պատրաստ է WB/Ozon-ում տեղադրելու համար</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PAGE 3: SEO & KEYWORDS STUDIO -->
+        <div id="seoStudio" class="page">
+            <div class="card">
+                <h2>✍️ SEO Վերնագրերի և Նկարագրությունների Գեներատոր</h2>
+                <input type="text" id="seoInput" placeholder="Ապրանքի անվանումը կամ կատեգորիան (օր.՝ Կանացի տաբատ)">
+                <button class="action-btn" onclick="generateSEOText()">Գեներացնել SEO Տեքստեր և Թեգեր</button>
+                <div id="seoResult" class="result-box" style="display:none;"></div>
+            </div>
+        </div>
+
+        <!-- PAGE 4: PAIN SOLVER -->
         <div id="painSolver" class="page">
             <div class="card">
                 <h2>💡 Սելլերի Ցավերի Ավտոմատ Դիագնոստիկ և Լուծումներ</h2>
-                <p style="color:var(--text-muted); font-size:14px; margin-bottom:20px;">Ընտրեք ձեր հիմնական գլխացավանքը կամ խնդիրը, և Novessa-ն կտա կոնկրետ բուժումը։</p>
-                
                 <div class="pain-card" onclick="solvePain(1)">
                     <b>1. 💸 «Գովազդի վրա շատ փող եմ ծախսում (ДРР-ը բարձր է), բայց վաճառքներ չկան»</b>
                 </div>
@@ -258,12 +329,11 @@ app.get('/', (req, res) => {
                 <div class="pain-card" onclick="solvePain(4)">
                     <b>4. 📉 «Չեմ հասկանում՝ ինչպես ճիշտ հաշվեմ միջնորդավճարները, որ վնաս չտամ»</b>
                 </div>
-
                 <div id="painSolutionResult" class="result-box" style="display:none;"></div>
             </div>
         </div>
 
-        <!-- PAGE 3: FUNNEL -->
+        <!-- PAGE 5: FUNNEL -->
         <div id="funnel" class="page">
             <div class="card">
                 <h2>📉 Վաճառքների Ձագար (Sales Funnel Leak Analytics)</h2>
@@ -281,21 +351,7 @@ app.get('/', (req, res) => {
             </div>
         </div>
 
-        <!-- PAGE 4: CARD STUDIO -->
-        <div id="cardStudio" class="page">
-            <div class="card">
-                <h2>🎨 Ապրանքային Քարտի Դիզայն և Ինֆոգրաֆիկա</h2>
-                <input type="text" id="cardTitle" placeholder="Ապրանքի անուն (օր.՝ Կանացի Կաշվե Պայուսակ)">
-                <div class="grid-2">
-                    <input type="text" id="cardBadge" placeholder="Բեջ (օր.՝ Хит продаж / 100% Кожа)">
-                    <input type="text" id="cardFeature" placeholder="Գլխավոր առավելություն (օր.՝ Водонепроницаемый)">
-                </div>
-                <button class="action-btn" onclick="generateCard()">Ստեղծել Քարտի Նախադիտում</button>
-                <div id="cardResult" style="display:none;"></div>
-            </div>
-        </div>
-
-        <!-- PAGE 5: UNIT ECONOMICS -->
+        <!-- PAGE 6: UNIT ECONOMICS -->
         <div id="unitEcon" class="page">
             <div class="card">
                 <h2>📊 Ունիվերսալ Յունիթ-Էկոնոմիկա</h2>
@@ -324,7 +380,7 @@ app.get('/', (req, res) => {
             </div>
         </div>
 
-        <!-- PAGE 6: HISTORY -->
+        <!-- PAGE 7: HISTORY -->
         <div id="history" class="page">
             <div class="card">
                 <h2>🧠 Հիշողության Բանկ</h2>
@@ -333,7 +389,7 @@ app.get('/', (req, res) => {
             </div>
         </div>
 
-        <!-- PAGE 7: AI COPILOT -->
+        <!-- PAGE 8: AI COPILOT -->
         <div id="aiCopilot" class="page">
             <div class="card">
                 <h2>🤖 Gemini AI E-Commerce & WB Խորհրդատու</h2>
@@ -353,7 +409,6 @@ app.get('/', (req, res) => {
             
             document.getElementById(pageId).classList.add('active');
             
-            // Activate button in sidebar
             const btns = document.querySelectorAll('.nav-btn');
             btns.forEach(btn => {
                 if (btn.getAttribute('onclick').includes(pageId)) {
@@ -362,29 +417,43 @@ app.get('/', (req, res) => {
             });
         }
 
+        function generateWBCard() {
+            let title = document.getElementById('cardProduct').value || 'Կանացի Ջինսեր';
+            let badge = document.getElementById('cardBadge').value || 'ХИТ ПРОДАЖ';
+            let feature = document.getElementById('cardBenefit').value || 'Идеальная посадка';
+            let imgUrl = document.getElementById('cardImgUrl').value || 'https://images.unsplash.com/photo-1541099649105-f69ad21f3246?auto=format&fit=crop&w=600&q=80';
+
+            document.getElementById('wbTitle').innerText = title;
+            document.getElementById('wbBadge').innerText = badge;
+            document.getElementById('wbFeature').innerText = "⭐ " + feature;
+            
+            let cardElem = document.getElementById('wbCard');
+            cardElem.style.backgroundImage = 'linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.7)), url(' + imgUrl + ')';
+
+            document.getElementById('cardPreviewArea').style.display = 'block';
+        }
+
+        function generateSEOText() {
+            let input = document.getElementById('seoInput').value || 'Ապրանք';
+            let resDiv = document.getElementById('seoResult');
+            resDiv.style.display = 'block';
+            resDiv.innerHTML = "📌 **SEO Վերնագիր (WB/Ozon):**\\n" + input + " - Բարձր որակի, թրենդային մոդել 2026\\n\\n" +
+                "📝 **SEO Նկարագրություն:**\\n" + input + "-ն պատրաստված է բարձրորակ նյութերից, որոնք ապահովում են առավելագույն հարմարավետություն։ Իդեալական է ամենօրյա կրման համար։\\n\\n" +
+                "🏷️ **Բանալի Բառեր (Keywords / Tags):**\\n#" + input.replace(/\s+/g, '_') + " #թրենդային #որակյալ #wb_хит #женская_одежда";
+        }
+
         function solvePain(painId) {
             let resDiv = document.getElementById('painSolutionResult');
             resDiv.style.display = 'block';
             
             if (painId === 1) {
-                resDiv.innerHTML = "🎯 **Բուժում / Լուծում (Բարձր ДРР & Գովազդային ծախսեր):**\\n" +
-                    "1. **Կանգնեցրեք ավտոգովազդը (Автореклама):** Եթե ставки-ները շատ բարձր են, գովազդը ուտում է ամբողջ մարժան։ Անցեք ձեռքով կամ ֆիքսված հարցումներով գովազդի (Реклама в поиске).\\n" +
-                    "2. **Ստուգեք SEO վերնագիրը:** Հնարավոր է գովազդվում եք սխալ բանալի բառերով, որոնցով մարդիկ չեն գնում ապրանքը:\\n" +
-                    "3. **Բարձրացրեք գլխավոր նկարի գրավչությունը:** Եթե քլիքներ կան, բայց գնում չկա, խնդիրը գնի կամ մրցակցի մեջ է։";
+                resDiv.innerHTML = "🎯 **Բուժում (Բարձր ДРР & Գովազդային ծախսեր):**\\n1. Կանգնեցրեք ավտոգովազդը, անցեք ֆիքսված հարցումներով գովազդի։\\n2. Ստուգեք SEO վերնագիրը (հնարավոր է գովազդվում եք սխալ keyword-ներով)։";
             } else if (painId === 2) {
-                resDiv.innerHTML = "🎯 **Բուժում / Լուծում (Ցածր Կոնվերսիա Զամբյուղ):**\\n" +
-                    "1. **Ինֆոգրաֆիկայի փոփոխություն:** Հաճախորդը չի հասկանում ապրանքի հիմնական առավելությունները առաջին 3 վայրկյանում։ Ավելացրեք հստակ բեջեր և չափսեր նկարների վրա:\\n" +
-                    "2. **Գնային մրցակցություն:** Ստուգեք MPSTATS-ով՝ նույն որակի ապրանքը մրցակիցների մոտ ավելի էժա՞ն է, թե՞ ոչ:\\n" +
-                    "3. **Ակնարկներ (Reviews):** Եթե քարտը նոր է և չունի 4.5+ գնահատական, մարդիկ վախենում են գնել։ Խթանեք առաջին դրական ակնարկները:";
+                resDiv.innerHTML = "🎯 **Բուժում (Ցածր Կոնվերսիա Զամբյուղ):**\\n1. Փոխեք գլխավոր ինֆոգրաֆիկան (ավելացրեք բեջեր)։\\n2. Ստուգեք մրցակիցների գնային առաջարկները MPSTATS-ով։";
             } else if (painId === 3) {
-                resDiv.innerHTML = "🎯 **Բուժում / Լուծում (Բարձր Վերադարձներ / Выкуп):**\\n" +
-                    "1. **Չափսային ցանցի ճշգրտություն:** Եթե հագուստ է, հնարավոր է չափսերը սխալ են նկարագրված։ Թարմացրեք չափսերի աղյուսակը:\\n" +
-                    "2. **Փաթեթավորում:** Ապրանքը տեղափոխման ժամանակ վնասվում է։ Ավելացրեք պաշտպանիչ պղպջակավոր թաղանթ (пупырка) կամ ամուր տուփ:\\n" +
-                    "3. **Իրականության համապատասխանություն:** Նկարները չպետք է իդեալականացնեն ապրանքը այն աստիճան, որ իրականում հիասթափություն առաջացնեն:";
+                resDiv.innerHTML = "🎯 **Բուժում (Բարձր Վերադարձներ / Выкуп):**\\n1. Ճշգրտեք չափսային ցանցը (размерная сетка)։\\n2. Ամրացրեք փաթեթավորումը (пупырка/տուփ)։";
             } else if (painId === 4) {
-                resDiv.innerHTML = "🎯 **Բուժում / Լուծում (Ֆինանսական Ճշգրտություն):**\\n" +
-                    "1. **Օգտագործեք Novessa Յունիթ-Էկոնոմիկայի բաժինը:** Մուտքագրեք ինքնարժեքը, միջնորդավճարը, լոգիստիկան և հարկերը:\\n" +
-                    "2. **Ավելացրեք ռիսկային բուֆեր:** Միշտ ներառեք նվազագույնը 5-10% չնախատեսված ծախսեր (տուգանքներ, պահեստավորում) հաշվարկների մեջ:";
+                resDiv.innerHTML = "🎯 **Բուժում (Ֆինանսական Ճշգրտություն):**\\n1. Օգտագործեք Novessa Յունիթ-Էկոնոմիկան։\\n2. Ավելացրեք 5-10% ռիսկային բուֆեր հաշվարկների մեջ։";
             }
         }
 
@@ -399,32 +468,15 @@ app.get('/', (req, res) => {
 
             let ctr = v > 0 ? ((c / v) * 100).toFixed(1) : 0;
             let clickToCart = c > 0 ? ((cart / c) * 100).toFixed(1) : 0;
-            let cartToOrder = cart > 0 ? ((ord / cart) * 100).toFixed(1) : 0;
             let buyoutRate = ord > 0 ? ((buy / ord) * 100).toFixed(1) : 0;
-
-            let advice = "";
-            if (ctr < 3) advice += "⚠️ Ցածր CTR (" + ctr + "%): Ապրանքի գլխավոր նկարը գրավիչ չէ։\\n";
-            if (clickToCart < 10) advice += "⚠️ Ցածր Զամբյուղ Լցնելու % (" + clickToCart + "%): Գինը բարձր է կամ քարտի մեջ չկան բավարար լուսանկարներ։\\n";
-            if (buyoutRate < 60) advice += "⚠️ Ցածր Քավում (" + buyoutRate + "%): Ապրանքի որակը չի համապատասխանում։\\n";
-            if (!advice) advice = "✅ Ձեր ձագարի ցուցանիշները գտնվում են լավ տիրույթում։";
 
             let resDiv = document.getElementById('funnelResult');
             resDiv.style.display = 'block';
-            resDiv.innerHTML = "📊 Ձագարի Փուլային Կոնվերսիա:\\n• CTR: " + ctr + "%\\n• Քլիք ➔ Զամբյուղ: " + clickToCart + "%\\n• Զամբյուղ ➔ Պատվեր: " + cartToOrder + "%\\n• Պատվեր ➔ Քավում: " + buyoutRate + "%\\n\\n🚨 Վերլուծություն:\\n" + advice;
-        }
-
-        function generateCard() {
-            let title = document.getElementById('cardTitle').value || 'Ապրանքի Անվանում';
-            let badge = document.getElementById('cardBadge').value || 'ХИТ ПРОДАЖ';
-            let feature = document.getElementById('cardFeature').value || 'Премиум Качество';
-
-            let resDiv = document.getElementById('cardResult');
-            resDiv.style.display = 'block';
-            resDiv.innerHTML = '<div style="background:linear-gradient(135deg, #2e1065, #1e3a8a); padding:20px; border-radius:12px; text-align:center; margin-top:15px;"><span style="background:#ef4444; color:white; padding:4px 10px; border-radius:20px; font-size:12px; font-weight:700;">' + badge + '</span><h3 style="margin:10px 0;">' + title + '</h3><p style="font-size:14px; opacity:0.9;">⭐ ' + feature + '</p></div>';
+            resDiv.innerHTML = "📊 **Ձագարի Փուլային Կոնվերսիա:**\\n• CTR: " + ctr + "%\\n• Քլիք ➔ Զամբյուղ: " + clickToCart + "%\\n• Պատվեր ➔ Քավում: " + buyoutRate + "%";
         }
 
         function calculate() {
-            let title = document.getElementById('productTitle').value || 'Անհայտ ապրանք';
+            let title = document.getElementById('productTitle').value || 'Ապրանք';
             let platform = document.getElementById('platform').value;
             let p = parseFloat(document.getElementById('price').value) || 0;
             let c = parseFloat(document.getElementById('cost').value) || 0;
@@ -504,7 +556,7 @@ app.get('/', (req, res) => {
                 const data = await response.json();
                 resDiv.innerHTML = data.reply || 'Պատասխան չստացվեց։';
             } catch (err) {
-                resDiv.innerHTML = '⚠️ Սխալ AI-ի հետ կապում։';
+                resDiv.innerHTML = '⚠️ Սխալ Gemini API հարցման ժամանակ։';
             }
         }
     </script>
