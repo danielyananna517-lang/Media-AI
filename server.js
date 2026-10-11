@@ -965,7 +965,7 @@ app.post('/api/remove-background', async (req, res) => {
   }
 
   const imageData = typeof req.body?.imageData === 'string' ? req.body.imageData : '';
-  const match = imageData.match(/^data:(image\/(?:png|jpeg));base64,([A-Za-z0-9+/=]+)$/);base64,([A-Za-z0-9+/=]+)$/);
+  const match = imageData.match(/^data:(image\/(?:png|jpeg));base64,([A-Za-z0-9+/=]+)$/);
   if (!match) return res.status(400).json({ success: false, error: 'Օգտագործեք վավեր PNG կամ JPEG նկար։' });
 
   const imageBuffer = Buffer.from(match[2], 'base64');
