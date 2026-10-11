@@ -12,7 +12,7 @@ app.get('/', (req, res) => {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Novessa Pro Max | E-Commerce Pain Solver & Suite</title>
+    <title>Novessa Pro Max | E-Commerce Suite</title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -111,11 +111,16 @@ app.get('/', (req, res) => {
             padding: 24px;
             margin-bottom: 24px;
             box-shadow: 0 12px 35px rgba(12, 9, 22, 0.6);
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+
+        .card:hover {
+            border-color: rgba(192, 132, 252, 0.5);
         }
 
         h2 { font-size: 20px; margin-top: 0; color: var(--text-main); }
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
 
         input, select, textarea {
             width: 100%;
@@ -163,6 +168,15 @@ app.get('/', (req, res) => {
             line-height: 1.6;
         }
 
+        .img-card {
+            width: 100%;
+            height: 160px;
+            object-fit: cover;
+            border-radius: 12px;
+            margin-bottom: 14px;
+            border: 1px solid var(--border-color);
+        }
+
         .pain-card {
             background: #1e1938;
             border: 1px solid #3f326b;
@@ -198,23 +212,35 @@ app.get('/', (req, res) => {
         <!-- PAGE 1: HOME DASHBOARD -->
         <div id="home" class="page active">
             <div class="hero-banner">
-                <h1 style="color:white; margin:0 0 10px 0;">Novessa Pro Max — Լուծում ենք Ձեր բիզնեսի ցավերը</h1>
-                <p style="color:#e2e8f0; font-size:16px; margin:0;">Ավելին, քան պարզապես հաշվիչ։ Ձեր խելացի e-commerce գործընկերը։</p>
+                <h1 style="color:white; margin:0 0 10px 0;">Բարի գալուստ Novessa Pro Max</h1>
+                <p style="color:#e2e8f0; font-size:16px; margin:0;">Պրոֆեսիոնալ E-Commerce, Wildberries/Ozon Suite & AI Analytics</p>
             </div>
             
-            <div class="grid-2">
-                <div class="card" onclick="switchPage('painSolver')" style="cursor:pointer; border-color:#c084fc;">
-                    <h3>💡 Բիզնես-Ցավերի Դիագնոստիկ (Pain Solver)</h3>
-                    <p style="color:var(--text-muted); font-size:13px;">Ընտրեք ձեր խնդիրը և ստացեք անհապաղ մասնագիտական լուծում ու գործողությունների պլան։</p>
-                </div>
+            <div class="grid-3" style="margin-bottom: 20px;">
                 <div class="card" onclick="switchPage('funnel')" style="cursor:pointer;">
-                    <h3>📉 Վաճառքի Ձագարի Վերլուծություն</h3>
-                    <p style="color:var(--text-muted); font-size:13px;">Բացահայտեք, թե կոնկրետ որ փուլում են կորչում ձեր գումարները։</p>
+                    <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=400&q=80" class="img-card">
+                    <h3>📉 Վաճառքի Ձագար</h3>
+                    <p style="color:var(--text-muted); font-size:13px;">Գտեք, թե որտեղ են կորչում փողերը WB/Ozon/E-commerce վաճառքներում։</p>
                 </div>
+                <div class="card" onclick="switchPage('cardStudio')" style="cursor:pointer;">
+                    <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=400&q=80" class="img-card">
+                    <h3>🎨 Քարտերի Դիզայն</h3>
+                    <p style="color:var(--text-muted); font-size:13px;">Գեներացրեք գրավիչ ինֆոգրաֆիկա և բեջեր ապրանքների համար։</p>
+                </div>
+                <div class="card" onclick="switchPage('unitEcon')" style="cursor:pointer;">
+                    <img src="https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=400&q=80" class="img-card">
+                    <h3>📊 Յունիթ-Էկոնոմիկա</h3>
+                    <p style="color:var(--text-muted); font-size:13px;">Ճշգրիտ հաշվարկեք մաքուր շահույթը, ROI-ն և հարկերը։</p>
+                </div>
+            </div>
+
+            <div class="card" onclick="switchPage('painSolver')" style="cursor:pointer; border-color:#c084fc;">
+                <h3>💡 Բիզնես-Ցավերի Դիագնոստիկ (Pain Solver)</h3>
+                <p style="color:var(--text-muted); font-size:13px;">Ընտրեք ձեր խնդիրը և ստացեք անհապաղ մասնագիտական լուծում ու գործողությունների պլան։</p>
             </div>
         </div>
 
-        <!-- PAGE 2: PAIN SOLVER (NEW CORE FEATURE) -->
+        <!-- PAGE 2: PAIN SOLVER -->
         <div id="painSolver" class="page">
             <div class="card">
                 <h2>💡 Սելլերի Ցավերի Ավտոմատ Դիագնոստիկ և Լուծումներ</h2>
@@ -326,7 +352,14 @@ app.get('/', (req, res) => {
             document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
             
             document.getElementById(pageId).classList.add('active');
-            event.currentTarget.classList.add('active');
+            
+            // Activate button in sidebar
+            const btns = document.querySelectorAll('.nav-btn');
+            btns.forEach(btn => {
+                if (btn.getAttribute('onclick').includes(pageId)) {
+                    btn.classList.add('active');
+                }
+            });
         }
 
         function solvePain(painId) {
