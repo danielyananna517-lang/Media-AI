@@ -51,7 +51,7 @@ if (TELEGRAM_BOT_TOKEN) {
   });
 }
 
-// API Endpoint for Chat
+// Mini App API Endpoint for AI Chat
 app.post('/api/chat', async (req, res) => {
   try {
     const { message } = req.body;
@@ -70,7 +70,7 @@ app.post('/api/chat', async (req, res) => {
   }
 });
 
-// Root route
+// Root route to verify server status
 app.get('/', (req, res) => {
   res.send('NOVESSA AI Backend is running successfully! 🚀');
 });
