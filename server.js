@@ -12,7 +12,7 @@ app.get('/', (req, res) => {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Novessa Pro Max | E-Commerce Suite</title>
+    <title>Novessa Pro Max | E-Commerce Pain Solver & Suite</title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -36,9 +36,8 @@ app.get('/', (req, res) => {
             min-height: 100vh;
         }
 
-        /* Navigation Sidebar */
         .sidebar {
-            width: 260px;
+            width: 270px;
             background: var(--bg-card);
             border-right: 1px solid var(--border-color);
             padding: 24px 16px;
@@ -81,7 +80,6 @@ app.get('/', (req, res) => {
             border: 1px solid rgba(192, 132, 252, 0.3);
         }
 
-        /* Main Content Area */
         .content {
             flex: 1;
             padding: 35px 40px;
@@ -97,7 +95,7 @@ app.get('/', (req, res) => {
         }
 
         .hero-banner {
-            background: linear-gradient(135deg, rgba(46, 16, 101, 0.8), rgba(30, 58, 138, 0.8)), url('https://images.unsplash.com/photo-1556742049-0a670f4a45e7?auto=format&fit=crop&w=1200&q=80');
+            background: linear-gradient(135deg, rgba(46, 16, 101, 0.9), rgba(30, 58, 138, 0.9)), url('https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1200&q=80');
             background-size: cover;
             background-position: center;
             border-radius: 16px;
@@ -154,7 +152,7 @@ app.get('/', (req, res) => {
 
         .result-box {
             margin-top: 16px;
-            padding: 16px;
+            padding: 18px;
             background: #090612;
             border: 1px solid var(--border-color);
             border-radius: 10px;
@@ -165,13 +163,18 @@ app.get('/', (req, res) => {
             line-height: 1.6;
         }
 
-        .img-card {
-            width: 100%;
-            height: 180px;
-            object-fit: cover;
+        .pain-card {
+            background: #1e1938;
+            border: 1px solid #3f326b;
+            padding: 16px;
             border-radius: 12px;
             margin-bottom: 12px;
-            border: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .pain-card:hover {
+            border-color: #c084fc;
+            transform: translateY(-2px);
         }
     </style>
 </head>
@@ -181,6 +184,7 @@ app.get('/', (req, res) => {
     <div class="sidebar">
         <div class="logo">🚀 Novessa Pro</div>
         <button class="nav-btn active" onclick="switchPage('home')">🏠 Գլխավոր (Home)</button>
+        <button class="nav-btn" onclick="switchPage('painSolver')">💡 Բիզնես-Ցավերի Դիագնոստիկ</button>
         <button class="nav-btn" onclick="switchPage('funnel')">📉 Վաճառքի Ձագար</button>
         <button class="nav-btn" onclick="switchPage('cardStudio')">🎨 Քարտերի Ստուդիա</button>
         <button class="nav-btn" onclick="switchPage('unitEcon')">📊 Յունիթ Էկոնոմիկա</button>
@@ -194,30 +198,46 @@ app.get('/', (req, res) => {
         <!-- PAGE 1: HOME DASHBOARD -->
         <div id="home" class="page active">
             <div class="hero-banner">
-                <h1 style="color:white; margin:0 0 10px 0;">Բարի գալուստ Novessa Pro Max</h1>
-                <p style="color:#e2e8f0; font-size:16px; margin:0;">Պրոֆեսիոնալ E-Commerce և Մարկետփլեյս Վերլուծությունների Համակարգ</p>
+                <h1 style="color:white; margin:0 0 10px 0;">Novessa Pro Max — Լուծում ենք Ձեր բիզնեսի ցավերը</h1>
+                <p style="color:#e2e8f0; font-size:16px; margin:0;">Ավելին, քան պարզապես հաշվիչ։ Ձեր խելացի e-commerce գործընկերը։</p>
             </div>
             
-            <div class="grid-3">
+            <div class="grid-2">
+                <div class="card" onclick="switchPage('painSolver')" style="cursor:pointer; border-color:#c084fc;">
+                    <h3>💡 Բիզնես-Ցավերի Դիագնոստիկ (Pain Solver)</h3>
+                    <p style="color:var(--text-muted); font-size:13px;">Ընտրեք ձեր խնդիրը և ստացեք անհապաղ մասնագիտական լուծում ու գործողությունների պլան։</p>
+                </div>
                 <div class="card" onclick="switchPage('funnel')" style="cursor:pointer;">
-                    <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=400&q=80" class="img-card">
-                    <h3>📉 Վաճառքի Ձագար</h3>
-                    <p style="color:var(--text-muted); font-size:13px;">Գտեք, թե որտեղ են կորչում փողերը WB/Ozon/E-commerce վաճառքներում։</p>
-                </div>
-                <div class="card" onclick="switchPage('cardStudio')" style="cursor:pointer;">
-                    <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=400&q=80" class="img-card">
-                    <h3>🎨 Քարտերի Դիզայն</h3>
-                    <p style="color:var(--text-muted); font-size:13px;">Գեներացրեք գրավիչ ինֆոգրաֆիկա և բեջեր ապրանքների համար։</p>
-                </div>
-                <div class="card" onclick="switchPage('unitEcon')" style="cursor:pointer;">
-                    <img src="https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=400&q=80" class="img-card">
-                    <h3>📊 Յունիթ-Էկոնոմիկա</h3>
-                    <p style="color:var(--text-muted); font-size:13px;">Ճշգրիտ հաշվարկեք մաքուր շահույթը, ROI-ն և հարկերը։</p>
+                    <h3>📉 Վաճառքի Ձագարի Վերլուծություն</h3>
+                    <p style="color:var(--text-muted); font-size:13px;">Բացահայտեք, թե կոնկրետ որ փուլում են կորչում ձեր գումարները։</p>
                 </div>
             </div>
         </div>
 
-        <!-- PAGE 2: FUNNEL -->
+        <!-- PAGE 2: PAIN SOLVER (NEW CORE FEATURE) -->
+        <div id="painSolver" class="page">
+            <div class="card">
+                <h2>💡 Սելլերի Ցավերի Ավտոմատ Դիագնոստիկ և Լուծումներ</h2>
+                <p style="color:var(--text-muted); font-size:14px; margin-bottom:20px;">Ընտրեք ձեր հիմնական գլխացավանքը կամ խնդիրը, և Novessa-ն կտա կոնկրետ բուժումը։</p>
+                
+                <div class="pain-card" onclick="solvePain(1)">
+                    <b>1. 💸 «Գովազդի վրա շատ փող եմ ծախսում (ДРР-ը բարձր է), բայց վաճառքներ չկան»</b>
+                </div>
+                <div class="pain-card" onclick="solvePain(2)">
+                    <b>2. 👀 «Ապրանքը դիտում են (Views կան), բայց զամբյուղ չեն դնում»</b>
+                </div>
+                <div class="pain-card" onclick="solvePain(3)">
+                    <b>3. 🔄 «Վերադարձները (Выкуп) շատ են, և լոգիստիկան ուտում է ամբողջ շահույթս»</b>
+                </div>
+                <div class="pain-card" onclick="solvePain(4)">
+                    <b>4. 📉 «Չեմ հասկանում՝ ինչպես ճիշտ հաշվեմ միջնորդավճարները, որ վնաս չտամ»</b>
+                </div>
+
+                <div id="painSolutionResult" class="result-box" style="display:none;"></div>
+            </div>
+        </div>
+
+        <!-- PAGE 3: FUNNEL -->
         <div id="funnel" class="page">
             <div class="card">
                 <h2>📉 Վաճառքների Ձագար (Sales Funnel Leak Analytics)</h2>
@@ -235,7 +255,7 @@ app.get('/', (req, res) => {
             </div>
         </div>
 
-        <!-- PAGE 3: CARD STUDIO -->
+        <!-- PAGE 4: CARD STUDIO -->
         <div id="cardStudio" class="page">
             <div class="card">
                 <h2>🎨 Ապրանքային Քարտի Դիզայն և Ինֆոգրաֆիկա</h2>
@@ -249,7 +269,7 @@ app.get('/', (req, res) => {
             </div>
         </div>
 
-        <!-- PAGE 4: UNIT ECONOMICS -->
+        <!-- PAGE 5: UNIT ECONOMICS -->
         <div id="unitEcon" class="page">
             <div class="card">
                 <h2>📊 Ունիվերսալ Յունիթ-Էկոնոմիկա</h2>
@@ -278,7 +298,7 @@ app.get('/', (req, res) => {
             </div>
         </div>
 
-        <!-- PAGE 5: HISTORY -->
+        <!-- PAGE 6: HISTORY -->
         <div id="history" class="page">
             <div class="card">
                 <h2>🧠 Հիշողության Բանկ</h2>
@@ -287,7 +307,7 @@ app.get('/', (req, res) => {
             </div>
         </div>
 
-        <!-- PAGE 6: AI COPILOT -->
+        <!-- PAGE 7: AI COPILOT -->
         <div id="aiCopilot" class="page">
             <div class="card">
                 <h2>🤖 Gemini AI E-Commerce & WB Խորհրդատու</h2>
@@ -307,6 +327,32 @@ app.get('/', (req, res) => {
             
             document.getElementById(pageId).classList.add('active');
             event.currentTarget.classList.add('active');
+        }
+
+        function solvePain(painId) {
+            let resDiv = document.getElementById('painSolutionResult');
+            resDiv.style.display = 'block';
+            
+            if (painId === 1) {
+                resDiv.innerHTML = "🎯 **Բուժում / Լուծում (Բարձր ДРР & Գովազդային ծախսեր):**\\n" +
+                    "1. **Կանգնեցրեք ավտոգովազդը (Автореклама):** Եթե ставки-ները շատ բարձր են, գովազդը ուտում է ամբողջ մարժան։ Անցեք ձեռքով կամ ֆիքսված հարցումներով գովազդի (Реклама в поиске).\\n" +
+                    "2. **Ստուգեք SEO վերնագիրը:** Հնարավոր է գովազդվում եք սխալ բանալի բառերով, որոնցով մարդիկ չեն գնում ապրանքը:\\n" +
+                    "3. **Բարձրացրեք գլխավոր նկարի գրավչությունը:** Եթե քլիքներ կան, բայց գնում չկա, խնդիրը գնի կամ մրցակցի մեջ է։";
+            } else if (painId === 2) {
+                resDiv.innerHTML = "🎯 **Բուժում / Լուծում (Ցածր Կոնվերսիա Զամբյուղ):**\\n" +
+                    "1. **Ինֆոգրաֆիկայի փոփոխություն:** Հաճախորդը չի հասկանում ապրանքի հիմնական առավելությունները առաջին 3 վայրկյանում։ Ավելացրեք հստակ բեջեր և չափսեր նկարների վրա:\\n" +
+                    "2. **Գնային մրցակցություն:** Ստուգեք MPSTATS-ով՝ նույն որակի ապրանքը մրցակիցների մոտ ավելի էժա՞ն է, թե՞ ոչ:\\n" +
+                    "3. **Ակնարկներ (Reviews):** Եթե քարտը նոր է և չունի 4.5+ գնահատական, մարդիկ վախենում են գնել։ Խթանեք առաջին դրական ակնարկները:";
+            } else if (painId === 3) {
+                resDiv.innerHTML = "🎯 **Բուժում / Լուծում (Բարձր Վերադարձներ / Выкуп):**\\n" +
+                    "1. **Չափսային ցանցի ճշգրտություն:** Եթե հագուստ է, հնարավոր է չափսերը սխալ են նկարագրված։ Թարմացրեք չափսերի աղյուսակը:\\n" +
+                    "2. **Փաթեթավորում:** Ապրանքը տեղափոխման ժամանակ վնասվում է։ Ավելացրեք պաշտպանիչ պղպջակավոր թաղանթ (пупырка) կամ ամուր տուփ:\\n" +
+                    "3. **Իրականության համապատասխանություն:** Նկարները չպետք է իդեալականացնեն ապրանքը այն աստիճան, որ իրականում հիասթափություն առաջացնեն:";
+            } else if (painId === 4) {
+                resDiv.innerHTML = "🎯 **Բուժում / Լուծում (Ֆինանսական Ճշգրտություն):**\\n" +
+                    "1. **Օգտագործեք Novessa Յունիթ-Էկոնոմիկայի բաժինը:** Մուտքագրեք ինքնարժեքը, միջնորդավճարը, լոգիստիկան և հարկերը:\\n" +
+                    "2. **Ավելացրեք ռիսկային բուֆեր:** Միշտ ներառեք նվազագույնը 5-10% չնախատեսված ծախսեր (տուգանքներ, պահեստավորում) հաշվարկների մեջ:";
+            }
         }
 
         let currentCalc = null;
