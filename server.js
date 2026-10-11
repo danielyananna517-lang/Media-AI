@@ -1,7 +1,7 @@
 import express from 'express';
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 const PORT = process.env.PORT || 3000;
 
 let historyDB = [];
@@ -12,7 +12,7 @@ app.get('/', (req, res) => {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Novessa Pro Max | All-in-One E-Commerce Master Suite</title>
+    <title>Novessa Pro Max | E-Commerce Suite</title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -26,7 +26,6 @@ app.get('/', (req, res) => {
             --text-main: #f9fafb;
             --text-muted: #9ca3af;
             --success: #10b981;
-            --danger: #ef4444;
         }
 
         body {
@@ -118,15 +117,11 @@ app.get('/', (req, res) => {
             padding: 24px;
             margin-bottom: 24px;
             box-shadow: 0 12px 35px rgba(12, 9, 22, 0.6);
-            transition: transform 0.2s ease, border-color 0.2s ease;
         }
-
-        .card:hover { border-color: rgba(192, 132, 252, 0.5); }
 
         h2 { font-size: 20px; margin-top: 0; color: var(--text-main); }
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
         .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
-        .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px; }
 
         label { font-size: 12px; color: var(--text-muted); display: block; margin-top: 8px; font-weight: 600; }
         input, select, textarea {
@@ -161,7 +156,11 @@ app.get('/', (req, res) => {
             cursor: pointer;
             box-shadow: 0 4px 15px rgba(124, 58, 237, 0.35);
         }
-        button.action-btn:hover { opacity: 0.95; }
+
+        .btn-export {
+            background: linear-gradient(135deg, #059669, #047857) !important;
+            box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3) !important;
+        }
 
         .result-box {
             margin-top: 16px;
@@ -174,15 +173,6 @@ app.get('/', (req, res) => {
             font-size: 14px;
             white-space: pre-wrap;
             line-height: 1.6;
-        }
-
-        .img-card {
-            width: 100%;
-            height: 150px;
-            object-fit: cover;
-            border-radius: 12px;
-            margin-bottom: 12px;
-            border: 1px solid var(--border-color);
         }
 
         .wb-card-container {
@@ -243,7 +233,7 @@ app.get('/', (req, res) => {
         <button class="nav-btn active" onclick="switchPage('home')">🏠 Գլխավոր (Dashboard)</button>
         <button class="nav-btn" onclick="switchPage('masterCalc')">📊 Յունիթ, Լոգիստիկա & Պահեստ</button>
         <button class="nav-btn" onclick="switchPage('funnelAndAd')">📉 Վաճառքի Ձագար & AD Test</button>
-        <button class="nav-btn" onclick="switchPage('cardStudio')">🎨 Card Studio & Infographics</button>
+        <button class="nav-btn" onclick="switchPage('cardStudio')">🎨 Card Studio & Upload</button>
         <button class="nav-btn" onclick="switchPage('seoStudio')">✍️ SEO & Keywords Suite</button>
         <button class="nav-btn" onclick="switchPage('painSolver')">💡 Բիզնես-Ցավերի Դիագնոստիկ</button>
         <button class="nav-btn" onclick="switchPage('history')">🧠 Հիշողության Բանկ</button>
@@ -256,40 +246,30 @@ app.get('/', (req, res) => {
         <!-- PAGE 1: HOME DASHBOARD -->
         <div id="home" class="page active">
             <div class="hero-banner">
-                <h1 style="color:white; margin:0 0 10px 0;">Novessa Pro Max — E-Commerce Master Suite</h1>
-                <p style="color:#e2e8f0; font-size:16px; margin:0;">Ամեն ինչ լոգիստիկայի, պահեստավորման, վաճառքի ձագարի, գովազդի (AD Test) և քարտի դիզայնի համար։</p>
+                <h1 style="color:white; margin:0 0 10px 0;">Novessa Pro Max — E-Commerce Suite</h1>
+                <p style="color:#e2e8f0; font-size:16px; margin:0;">Ամեն ինչ լոգիստիկայի, պահեստավորման, ձագարի, գովազդի և քարտերի դիզայնի համար։</p>
             </div>
             
-            <div class="grid-3" style="margin-bottom: 20px;">
+            <div class="grid-3">
                 <div class="card" onclick="switchPage('masterCalc')" style="cursor:pointer;">
-                    <img src="https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=400&q=80" class="img-card">
-                    <h3>📊 Յունիթ, Լոգիստիկա & Պահեստ</h3>
-                    <p style="color:var(--text-muted); font-size:13px;">Հաշվարկեք ինքնարժեքը, առաջ/հետադարձ լոգիստիկան և պահեստավորումը (Хранение):</p>
-                </div>
-                <div class="card" onclick="switchPage('funnelAndAd')" style="cursor:pointer;">
-                    <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=400&q=80" class="img-card">
-                    <h3>📉 Ձագար & AD Test (ДРР/ROAS)</h3>
-                    <p style="color:var(--text-muted); font-size:13px;">Ստուգեք գովազդի արդյունավետությունը և վերլուծեք կորուստները։</p>
+                    <h3>📊 Յունիթ & Լոգիստիկա</h3>
+                    <p style="color:var(--text-muted); font-size:13px;">Ճշգրիտ հաշվարկեք շահույթը, լոգիստիկան և պահեստը (Хранение)։</p>
                 </div>
                 <div class="card" onclick="switchPage('cardStudio')" style="cursor:pointer;">
-                    <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=400&q=80" class="img-card">
-                    <h3>🎨 Card Studio & Infographics</h3>
-                    <p style="color:var(--text-muted); font-size:13px;">Ստեղծեք պատրաստի WB/Ozon քարտեր՝ ինֆոգրաֆիկայով ու բեջերով։</p>
+                    <h3>🎨 Card Studio & Upload</h3>
+                    <p style="color:var(--text-muted); font-size:13px;">Բեռնեք ապրանքի նկարը և ստեղծեք պատրաստի WB/Ozon քարտ։</p>
                 </div>
-            </div>
-
-            <div class="card" onclick="switchPage('painSolver')" style="cursor:pointer; border-color:#c084fc;">
-                <h3>💡 Բիզնես-Ցավերի Դիագնոստիկ (Pain Solver)</h3>
-                <p style="color:var(--text-muted); font-size:13px;">Ընտրեք ձեր խնդիրը (բարձր ДРР, ցածր CTR, վերադարձներ) և ստացեք անհապաղ բուժումը։</p>
+                <div class="card" onclick="switchPage('funnelAndAd')" style="cursor:pointer;">
+                    <h3>📉 Ձագար & AD Test</h3>
+                    <p style="color:var(--text-muted); font-size:13px;">Վերլուծեք կորուստները և գովազդի արդյունավետությունը (ДРР/ROAS)։</p>
+                </div>
             </div>
         </div>
 
-        <!-- PAGE 2: MASTER UNIT ECONOMICS + LOGISTICS + STORAGE -->
+        <!-- PAGE 2: MASTER UNIT ECONOMICS -->
         <div id="masterCalc" class="page">
             <div class="card">
-                <h2>📊 Ունիվերսալ Յունիթ-Էկոնոմիկա, Լոգիստիկա և Պահեստավորում (Хранение)</h2>
-                <p style="color:var(--text-muted); font-size:13px; margin-bottom:15px;">Հաշվի առեք բոլոր թաքնված ծախսերը՝ ներառյալ պահեստը, հետադարձ առաքումն ու գովազդը։</p>
-                
+                <h2>📊 Ունիվերսալ Յունիթ-Էկոնոմիկա, Լոգիստիկա և Պահեստ</h2>
                 <input type="text" id="productTitle" placeholder="Ապրանքի անվանում (օր.՝ Կանացի ջինսեր)">
                 <select id="platform">
                     <option value="Wildberries">Wildberries</option>
@@ -315,130 +295,113 @@ app.get('/', (req, res) => {
                         <input type="number" id="commission" placeholder="15">
                     </div>
                     <div>
-                        <label>Առաքում դեպի հաճախորդ (Լոգիստիկա)</label>
+                        <label>Լոգիստիկա դեպի հաճախորդ</label>
                         <input type="number" id="logistics" placeholder="50">
                     </div>
                     <div>
-                        <label>Հետադարձի Արժեքը (Reverse Log)</label>
+                        <label>Հետադարձ Լոգիստիկա</label>
                         <input type="number" id="revLogistics" placeholder="33">
                     </div>
                 </div>
 
                 <div class="grid-3">
                     <div>
-                        <label>Պահեստավորում օրական (Хранение)</label>
+                        <label>Պահեստավորում օրական</label>
                         <input type="number" id="storagePerDay" placeholder="1.5">
                     </div>
                     <div>
-                        <label>Միջին օրերը պահեստում (Days)</label>
+                        <label>Միջին օրերը պահեստում</label>
                         <input type="number" id="avgDays" placeholder="30">
                     </div>
                     <div>
-                        <label>Выкуп (Քավումների %) մոտավոր</label>
+                        <label>Выкуп (Քավում %) Մոտավոր</label>
                         <input type="number" id="buyoutRate" placeholder="85">
                     </div>
                 </div>
 
                 <div class="grid-2">
                     <div>
-                        <label>Գովազդային Բյուջե / ДРР (%)</label>
+                        <label>Գովազդ / ДРР (%)</label>
                         <input type="number" id="adCost" placeholder="10">
                     </div>
                     <div>
-                        <label>Հարկային Դրույքաչափ (%)</label>
+                        <label>Հարկ (%)</label>
                         <input type="number" id="tax" placeholder="5">
                     </div>
                 </div>
 
                 <button class="action-btn" onclick="calculateMaster()">Հաշվարկել Ամբողջական Շահույթը</button>
                 <div id="masterResult" class="result-box" style="display:none;"></div>
-                <button id="saveBtn" class="action-btn" style="display:none; background: linear-gradient(135deg, #059669, #047857);" onclick="saveCalculation()">💾 Պահպանել հիշողության մեջ</button>
+                
+                <div class="grid-2" style="margin-top:12px;">
+                    <button id="saveBtn" class="action-btn" style="display:none; background: linear-gradient(135deg, #059669, #047857);" onclick="saveCalculation()">💾 Պահպանել Հիշողության Մեջ</button>
+                    <button id="exportBtn" class="action-btn btn-export" style="display:none;" onclick="exportToText()">📄 Ներբեռնել Հաշվետվությունը (Text/CSV)</button>
+                </div>
             </div>
         </div>
 
-        <!-- PAGE 3: SALES FUNNEL & AD TEST -->
+        <!-- PAGE 3: FUNNEL & AD TEST -->
         <div id="funnelAndAd" class="page">
             <div class="card">
-                <h2>📉 1. Վաճառքների Ձագար (Sales Funnel Leak Analytics)</h2>
+                <h2>📉 1. Վաճառքների Ձագար (Funnel Leak Analytics)</h2>
                 <div class="grid-3">
-                    <div>
-                        <label>Ցուցադրումներ (Views)</label>
-                        <input type="number" id="views" placeholder="0">
-                    </div>
-                    <div>
-                        <label>Քարտի բացումներ (Clicks)</label>
-                        <input type="number" id="clicks" placeholder="0">
-                    </div>
-                    <div>
-                        <label>Զամբյուղ (Add to Cart)</label>
-                        <input type="number" id="carts" placeholder="0">
-                    </div>
+                    <input type="number" id="views" placeholder="Ցուցադրումներ (Views)">
+                    <input type="number" id="clicks" placeholder="Քլիքներ (Clicks)">
+                    <input type="number" id="carts" placeholder="Զամբյուղ (Carts)">
                 </div>
                 <div class="grid-2">
-                    <div>
-                        <label>Պատվերներ (Orders)</label>
-                        <input type="number" id="orders" placeholder="0">
-                    </div>
-                    <div>
-                        <label>Քավումներ / Выкуп (Buyouts)</label>
-                        <input type="number" id="buyouts" placeholder="0">
-                    </div>
+                    <input type="number" id="orders" placeholder="Պատվերներ (Orders)">
+                    <input type="number" id="buyouts" placeholder="Քավումներ (Buyouts)">
                 </div>
-                <button class="action-btn" onclick="analyzeFunnel()">Վերլուծել Ձագարը և Գտնել Կորուստները</button>
+                <button class="action-btn" onclick="analyzeFunnel()">Վերլուծել Ձագարը</button>
                 <div id="funnelResult" class="result-box" style="display:none;"></div>
             </div>
 
             <div class="card">
-                <h2>🎯 2. Գովազդային Թեստ և ROAS/ДРР Վերլուծություն (AD Test)</h2>
+                <h2>🎯 2. Գովազդային Թեստ (AD Test / ДРР & ROAS)</h2>
                 <div class="grid-3">
-                    <div>
-                        <label>Ծախսված Գովազդային Բյուջե</label>
-                        <input type="number" id="adBudget" placeholder="50000">
-                    </div>
-                    <div>
-                        <label>Ստացված Վաճառքների Գումար (Revenue)</label>
-                        <input type="number" id="adRevenue" placeholder="200000">
-                    </div>
-                    <div>
-                        <label>Ստացված Պատվերների Քանակ</label>
-                        <input type="number" id="adOrdersCount" placeholder="25">
-                    </div>
+                    <input type="number" id="adBudget" placeholder="Գովազդային Ծախս">
+                    <input type="number" id="adRevenue" placeholder="Վաճառքների Գումար">
+                    <input type="number" id="adOrdersCount" placeholder="Պատվերների Քանակ">
                 </div>
                 <button class="action-btn" onclick="runAdTest()">Ստուգել Գովազդի Արդյունավետությունը</button>
                 <div id="adTestResult" class="result-box" style="display:none;"></div>
             </div>
         </div>
 
-        <!-- PAGE 4: CARD STUDIO -->
+        <!-- PAGE 4: CARD STUDIO & IMAGE UPLOAD -->
         <div id="cardStudio" class="page">
             <div class="card">
-                <h2>🎨 WB/Ozon Քարտերի Դիզայն և Ինֆոգրաֆիկա</h2>
+                <h2>🎨 WB/Ozon Քարտերի Դիզայն և Նկարի Upload</h2>
                 <input type="text" id="cardProduct" placeholder="Ապրանքի անուն (օր.՝ Կանացի Ջինսեր)">
                 <div class="grid-2">
                     <input type="text" id="cardBadge" placeholder="Բեջ (օր.՝ ХИТ ПРОДАЖ / 100% ХЛОПОК)">
                     <input type="text" id="cardBenefit" placeholder="Գլխավոր առավելություն (օր.՝ Идеальная посадка)">
                 </div>
-                <input type="text" id="cardImgUrl" placeholder="Ապրանքի նկարի հղում (URL) (կամ թողեք դատարկ)">
+                
+                <label>Բեռնեք ապրանքի լուսանկարը համակարգչից․</label>
+                <input type="file" id="cardImgUpload" accept="image/*" onchange="previewUploadedImage(event)">
+
                 <button class="action-btn" onclick="generateWBCard()">Գեներացնել WB/Ozon Քարտը</button>
+                
                 <div id="cardPreviewArea" style="display:none;">
                     <div id="wbCard" class="wb-card-container">
                         <div id="wbBadge" class="wb-badge-top">ХИТ ПРОДАЖ</div>
                         <div class="wb-details-bottom">
                             <h4 id="wbTitle" style="margin:0 0 4px 0; font-size:15px; color:white;">Կանացի Ջինսեր</h4>
                             <p id="wbFeature" style="margin:0; font-size:12px; color:#c084fc; font-weight:600;">⭐ Идеальная посадка</p>
-                            <div style="margin-top:6px; font-size:11px; color:#9ca3af;">✅ Պատրաստ է WB/Ozon-ում տեղադրելու համար</div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- PAGE 5: SEO & KEYWORDS -->
+        <!-- PAGE 5: SEO STUDIO -->
         <div id="seoStudio" class="page">
             <div class="card">
-                <h2>✍️ SEO Վերնագրերի և Նկարագրությունների Գեներատոր</h2>
-                <input type="text" id="seoInput" placeholder="Ապրանքի անվանումը կամ կատեգորիան (օր.՝ Կանացի տաբատ)">
-                <button class="action-btn" onclick="generateSEOText()">Գեներացնել SEO Տեքստեր և Թեգեր</button>
+                <h2>✍️ SEO Վերնագրեր և Նկարագրություններ</h2>
+                <input type="text" id="seoInput" placeholder="Ապրանքի անվանում (օր.՝ Կանացի տաբատ)">
+                <button class="action-btn" onclick="generateSEOText()">Գեներացնել SEO Տեքստեր</button>
                 <div id="seoResult" class="result-box" style="display:none;"></div>
             </div>
         </div>
@@ -446,19 +409,10 @@ app.get('/', (req, res) => {
         <!-- PAGE 6: PAIN SOLVER -->
         <div id="painSolver" class="page">
             <div class="card">
-                <h2>💡 Սելլերի Ցավերի Ավտոմատ Դիագնոստիկ և Լուծումներ</h2>
-                <div class="pain-card" onclick="solvePain(1)">
-                    <b>1. 💸 «Գովազդի վրա շատ փող եմ ծախսում (ДРР-ը բարձր է), բայց վաճառքներ չկան»</b>
-                </div>
-                <div class="pain-card" onclick="solvePain(2)">
-                    <b>2. 👀 «Ապրանքը դիտում են (Views կան), բայց զամբյուղ չեն դնում»</b>
-                </div>
-                <div class="pain-card" onclick="solvePain(3)">
-                    <b>3. 🔄 «Վերադարձները (Выкуп) շատ են, և լոգիստիկան ուտում է ամբողջ շահույթս»</b>
-                </div>
-                <div class="pain-card" onclick="solvePain(4)">
-                    <b>4. 📉 «Չեմ հասկանում՝ ինչպես ճիշտ հաշվեմ միջնորդավճարները, պահեստը և հարկերը»</b>
-                </div>
+                <h2>💡 Սելլերի Ցավերի Դիագնոստիկ</h2>
+                <div class="pain-card" onclick="solvePain(1)"><b>1. 💸 «Գովազդի վրա շատ փող եմ ծախսում (ДРР), բայց վաճառք չկա»</b></div>
+                <div class="pain-card" onclick="solvePain(2)"><b>2. 👀 «Ապրանքը դիտում են, բայց զամբյուղ չեն դնում»</b></div>
+                <div class="pain-card" onclick="solvePain(3)"><b>3. 🔄 «Վերադարձները (Выкуп) շատ են, լոգիստիկան ուտում է շահույթս»</b></div>
                 <div id="painSolutionResult" class="result-box" style="display:none;"></div>
             </div>
         </div>
@@ -475,9 +429,9 @@ app.get('/', (req, res) => {
         <!-- PAGE 8: AI COPILOT -->
         <div id="aiCopilot" class="page">
             <div class="card">
-                <h2>🤖 Gemini AI E-Commerce & WB Խորհրդատու</h2>
+                <h2>🤖 Gemini AI E-Commerce Խորհրդատու</h2>
                 <input type="password" id="geminiKey" placeholder="Gemini API Key (ըստ ցանկության)">
-                <textarea id="aiPrompt" placeholder="Հարցրեք վաճառքների, գովազդի կամ SEO-ի մասին..."></textarea>
+                <textarea id="aiPrompt" placeholder="Հարցրեք վաճառքների կամ SEO-ի մասին..."></textarea>
                 <button class="action-btn" onclick="askAI()">Ուղղել հարցը AI-ին</button>
                 <div id="aiResult" class="result-box" style="display:none;">Սպասում եմ հարցի...</div>
             </div>
@@ -500,7 +454,19 @@ app.get('/', (req, res) => {
             });
         }
 
+        let uploadedImgData = null;
         let currentCalc = null;
+
+        function previewUploadedImage(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    uploadedImgData = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
 
         function calculateMaster() {
             let title = document.getElementById('productTitle').value || 'Ապրանք';
@@ -516,13 +482,11 @@ app.get('/', (req, res) => {
             let ad = parseFloat(document.getElementById('adCost').value) || 10;
             let tax = parseFloat(document.getElementById('tax').value) || 5;
 
-            // Calculations
             let commAmount = p * (comm / 100);
             let adAmount = p * (ad / 100);
             let taxAmount = p * (tax / 100);
             let storageTotal = storagePerDay * avgDays;
             
-            // Return logistics risk: unbought percentage incurs reverse logistics
             let unboughtPercent = (100 - buyoutRate) / 100;
             let effectiveLogistics = log + (revLog * unboughtPercent);
 
@@ -536,11 +500,22 @@ app.get('/', (req, res) => {
             let resDiv = document.getElementById('masterResult');
             resDiv.style.display = 'block';
             resDiv.innerHTML = "📊 <b>Հաշվարկի Արդյունքներ (" + platform + "):</b>\\n" +
-                "• Մաքուր Շահույթ (Net Profit): <b>" + netProfit.toFixed(2) + " ֏/$</b>\\n" +
-                "• Մարժա (Margin): <b>" + margin + "%</b> | ROI: <b>" + roi + "%</b>\\n" +
-                "• Թաքնված ծախսեր (Լոգիստիկա + Պահեստ): " + (effectiveLogistics + storageTotal).toFixed(2) + " | Գովազդ: " + adAmount.toFixed(2);
+                "• Մաքուր Շահույթ: <b>" + netProfit.toFixed(2) + " ֏/$</b>\\n" +
+                "• Մարժա: <b>" + margin + "%</b> | ROI: <b>" + roi + "%</b>\\n" +
+                "• Լոգիստիկա + Պահեստ: " + (effectiveLogistics + storageTotal).toFixed(2) + " | Գովազդ: " + adAmount.toFixed(2);
             
             document.getElementById('saveBtn').style.display = 'block';
+            document.getElementById('exportBtn').style.display = 'block';
+        }
+
+        function exportToText() {
+            if (!currentCalc) return;
+            let textData = "Novessa Pro Max Report\\nProduct: " + currentCalc.title + "\\nPlatform: " + currentCalc.platform + "\\nPrice: " + currentCalc.price + "\\nNet Profit: " + currentCalc.netProfit + "\\nROI: " + currentCalc.roi + "%\\nDate: " + currentCalc.date;
+            let blob = new Blob([textData], { type: 'text/plain' });
+            let a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = currentCalc.title + '_Report.txt';
+            a.click();
         }
 
         function analyzeFunnel() {
@@ -556,7 +531,7 @@ app.get('/', (req, res) => {
 
             let resDiv = document.getElementById('funnelResult');
             resDiv.style.display = 'block';
-            resDiv.innerHTML = "📊 **Ձագարի Փուլային Կոնվերսիա:**\\n• CTR (Դիտում ➔ Քլիք): " + ctr + "%\\n• Քլիք ➔ Զամբյուղ: " + clickToCart + "%\\n• Պատվեր ➔ Քավում (Выкуп): " + buyoutRate + "%";
+            resDiv.innerHTML = "📊 **Ձագարի Փուլային Կոնվերսիա:**\\n• CTR: " + ctr + "%\\n• Քլիք ➔ Զամբյուղ: " + clickToCart + "%\\n• Պատվեր ➔ Քավում: " + buyoutRate + "%";
         }
 
         function runAdTest() {
@@ -566,23 +541,17 @@ app.get('/', (req, res) => {
 
             let drr = revenue > 0 ? ((budget / revenue) * 100).toFixed(1) : 0;
             let roas = budget > 0 ? (revenue / budget).toFixed(2) : 0;
-            let cpa = orders > 0 ? (budget / orders).toFixed(1) : 0;
-
-            let status = drr > 15 ? "🔴 **Վտանգավոր է:** ДРР-ը բարձր է 15%-ից, գովազդը ուտում է շահույթը։" : "🟢 **Լավ է:** Գովազդային ցուցանիշները նորմայի սահմաններում են։";
 
             let resDiv = document.getElementById('adTestResult');
             resDiv.style.display = 'block';
-            resDiv.innerHTML = "🎯 **Գովազդային Թեստի Արդյունքներ (AD Test):**\\n" +
-                "• ДРР (Գովազդի մասնաբաժինը շրջանառության մեջ): <b>" + drr + "%</b>\\n" +
-                "• ROAS (Վերադարձը գովազդից): <b>" + roas + "x</b>\\n" +
-                "• CPA (Մեկ պատվերի արժեքը): <b>" + cpa + " ֏/$</b>\\n\\n" + status;
+            resDiv.innerHTML = "🎯 **AD Test:**\\n• ДРР: <b>" + drr + "%</b>\\n• ROAS: <b>" + roas + "x</b>";
         }
 
         function generateWBCard() {
             let title = document.getElementById('cardProduct').value || 'Կանացի Ջինսեր';
             let badge = document.getElementById('cardBadge').value || 'ХИТ ПРОДАЖ';
             let feature = document.getElementById('cardBenefit').value || 'Идеальная посадка';
-            let imgUrl = document.getElementById('cardImgUrl').value || 'https://images.unsplash.com/photo-1541099649105-f69ad21f3246?auto=format&fit=crop&w=600&q=80';
+            let imgUrl = uploadedImgData || 'https://images.unsplash.com/photo-1541099649105-f69ad21f3246?auto=format&fit=crop&w=600&q=80';
 
             document.getElementById('wbTitle').innerText = title;
             document.getElementById('wbBadge').innerText = badge;
@@ -598,24 +567,15 @@ app.get('/', (req, res) => {
             let input = document.getElementById('seoInput').value || 'Ապրանք';
             let resDiv = document.getElementById('seoResult');
             resDiv.style.display = 'block';
-            resDiv.innerHTML = "📌 **SEO Վերնագիր (WB/Ozon):**\\n" + input + " - Բարձր որակի, թրենդային մոդել 2026\\n\\n" +
-                "📝 **SEO Նկարագրություն:**\\n" + input + "-ն պատրաստված է բարձրորակ նյութերից, ապահովում է հարմարավետություն և ամրություն։ Իդեալական է ամենօրյա կրման համար։\\n\\n" +
-                "🏷️ **Բանալի Բառեր (Keywords / Tags):**\\n#" + input.replace(/\s+/g, '_') + " #թրենդային #որակյալ #wb_хит #женская_одежда";
+            resDiv.innerHTML = "📌 **SEO Վերնագիր:** " + input + " - Բարձր որակի 2026\\n\\n🏷️ **Keywords:** #" + input.replace(/\s+/g, '_') + " #wb_хит";
         }
 
         function solvePain(painId) {
             let resDiv = document.getElementById('painSolutionResult');
             resDiv.style.display = 'block';
-            
-            if (painId === 1) {
-                resDiv.innerHTML = "🎯 **Բուժում (Բարձր ДРР & Գովազդային ծախսեր):**\\n1. Կանգնեցրեք ավտոգովազդը, անցեք ֆիքսված հարցումներով գովազդի։\\n2. Ստուգեք SEO վերնագիրը (հնարավոր է գովազդվում եք սխալ keyword-ներով)։";
-            } else if (painId === 2) {
-                resDiv.innerHTML = "🎯 **Բուժում (Ցածր Կոնվերսիա Զամբյուղ):**\\n1. Փոխեք գլխավոր ինֆոգրաֆիկան (ավելացրեք բեջեր)։\\n2. Ստուգեք մրցակիցների գնային առաջարկները MPSTATS-ով։";
-            } else if (painId === 3) {
-                resDiv.innerHTML = "🎯 **Բուժում (Բարձր Վերադարձներ / Выкуп):**\\n1. Ճշգրտեք չափսային ցանցը (размерная сетка)։\\n2. Ամրացրեք փաթեթավորումը (пупырка/տուփ)։";
-            } else if (painId === 4) {
-                resDiv.innerHTML = "🎯 **Բուժում (Ֆինանսական Ճշգրտություն):**\\n1. Օգտագործեք Novessa Մաստեր Յունիթ-Էկոնոմիկան։\\n2. Հաշվի առեք պահեստավորման և հետադարձ լոգիստիկայի ռիսկերը։";
-            }
+            if (painId === 1) resDiv.innerHTML = "🎯 **Բուժում:** Կանգնեցրեք ավտոգովազդը, անցեք ֆիքսված հարցումներով գովազդի։";
+            else if (painId === 2) resDiv.innerHTML = "🎯 **Բուժում:** Փոխեք գլխավոր ինֆոգրաֆիկան և ստուգեք մրցակիցների գները։";
+            else if (painId === 3) resDiv.innerHTML = "🎯 **Բուժում:** Ճշգրտեք չափսային ցանցը և ամրացրեք փաթեթավորումը։";
         }
 
         async function saveCalculation() {
