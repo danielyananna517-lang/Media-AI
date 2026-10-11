@@ -13,11 +13,12 @@ app.get('/', (req, res) => {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Novessa Pro Max | Enterprise E-Commerce Suite</title>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Noto+Sans+Armenian:wght@400;700&display=swap" rel="stylesheet">
     <!-- SheetJS for real .xlsx export -->
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     <!-- jsPDF for professional PDF reports -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         :root {
             --bg-base: #0c0916;
@@ -337,9 +338,10 @@ app.get('/', (req, res) => {
                 <button class="action-btn" onclick="calculateMaster()">Հաշվարկել Ամբողջական Շահույթը</button>
                 <div id="masterResult" class="result-box" style="display:none;"></div>
                 
-                <div class="grid-2" style="margin-top:15px;">
+                <div class="grid-3" style="margin-top:15px;">
                     <button id="exportExcelBtn" class="action-btn btn-excel" style="display:none;" onclick="exportToExcel()">📊 Ներբեռնել Excel (.xlsx)</button>
                     <button id="exportPdfBtn" class="action-btn btn-pdf" style="display:none;" onclick="exportToPDF()">📄 Ներբեռնել PDF Հաշվետվություն</button>
+                    <button id="saveCalcBtn" class="action-btn" style="display:none;background:linear-gradient(135deg,#059669,#047857);" onclick="saveCalculation()">💾 Պահպանել այս բրաուզերում</button>
                 </div>
             </div>
         </div>
@@ -392,7 +394,7 @@ app.get('/', (req, res) => {
                 </div>
                 
                 <label>Բեռնեք ապրանքի լուսանկարը համակարգչից կամ հեռախոսից․</label>
-                <input type="file" id="cardImgUpload" accept="image/*" onchange="handleImageUpload(event)">
+                <input type="file" id="cardImgUpload" accept="image/png,image/jpeg" onchange="handleImageUpload(event)">
                 
                 <div id="processingStatus" style="font-size:13px; color:#38bdf8; margin-top:8px; display:none;">⚙️ Մշակվում է նկարը և մաքրվում ֆոնը...</div>
 
@@ -463,7 +465,7 @@ app.get('/', (req, res) => {
         <!-- PAGE 8: HISTORY -->
         <div id="history" class="page">
             <div class="card">
-                <h2>🧠 Հիշողության Բանկ</h2>
+                <h2>🧠 Հիշողության Բանկ (այս բրաուզերում)</h2>
                 <button class="action-btn" onclick="loadHistory()" style="background: #3f326b;">🔄 Թարմացնել պատմությունը</button>
                 <div id="historyList" class="result-box" style="margin-top:15px;">Սեղմեք թարմացնելու համար...</div>
             </div>
@@ -473,7 +475,6 @@ app.get('/', (req, res) => {
         <div id="aiCopilot" class="page">
             <div class="card">
                 <h2>🤖 Gemini AI E-Commerce Խորհրդատու</h2>
-                <input type="password" id="geminiKey" placeholder="Gemini API Key">
                 <textarea id="aiPrompt" placeholder="Հարցրեք վաճառքների կամ SEO-ի մասին..."></textarea>
                 <button class="action-btn" onclick="askAI()">Ուղղել հարցը AI-ին</button>
                 <div id="aiResult" class="result-box" style="display:none;">Սպասում եմ հարցի...</div>
@@ -500,74 +501,135 @@ app.get('/', (req, res) => {
         let uploadedImgData = null;
         let currentCalc = null;
 
-        function handleImageUpload(event) {
-            const file = event.target.files[0];
+        async function handleImageUpload(event) {
+            const file = event?.target?.files?.[0];
             if (!file) return;
-
-            if (file.size > 10 * 1024 * 1024) {
-                alert('⚠️ Ֆայլի չափը գերազանցում է 10ՄԲ սահմանափակումը։');
+            const statusElem = document.getElementById('processingStatus');
+            if (!['image/png', 'image/jpeg'].includes(file.type)) {
+                statusElem.style.display = 'block';
+                statusElem.style.color = '#ef4444';
+                statusElem.textContent = 'Ընդունվում են միայն PNG կամ JPEG նկարներ։';
+                event.target.value = '';
                 return;
             }
-
-            const statusElem = document.getElementById('processingStatus');
+            if (file.size > 10 * 1024 * 1024) {
+                statusElem.style.display = 'block';
+                statusElem.style.color = '#ef4444';
+                statusElem.textContent = 'Ֆայլը գերազանցում է 10 ՄԲ սահմանաչափը։';
+                event.target.value = '';
+                return;
+            }
             statusElem.style.display = 'block';
-            statusElem.innerText = '⚙️ Ներբեռնվում է և մշակվում (Background cleaning)...';
-
+            statusElem.style.color = '#38bdf8';
+            statusElem.textContent = 'Նկարը բեռնվում է…';
             const reader = new FileReader();
-            reader.onload = function(e) {
-                setTimeout(() => {
-                    uploadedImgData = e.target.result;
-                    statusElem.innerText = '✅ Նկարը հաջողությամբ մշակվեց և պատրաստ է Card Studio-ի համար։';
-                }, 800);
+            reader.onerror = function () {
+                statusElem.style.color = '#ef4444';
+                statusElem.textContent = 'Չհաջողվեց կարդալ նկարը։';
+            };
+            reader.onload = async function (e) {
+                uploadedImgData = String(e.target.result || '');
+                statusElem.textContent = 'Նկարը բեռնված է։ Ստուգվում է ֆոնի իրական հեռացումը…';
+                try {
+                    const response = await fetch('/api/remove-background', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ imageData: uploadedImgData, fileName: file.name })
+                    });
+                    const data = await response.json().catch(() => ({}));
+                    if (response.ok && data.success && typeof data.imageData === 'string' && data.imageData.startsWith('data:image/png;base64,')) {
+                        uploadedImgData = data.imageData;
+                        statusElem.style.color = '#10b981';
+                        statusElem.textContent = 'Ֆոնը հեռացվել է իրական մշակմամբ։ Մշակված PNG-ն պատրաստ է Card Studio-ի համար։';
+                    } else {
+                        statusElem.style.color = '#f59e0b';
+                        statusElem.textContent = data.error
+                            ? 'Նկարը բեռնված է, բայց ֆոնի հեռացումը հասանելի չէ. ' + data.error
+                            : 'Նկարը բեռնված է, բայց ֆոնի հեռացումը չի հաստատվել։ Կօգտագործվի սկզբնական նկարը։';
+                    }
+                } catch (error) {
+                    statusElem.style.color = '#f59e0b';
+                    statusElem.textContent = 'Նկարը բեռնված է, բայց ֆոնի հեռացման ծառայությանը միանալ չհաջողվեց։ Կօգտագործվի սկզբնական նկարը։';
+                }
             };
             reader.readAsDataURL(file);
         }
 
+        function readNumberInput(id, fallback) {
+            const element = document.getElementById(id);
+            if (!element) return NaN;
+            const raw = String(element.value ?? '').trim();
+            if (raw === '') return fallback;
+            const value = Number(raw);
+            return Number.isFinite(value) ? value : NaN;
+        }
+
         function calculateMaster() {
-            let title = document.getElementById('productTitle').value || 'Ապրանք';
-            let platform = document.getElementById('platform').value;
-            let p = parseFloat(document.getElementById('price').value) || 0;
-            let c = parseFloat(document.getElementById('cost').value) || 0;
-            let comm = parseFloat(document.getElementById('commission').value) || 15;
-            let log = parseFloat(document.getElementById('logistics').value) || 50;
-            let revLog = parseFloat(document.getElementById('revLogistics').value) || 33;
-            let storagePerDay = parseFloat(document.getElementById('storagePerDay').value) || 1;
-            let avgDays = parseFloat(document.getElementById('avgDays').value) || 30;
-            let buyoutRate = parseFloat(document.getElementById('buyoutRate').value) || 85;
-            let ad = parseFloat(document.getElementById('adCost').value) || 10;
-            let tax = parseFloat(document.getElementById('tax').value) || 5;
+            const title = (document.getElementById('productTitle').value || 'Ապրանք').trim().slice(0, 120);
+            const platform = document.getElementById('platform').value;
+            const p = readNumberInput('price', NaN);
+            const c = readNumberInput('cost', NaN);
+            const comm = readNumberInput('commission', 15);
+            const log = readNumberInput('logistics', 50);
+            const revLog = readNumberInput('revLogistics', 33);
+            const storagePerDay = readNumberInput('storagePerDay', 1);
+            const avgDays = readNumberInput('avgDays', 30);
+            const buyoutRate = readNumberInput('buyoutRate', 85);
+            const ad = readNumberInput('adCost', 10);
+            const tax = readNumberInput('tax', 5);
 
-            let commAmount = p * (comm / 100);
-            let adAmount = p * (ad / 100);
-            let taxAmount = p * (tax / 100);
-            let storageTotal = storagePerDay * avgDays;
-            let unboughtPercent = (100 - buyoutRate) / 100;
-            let effectiveLogistics = log + (revLog * unboughtPercent);
+            const values = [p, c, comm, log, revLog, storagePerDay, avgDays, buyoutRate, ad, tax];
+            if (!values.every(Number.isFinite)) {
+                alert('Լրացրեք պարտադիր թվային դաշտերը վավեր թվերով։');
+                return;
+            }
+            if (p <= 0 || c < 0 || log < 0 || revLog < 0 || storagePerDay < 0 || avgDays < 0) {
+                alert('Գինը պետք է լինի 0-ից բարձր, իսկ ինքնարժեքն ու ծախսերը՝ 0 կամ ավելի։');
+                return;
+            }
+            if ([comm, buyoutRate, ad, tax].some(v => v < 0 || v > 100)) {
+                alert('Միջնորդավճարը, buyout-ը, գովազդն ու հարկը պետք է լինեն 0–100% միջակայքում։');
+                return;
+            }
 
-            let totalExpenses = c + commAmount + effectiveLogistics + storageTotal + adAmount + taxAmount;
-            let netProfit = p - totalExpenses;
-            let roi = c > 0 ? ((netProfit / c) * 100).toFixed(1) : 0;
-            let margin = p > 0 ? ((netProfit / p) * 100).toFixed(1) : 0;
+            const commAmount = p * (comm / 100);
+            const adAmount = p * (ad / 100);
+            const taxAmount = p * (tax / 100);
+            const storageTotal = storagePerDay * avgDays;
+            const unboughtPercent = (100 - buyoutRate) / 100;
+            const effectiveLogistics = log + (revLog * unboughtPercent);
+            const totalExpenses = c + commAmount + effectiveLogistics + storageTotal + adAmount + taxAmount;
+            const netProfit = p - totalExpenses;
+            const roi = c > 0 ? ((netProfit / c) * 100).toFixed(1) : 'N/A';
+            const margin = ((netProfit / p) * 100).toFixed(1);
 
-            currentCalc = { 
-                title, platform, price: p, cost: c, commission: commAmount, 
-                logistics: effectiveLogistics, storage: storageTotal, ad: adAmount, 
-                tax: taxAmount, netProfit: netProfit.toFixed(2), roi, margin, date: new Date().toLocaleDateString() 
+            currentCalc = {
+                title, platform, price: p, cost: c, commission: commAmount,
+                logistics: effectiveLogistics, storage: storageTotal, ad: adAmount,
+                tax: taxAmount, totalExpenses, netProfit: Number(netProfit.toFixed(2)),
+                roi, margin, date: new Date().toISOString()
             };
 
-            let resDiv = document.getElementById('masterResult');
+            const resDiv = document.getElementById('masterResult');
             resDiv.style.display = 'block';
-            resDiv.innerHTML = "📊 <b>Հաշվարկի Արդյունքներ (" + platform + "):</b>\\n" +
-                "• Մաքուր Շահույթ: <b>" + netProfit.toFixed(2) + " ֏</b>\\n" +
-                "• Մարժա: <b>" + margin + "%</b> | ROI: <b>" + roi + "%</b>\\n" +
-                "• Ընդհանուր Ծախսեր: " + totalExpenses.toFixed(2);
-            
+            resDiv.textContent = [
+                'Հաշվարկի արդյունքներ (' + platform + ')',
+                'Մաքուր շահույթ՝ ' + netProfit.toFixed(2),
+                'Մարժա՝ ' + margin + '%',
+                'ROI՝ ' + (roi === 'N/A' ? roi : roi + '%'),
+                'Ընդհանուր ծախսեր՝ ' + totalExpenses.toFixed(2),
+                'Նշում․ գնահատումը հիմնված է մուտքագրված ենթադրությունների վրա։'
+            ].join('\n');
+
             document.getElementById('exportExcelBtn').style.display = 'block';
             document.getElementById('exportPdfBtn').style.display = 'block';
+            const saveButton = document.getElementById('saveCalcBtn');
+            if (saveButton) saveButton.style.display = 'block';
         }
 
         function exportToExcel() {
             if (!currentCalc) { alert('Նախ կատարեք հաշվարկ։'); return; }
+            if (!window.XLSX) { alert('Excel արտահանման գրադարանը չի բեռնվել։ Թարմացրեք էջը և փորձեք կրկին։'); return; }
 
             const wb = XLSX.utils.book_new();
 
@@ -595,59 +657,125 @@ app.get('/', (req, res) => {
             const ws2 = XLSX.utils.aoa_to_sheet(costData);
             XLSX.utils.book_append_sheet(wb, ws2, "Ծախսեր և շահույթ");
 
-            XLSX.writeFile(wb, currentCalc.title + "_Novessa_Report.xlsx");
+            const safeName = String(currentCalc.title || 'Novessa').replace(/[<>:"|?*\u0000-\u001F]/g, '_').replace(/[\\/]/g, '_').slice(0, 80);
+            XLSX.writeFile(wb, safeName + "_Novessa_Report.xlsx");
         }
 
-        function exportToPDF() {
+        async function exportToPDF() {
             if (!currentCalc) { alert('Նախ կատարեք հաշվարկ։'); return; }
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
+            if (!window.jspdf || !window.html2canvas) {
+                alert('PDF գրադարանները չեն բեռնվել։ Թարմացրեք էջը և փորձեք կրկին։');
+                return;
+            }
 
-            doc.setFont("Helvetica", "bold");
-            doc.setFontSize(18);
-            doc.text("Novessa Pro Max - E-Commerce Report", 20, 20);
+            const report = document.createElement('section');
+            report.lang = 'hy';
+            report.style.cssText = 'position:fixed;left:-10000px;top:0;width:760px;padding:32px;background:#fff;color:#171717;font-family:"Noto Sans Armenian",Arial,sans-serif;box-sizing:border-box;';
+            const heading = document.createElement('h1');
+            heading.textContent = 'NOVESSA — Յունիթ-էկոնոմիկայի հաշվետվություն';
+            heading.style.cssText = 'font-size:24px;margin:0 0 8px;';
+            report.appendChild(heading);
 
-            doc.setFont("Helvetica", "normal");
-            doc.setFontSize(12);
-            doc.text("Amstativ: " + currentCalc.date, 20, 30);
-            doc.text("Aparanq: " + currentCalc.title, 20, 40);
-            doc.text("Platform: " + currentCalc.platform, 20, 50);
-            doc.text("Vacharqi Gin: " + currentCalc.price + " AMD", 20, 60);
-            doc.text("Inqnarzheq (COGS): " + currentCalc.cost + " AMD", 20, 70);
-            doc.text("-------------------------------------------------------------", 20, 80);
-            doc.setFont("Helvetica", "bold");
-            doc.text("Maqur Shahuyt: " + currentCalc.netProfit + " AMD", 20, 90);
-            doc.text("Marzha: " + currentCalc.margin + "%  |  ROI: " + currentCalc.roi + "%", 20, 100);
+            const meta = document.createElement('p');
+            meta.textContent = 'Ամսաթիվ՝ ' + new Date(currentCalc.date).toLocaleString() + ' | Հարթակ՝ ' + currentCalc.platform;
+            meta.style.cssText = 'font-size:13px;color:#555;margin:0 0 20px;';
+            report.appendChild(meta);
 
-            doc.save(currentCalc.title + "_Novessa_Report.pdf");
+            const productHeading = document.createElement('h2');
+            productHeading.textContent = 'Ապրանք՝ ' + currentCalc.title;
+            productHeading.style.cssText = 'font-size:18px;margin:0 0 14px;';
+            report.appendChild(productHeading);
+
+            const table = document.createElement('table');
+            table.style.cssText = 'width:100%;border-collapse:collapse;font-size:14px;';
+            const rows = [
+                ['Վաճառքի գին', currentCalc.price],
+                ['Ապրանքի ինքնարժեք', currentCalc.cost],
+                ['Միջնորդավճար', currentCalc.commission],
+                ['Լոգիստիկա և վերադարձի գնահատված ծախս', currentCalc.logistics],
+                ['Պահեստավորում', currentCalc.storage],
+                ['Գովազդ', currentCalc.ad],
+                ['Հարկեր', currentCalc.tax],
+                ['Ընդհանուր ծախսեր', currentCalc.totalExpenses],
+                ['Մաքուր շահույթ', currentCalc.netProfit],
+                ['Մարժա', currentCalc.margin + '%'],
+                ['ROI', currentCalc.roi === 'N/A' ? 'N/A' : currentCalc.roi + '%']
+            ];
+            rows.forEach((item, index) => {
+                const tr = document.createElement('tr');
+                [item[0], typeof item[1] === 'number' ? item[1].toFixed(2) : String(item[1])].forEach(value => {
+                    const td = document.createElement('td');
+                    td.textContent = value;
+                    td.style.cssText = 'border:1px solid #ddd;padding:9px;' + (index >= 7 ? 'font-weight:700;background:#f3f4f6;' : '');
+                    tr.appendChild(td);
+                });
+                table.appendChild(tr);
+            });
+            report.appendChild(table);
+
+            const note = document.createElement('p');
+            note.textContent = 'Նշում․ արդյունքները հիմնված են մուտքագրված ենթադրությունների վրա և չեն հաստատում marketplace-ի իրական սակագները։';
+            note.style.cssText = 'font-size:11px;color:#666;margin-top:18px;';
+            report.appendChild(note);
+
+            document.body.appendChild(report);
+            try {
+                if (document.fonts && document.fonts.ready) await document.fonts.ready;
+                const canvas = await window.html2canvas(report, { scale: 2, backgroundColor: '#ffffff', useCORS: true });
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF('p', 'mm', 'a4');
+                const width = 190;
+                const height = width * canvas.height / canvas.width;
+                if (height > 277) {
+                    alert('Հաշվետվությունը մեկ էջի համար չափազանց երկար է։ Կրճատեք ապրանքի անվանումը կամ հաշվետվության բովանդակությունը։');
+                    return;
+                }
+                doc.addImage(canvas.toDataURL('image/png'), 'PNG', 10, 10, width, height);
+                const safeName = String(currentCalc.title || 'Novessa').replace(/[<>:"|?*\u0000-\u001F]/g, '_').replace(/[\\/]/g, '_').slice(0, 80);
+                doc.save(safeName + '_Novessa_Report.pdf');
+            } catch (error) {
+                alert('PDF ստեղծել չհաջողվեց։ Ստուգեք՝ արդյոք PDF գրադարանները հասանելի են։');
+            } finally {
+                report.remove();
+            }
         }
 
         function calculateStockPredictor() {
-            let sku = document.getElementById('stockSku').value || 'SKU-DEFAULT';
-            let stock = parseFloat(document.getElementById('currentStock').value) || 0;
-            let dailySales = parseFloat(document.getElementById('dailySales').value) || 1;
-            let leadTime = parseFloat(document.getElementById('leadTime').value) || 14;
-            let safetyStock = parseFloat(document.getElementById('safetyStock').value) || 20;
+            const sku = String(document.getElementById('stockSku').value || 'SKU').trim().slice(0, 80);
+            const stock = readNumberInput('currentStock', NaN);
+            const dailySales = readNumberInput('dailySales', NaN);
+            const leadTime = readNumberInput('leadTime', NaN);
+            const safetyStock = readNumberInput('safetyStock', NaN);
 
-            if (dailySales <= 0) { alert('Օրական վաճառքը պետք է մեծ լինի 0-ից'); return; }
+            if (![stock, dailySales, leadTime, safetyStock].every(Number.isFinite) ||
+                stock < 0 || dailySales <= 0 || leadTime < 0 || safetyStock < 0) {
+                alert('Մուտքագրեք վավեր տվյալներ․ մնացորդը, մատակարարման ժամկետը և անվտանգության պաշարը չեն կարող բացասական լինել, իսկ օրական վաճառքը պետք է լինի 0-ից բարձր։');
+                return;
+            }
 
-            let daysLeft = Math.floor(stock / dailySales);
-            let reorderPoint = (dailySales * leadTime) + safetyStock;
-            let recommendedQty = (dailySales * 30) + safetyStock - stock;
-            if (recommendedQty < 0) recommendedQty = 0;
+            const targetCoverDays = 30;
+            const daysLeft = stock / dailySales;
+            const reorderPoint = (dailySales * leadTime) + safetyStock;
+            const daysUntilReorder = stock <= reorderPoint ? 0 : (stock - reorderPoint) / dailySales;
+            const recommendedQty = Math.max(0, (dailySales * (leadTime + targetCoverDays)) + safetyStock - stock);
+            const today = new Date();
+            const stockOutDate = new Date(today.getTime() + Math.ceil(daysLeft) * 86400000);
+            const reorderDate = new Date(today.getTime() + Math.ceil(daysUntilReorder) * 86400000);
+            const dateFormat = value => value.toLocaleDateString('hy-AM');
 
-            let today = new Date();
-            let stockOutDate = new Date(today.getTime() + (daysLeft * 24 * 60 * 60 * 1000)).toLocaleDateString();
-            let reorderDate = new Date(today.getTime() + Math.max(0, (daysLeft - leadTime)) * 24 * 60 * 60 * 1000).toLocaleDateString();
-
-            let resDiv = document.getElementById('stockResult');
+            const lines = [
+                'Stock-Out կանխատեսում — ' + sku,
+                'Միջին օրական պահանջարկ՝ ' + dailySales.toFixed(2) + ' հատ/օր',
+                'Մոտավոր օրեր մինչև պաշարի սպառումը՝ ' + daysLeft.toFixed(1),
+                'Կանխատեսվող սպառման ամսաթիվ՝ ' + dateFormat(stockOutDate),
+                'Վերապատվիրման շեմ՝ ' + Math.ceil(reorderPoint) + ' հատ',
+                'Վերապատվիրման առաջարկվող ամսաթիվ՝ ' + dateFormat(reorderDate),
+                'Առաջարկվող պատվերի քանակ՝ ' + Math.ceil(recommendedQty) + ' հատ',
+                'Ենթադրություն՝ պահանջարկը կայուն է․ մատակարարման ուշացումները և սեզոնայնությունը ներառված չեն։'
+            ];
+            const resDiv = document.getElementById('stockResult');
             resDiv.style.display = 'block';
-            resDiv.innerHTML = "📦 <b>Stock-Out Կանխատեսում (" + sku + "):</b>\\n" +
-                "• Միջին օրական պահանջարկ: <b>" + dailySales + " հատ/օր</b>\\n" +
-                "• Մոտավոր օրեր մինչև պաշարի սպառումը: <b>" + daysLeft + " օր</b>\\n" +
-                "• Կանխատեսվող Stock-Out ամսաթիվ: <b style='color:#ef4444;'>" + stockOutDate + "</b>\\n" +
-                "• Առաջարկվող վերապատվիրման ամսաթիվ: <b style='color:#38bdf8;'>" + reorderDate + "</b>\\n" +
-                "• Առաջարկվող վերապատվիրման քանակ: <b>" + Math.ceil(recommendedQty) + " հատ</b>";
+            resDiv.textContent = lines.join('\n');
         }
 
         function analyzeFunnel() {
@@ -693,11 +821,32 @@ app.get('/', (req, res) => {
             document.getElementById('cardPreviewArea').style.display = 'block';
         }
 
-        function generateSEOText() {
-            let input = document.getElementById('seoInput').value || 'Ապրանք';
-            let resDiv = document.getElementById('seoResult');
+        async function generateSEOText() {
+            const input = String(document.getElementById('seoInput').value || '').trim().slice(0, 300);
+            const resDiv = document.getElementById('seoResult');
             resDiv.style.display = 'block';
-            resDiv.innerHTML = "📌 **SEO Վերնագիր:** " + input + " - Բարձր որակի 2026\\n\\n🏷️ **Keywords:** #" + input.replace(/\s+/g, '_') + " #wb_хит";
+            if (!input) {
+                resDiv.textContent = 'Նախ մուտքագրեք ապրանքի անունը կամ կատեգորիան։';
+                return;
+            }
+            resDiv.textContent = 'AI-ն պատրաստում է SEO առաջարկները…';
+            const prompt = 'Դու e-commerce SEO մասնագետ ես։ Ապրանք՝ ' + input +
+                '. Պատասխանիր հայերենով՝ բաժիններով. SEO վերնագիր, ապրանքի նկարագրության նախագիծ, 8 համապատասխան բանալի բառ, լրացուցիչ տվյալներ, որոնք պետք է ճշտել։ Մի՛ հորինիր նյութ, չափս, բաղադրություն, սերտիֆիկատ, որոնման հաճախականություն կամ վաճառքի վիճակագրություն։ Եթե տվյալները բավարար չեն, ասա դա։';
+            try {
+                const response = await fetch('/api/ai', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt })
+                });
+                const data = await response.json().catch(() => ({}));
+                if (!response.ok) {
+                    resDiv.textContent = data.error || 'SEO գեներացիան հասանելի չէ։ Ստուգեք AI ծառայության կարգավորումները։';
+                    return;
+                }
+                resDiv.textContent = data.reply || 'AI-ն դատարկ պատասխան է վերադարձրել։';
+            } catch (error) {
+                resDiv.textContent = 'AI SEO ծառայությանը միանալ չհաջողվեց։';
+            }
         }
 
         function solvePain(painId) {
@@ -708,89 +857,209 @@ app.get('/', (req, res) => {
             else if (painId === 3) resDiv.innerHTML = "🎯 **Բուժում:** Ճշգրտեք չափսային ցանցը և ամրացրեք փաթեթավորումը։";
         }
 
-        async function loadHistory() {
+        function saveCalculation() {
+            if (!currentCalc) {
+                alert('Նախ կատարեք հաշվարկ։');
+                return;
+            }
             try {
-                const res = await fetch('/api/history');
-                const data = await res.json();
-                let listDiv = document.getElementById('historyList');
-                if (data.length === 0) {
-                    listDiv.innerHTML = 'Հիշողությունը դատարկ է։';
+                const saved = JSON.parse(localStorage.getItem('novessaHistory') || '[]');
+                const history = Array.isArray(saved) ? saved : [];
+                history.unshift({ ...currentCalc, savedAt: new Date().toISOString() });
+                localStorage.setItem('novessaHistory', JSON.stringify(history.slice(0, 20)));
+                loadHistory();
+                alert('Հաշվարկը պահպանվել է այս բրաուզերում։ Այն ավտոմատ չի համաժամացվում այլ սարքերի հետ։');
+            } catch (error) {
+                alert('Հնարավոր չէ պահպանել հաշվարկը բրաուզերի հիշողության մեջ։');
+            }
+        }
+
+        function loadHistory() {
+            const listDiv = document.getElementById('historyList');
+            listDiv.replaceChildren();
+            try {
+                const saved = JSON.parse(localStorage.getItem('novessaHistory') || '[]');
+                const history = Array.isArray(saved) ? saved : [];
+                if (!history.length) {
+                    listDiv.textContent = 'Այս բրաուզերում պահպանված հաշվարկներ դեռ չկան։';
                     return;
                 }
-                listDiv.innerHTML = data.map((item, index) => 
-                    '<div style="background:#1e1938; padding:12px; margin-top:8px; border-radius:8px; border:1px solid #3f326b; font-size:13px;">' +
-                    '<b>#' + (index + 1) + ' - ' + item.title + '</b> (' + item.platform + ')<br>' +
-                    'Գինը՝ ' + item.price + ' | Շահույթ՝ <span style="color:#c084fc;">' + item.netProfit + '</span> | ROI՝ <b>' + item.roi + '%</b>' +
-                    '</div>'
-                ).join('');
-            } catch (err) {
-                document.getElementById('historyList').innerHTML = '⚠️ Սխալ պատմությունը բեռնելիս։';
+                history.forEach((item, index) => {
+                    const card = document.createElement('div');
+                    card.style.cssText = 'background:#1e1938;padding:12px;margin-top:8px;border-radius:8px;border:1px solid #3f326b;font-size:13px;';
+                    const title = document.createElement('b');
+                    title.textContent = '#' + (index + 1) + ' — ' + String(item.title || 'Ապրանք') + ' (' + String(item.platform || '') + ')';
+                    const details = document.createElement('p');
+                    details.textContent = 'Գինը՝ ' + String(item.price ?? '') + ' | Շահույթ՝ ' + String(item.netProfit ?? '') + ' | ROI՝ ' + String(item.roi ?? '');
+                    details.style.margin = '8px 0 0';
+                    card.append(title, details);
+                    listDiv.appendChild(card);
+                });
+            } catch (error) {
+                listDiv.textContent = 'Չհաջողվեց կարդալ այս բրաուզերի պատմությունը։';
             }
         }
 
         async function askAI() {
-            let prompt = document.getElementById('aiPrompt').value;
-            let apiKey = document.getElementById('geminiKey').value;
-            let resDiv = document.getElementById('aiResult');
-            
-            if(!prompt) { alert('Գրեք հարցը։'); return; }
+            const prompt = String(document.getElementById('aiPrompt').value || '').trim();
+            const resDiv = document.getElementById('aiResult');
+            if (!prompt) {
+                alert('Գրեք հարցը։');
+                return;
+            }
+            if (prompt.length > 12000) {
+                alert('Հարցը չափազանց երկար է։ Խնդրում ենք կրճատել։');
+                return;
+            }
             resDiv.style.display = 'block';
-            resDiv.innerHTML = '🤖 Մշակվում է...';
-
+            resDiv.textContent = 'AI-ն մշակում է հարցը…';
             try {
                 const response = await fetch('/api/ai', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ prompt, apiKey })
+                    body: JSON.stringify({ prompt })
                 });
-                const data = await response.json();
-                resDiv.innerHTML = data.reply || 'Պատասխան չստացվեց։';
-            } catch (err) {
-                resDiv.innerHTML = '⚠️ Սխալ Gemini API հարցման ժամանակ։';
+                const data = await response.json().catch(() => ({}));
+                if (!response.ok) {
+                    resDiv.textContent = data.error || 'AI ծառայությունը հասանելի չէ։';
+                    return;
+                }
+                resDiv.textContent = data.reply || 'AI-ն դատարկ պատասխան է վերադարձրել։';
+            } catch (error) {
+                resDiv.textContent = 'AI ծառայության հետ կապը չհաջողվեց։';
             }
         }
-    </script>
+    
+
+        </script>
 </body>
 </html>`);
 });
 
 app.post('/api/save', (req, res) => {
   const item = req.body;
+  if (!item || typeof item !== 'object' || Array.isArray(item)) {
+    return res.status(400).json({ success: false, error: 'Հաշվարկի տվյալները անվավեր են։' });
+  }
   historyDB.unshift(item);
   if (historyDB.length > 20) historyDB.pop();
-  res.json({ success: true, message: 'Հաշվարկը պահպանվեց! 🧠' });
+  return res.json({
+    success: true,
+    storage: 'process-memory',
+    message: 'Հաշվարկը պահպանվել է ժամանակավոր սերվերային հիշողության մեջ և կարող է կորչել վերագործարկման ժամանակ։'
+  });
 });
 
-app.get('/api/history', (req, res) => {
-  res.json(historyDB);
+app.get('/api/history', (_req, res) => {
+  return res.json(historyDB);
+});
+
+app.post('/api/remove-background', async (req, res) => {
+  const apiKey = String(process.env.REMOVE_BG_API_KEY || '').trim();
+  if (!apiKey) {
+    return res.status(503).json({
+      success: false,
+      code: 'BACKGROUND_REMOVAL_NOT_CONFIGURED',
+      error: 'Ֆոնի հեռացման ծառայությունը կարգավորված չէ․ պահանջվում է REMOVE_BG_API_KEY։'
+    });
+  }
+
+  const imageData = typeof req.body?.imageData === 'string' ? req.body.imageData : '';
+  const match = imageData.match(/^data:(image\/(?:png|jpeg));base64,([A-Za-z0-9+/=]+)$/);
+  if (!match) return res.status(400).json({ success: false, error: 'Օգտագործեք վավեր PNG կամ JPEG նկար։' });
+
+  const imageBuffer = Buffer.from(match[2], 'base64');
+  if (!imageBuffer.length || imageBuffer.length > 10 * 1024 * 1024) {
+    return res.status(413).json({ success: false, error: 'Նկարի չափը թույլատրելի միջակայքից դուրս է։' });
+  }
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 45000);
+  try {
+    const form = new FormData();
+    form.set('image_file', new Blob([imageBuffer], { type: match[1] }), match[1] === 'image/png' ? 'upload.png' : 'upload.jpg');
+    form.set('size', 'auto');
+    const upstream = await fetch('https://api.remove.bg/v1.0/removebg', {
+      method: 'POST',
+      headers: { 'X-Api-Key': apiKey },
+      body: form,
+      signal: controller.signal
+    });
+    if (!upstream.ok) {
+      const status = upstream.status === 429 ? 429 : 502;
+      return res.status(status).json({
+        success: false,
+        code: status === 429 ? 'BACKGROUND_RATE_LIMIT' : 'BACKGROUND_PROVIDER_ERROR',
+        error: 'Ֆոնի հեռացման ծառայությունը վերադարձրել է սխալ (HTTP ' + upstream.status + ')։'
+      });
+    }
+    const output = Buffer.from(await upstream.arrayBuffer());
+    if (!output.length || output.length > 15 * 1024 * 1024) {
+      return res.status(502).json({ success: false, error: 'Մշակման արդյունքը դատարկ է կամ չափազանց մեծ։' });
+    }
+    return res.json({ success: true, imageData: 'data:image/png;base64,' + output.toString('base64') });
+  } catch (error) {
+    return res.status(error.name === 'AbortError' ? 504 : 502).json({
+      success: false,
+      code: error.name === 'AbortError' ? 'BACKGROUND_PROVIDER_TIMEOUT' : 'BACKGROUND_PROVIDER_UNREACHABLE',
+      error: 'Ֆոնի հեռացման ծառայությունը հասանելի չէ։'
+    });
+  } finally {
+    clearTimeout(timer);
+  }
 });
 
 app.post('/api/ai', async (req, res) => {
-  const { prompt, apiKey } = req.body;
-  const key = apiKey || process.env.GEMINI_API_KEY;
+  const prompt = typeof req.body?.prompt === 'string' ? req.body.prompt.trim() : '';
+  if (!prompt) return res.status(400).json({ success: false, error: 'Հարցը պարտադիր է։' });
+  if (prompt.length > 12000) return res.status(413).json({ success: false, error: 'Հարցը չափազանց երկար է։' });
 
+  const key = String(process.env.GEMINI_API_KEY || '').trim();
   if (!key) {
-    return res.json({ 
-      reply: `[Demo AI Խորհուրդ]: Ձեր հարցն է՝ "${prompt}"\n\nE-Commerce խորհուրդ. Վաճառքի ձագարը և գովազդը կառավարելիս միշտ հետևեք ROAS-ին և ДРР-ին:` 
+    return res.status(503).json({
+      success: false,
+      code: 'AI_NOT_CONFIGURED',
+      error: 'Իրական AI ծառայությունը կարգավորված չէ։ Ավելացրեք GEMINI_API_KEY-ը Render-ի գաղտնի կարգավորումներում։'
     });
   }
+  const model = String(process.env.GEMINI_MODEL || 'gemini-3.8-flash').trim();
+  if (!/^[A-Za-z0-9._-]+$/.test(model)) {
+    return res.status(500).json({ success: false, error: 'GEMINI_MODEL կարգավորումն անվավեր է։' });
+  }
 
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 45000);
   try {
-    const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
+    const geminiRes = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(model) + ':generateContent', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }]
-      })
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
+      body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: prompt }] }] }),
+      signal: controller.signal
     });
-    const data = await geminiRes.json();
-    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Պատասխան չստացվեց Gemini-ից:';
-    res.json({ reply });
+    const data = await geminiRes.json().catch(() => ({}));
+    if (!geminiRes.ok) {
+      const status = geminiRes.status === 429 ? 429 : (geminiRes.status >= 400 && geminiRes.status < 500 ? geminiRes.status : 502);
+      return res.status(status).json({
+        success: false,
+        code: status === 429 ? 'AI_RATE_LIMIT' : 'AI_PROVIDER_ERROR',
+        error: status === 429 ? 'AI ծառայության սահմանաչափը լրացել է։ Փորձեք ավելի ուշ։' :
+          'AI ծառայությունը վերադարձրել է սխալ (HTTP ' + geminiRes.status + ')։'
+      });
+    }
+    const reply = data.candidates?.[0]?.content?.parts?.map(part => part.text || '').join('').trim();
+    if (!reply) return res.status(502).json({ success: false, code: 'AI_EMPTY_RESPONSE', error: 'AI-ն դատարկ պատասխան է վերադարձրել։' });
+    return res.json({ success: true, provider: 'Google Gemini', model, reply });
   } catch (error) {
-    res.json({ reply: '⚠️ Սխալ Gemini API հարցման ժամանակ:' });
+    return res.status(error.name === 'AbortError' ? 504 : 502).json({
+      success: false,
+      code: error.name === 'AbortError' ? 'AI_TIMEOUT' : 'AI_PROVIDER_UNREACHABLE',
+      error: error.name === 'AbortError' ? 'AI պատասխանի սպասման ժամանակը սպառվեց։' : 'AI ծառայությանը միանալ չհաջողվեց։'
+    });
+  } finally {
+    clearTimeout(timer);
   }
 });
 
-app.listen(PORT, () => {
+        app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
