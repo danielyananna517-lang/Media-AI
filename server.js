@@ -12,7 +12,7 @@ app.get('/', (req, res) => {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Novessa Pro Max | E-Commerce & WB Suite</title>
+    <title>Novessa Pro Max | E-Commerce Suite</title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -23,7 +23,6 @@ app.get('/', (req, res) => {
             --accent-purple: #c084fc;
             --accent-blue: #38bdf8;
             --accent-glow: rgba(192, 132, 252, 0.25);
-            --success: #10b981;
             --text-main: #f9fafb;
             --text-muted: #9ca3af;
         }
@@ -33,32 +32,78 @@ app.get('/', (req, res) => {
             background: var(--bg-base);
             color: var(--text-main);
             margin: 0;
-            padding: 30px 20px;
+            display: flex;
             min-height: 100vh;
         }
 
-        .container {
-            max-width: 1000px;
-            margin: 0 auto;
+        /* Navigation Sidebar */
+        .sidebar {
+            width: 260px;
+            background: var(--bg-card);
+            border-right: 1px solid var(--border-color);
+            padding: 24px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
         }
 
-        header {
-            text-align: center;
-            margin-bottom: 40px;
-        }
-
-        h1 {
-            font-size: 34px;
+        .logo {
+            font-size: 22px;
+            font-weight: 700;
             background: linear-gradient(135deg, #c084fc, #38bdf8);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            margin: 0 0 8px 0;
-            font-weight: 700;
+            margin-bottom: 24px;
+            padding-left: 12px;
         }
 
-        .subtitle {
+        .nav-btn {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border-radius: 10px;
             color: var(--text-muted);
-            font-size: 15px;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            background: transparent;
+            width: 100%;
+            text-align: left;
+        }
+
+        .nav-btn:hover, .nav-btn.active {
+            background: linear-gradient(135deg, rgba(124, 58, 237, 0.2), rgba(37, 99, 235, 0.2));
+            color: var(--accent-purple);
+            border: 1px solid rgba(192, 132, 252, 0.3);
+        }
+
+        /* Main Content Area */
+        .content {
+            flex: 1;
+            padding: 35px 40px;
+            overflow-y: auto;
+        }
+
+        .page { display: none; }
+        .page.active { display: block; animation: fadeIn 0.3s ease; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .hero-banner {
+            background: linear-gradient(135deg, rgba(46, 16, 101, 0.8), rgba(30, 58, 138, 0.8)), url('https://images.unsplash.com/photo-1556742049-0a670f4a45e7?auto=format&fit=crop&w=1200&q=80');
+            background-size: cover;
+            background-position: center;
+            border-radius: 16px;
+            padding: 40px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 30px;
         }
 
         .card {
@@ -68,23 +113,9 @@ app.get('/', (req, res) => {
             padding: 24px;
             margin-bottom: 24px;
             box-shadow: 0 12px 35px rgba(12, 9, 22, 0.6);
-            transition: transform 0.2s ease, border-color 0.2s ease;
         }
 
-        .card:hover {
-            border-color: rgba(192, 132, 252, 0.5);
-        }
-
-        h2 {
-            font-size: 18px;
-            margin-top: 0;
-            margin-bottom: 20px;
-            color: var(--text-main);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
+        h2 { font-size: 20px; margin-top: 0; color: var(--text-main); }
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
         .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
 
@@ -100,7 +131,6 @@ app.get('/', (req, res) => {
             font-size: 14px;
             font-family: inherit;
             outline: none;
-            transition: border-color 0.2s, box-shadow 0.2s;
         }
 
         input:focus, select:focus, textarea:focus {
@@ -108,9 +138,7 @@ app.get('/', (req, res) => {
             box-shadow: 0 0 0 3px var(--accent-glow);
         }
 
-        textarea { resize: vertical; height: 90px; }
-
-        button {
+        button.action-btn {
             width: 100%;
             padding: 13px;
             margin-top: 10px;
@@ -121,17 +149,7 @@ app.get('/', (req, res) => {
             font-weight: 600;
             font-size: 15px;
             cursor: pointer;
-            transition: opacity 0.2s, transform 0.1s;
-            font-family: inherit;
             box-shadow: 0 4px 15px rgba(124, 58, 237, 0.35);
-        }
-
-        button:hover { opacity: 0.95; transform: translateY(-1px); }
-        button:active { transform: translateY(0); }
-
-        .btn-save {
-            background: linear-gradient(135deg, #059669, #047857);
-            box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
         }
 
         .result-box {
@@ -147,128 +165,150 @@ app.get('/', (req, res) => {
             line-height: 1.6;
         }
 
-        /* Card Preview Mockup */
-        .preview-box {
-            background: linear-gradient(135deg, #2e1065, #1e3a8a);
-            border: 2px dashed #a855f7;
-            padding: 24px;
+        .img-card {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
             border-radius: 12px;
-            text-align: center;
-            color: white;
-            margin-top: 16px;
-            box-shadow: 0 8px 25px rgba(168, 85, 247, 0.25);
-        }
-
-        .badge-pill {
-            background: #ef4444;
-            color: white;
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 700;
-            display: inline-block;
-            margin-bottom: 10px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .history-card {
-            background: var(--bg-input);
-            padding: 14px 18px;
-            margin-top: 10px;
-            border-radius: 10px;
+            margin-bottom: 12px;
             border: 1px solid var(--border-color);
-            font-size: 13px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        @media (max-width: 768px) {
-            .grid-2, .grid-3 { grid-template-columns: 1fr; }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>🚀 Novessa Pro Max</h1>
-            <div class="subtitle">Universal E-Commerce, Wildberries/Ozon Suite & AI Analytics</div>
-        </header>
-        
-        <!-- 1. Funnel Analytics -->
-        <div class="card">
-            <h2>📉 1. Վաճառքների Ձագար (Sales Funnel Leak Analytics)</h2>
+
+    <!-- Sidebar Menu -->
+    <div class="sidebar">
+        <div class="logo">🚀 Novessa Pro</div>
+        <button class="nav-btn active" onclick="switchPage('home')">🏠 Գլխավոր (Home)</button>
+        <button class="nav-btn" onclick="switchPage('funnel')">📉 Վաճառքի Ձագար</button>
+        <button class="nav-btn" onclick="switchPage('cardStudio')">🎨 Քարտերի Ստուդիա</button>
+        <button class="nav-btn" onclick="switchPage('unitEcon')">📊 Յունիթ Էկոնոմիկա</button>
+        <button class="nav-btn" onclick="switchPage('history')">🧠 Հիշողության Բանկ</button>
+        <button class="nav-btn" onclick="switchPage('aiCopilot')">🤖 Gemini AI Copilot</button>
+    </div>
+
+    <!-- Main Content -->
+    <div class="content">
+
+        <!-- PAGE 1: HOME DASHBOARD -->
+        <div id="home" class="page active">
+            <div class="hero-banner">
+                <h1 style="color:white; margin:0 0 10px 0;">Բարի գալուստ Novessa Pro Max</h1>
+                <p style="color:#e2e8f0; font-size:16px; margin:0;">Պրոֆեսիոնալ E-Commerce և Մարկետփլեյս Վերլուծությունների Համակարգ</p>
+            </div>
+            
             <div class="grid-3">
-                <input type="number" id="views" placeholder="Ցուցադրումներ (Views)">
-                <input type="number" id="clicks" placeholder="Քարտի բացումներ (Clicks)">
-                <input type="number" id="carts" placeholder="Զամբյուղ (Add to Cart)">
+                <div class="card" onclick="switchPage('funnel')" style="cursor:pointer;">
+                    <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=400&q=80" class="img-card">
+                    <h3>📉 Վաճառքի Ձագար</h3>
+                    <p style="color:var(--text-muted); font-size:13px;">Գտեք, թե որտեղ են կորչում փողերը WB/Ozon/E-commerce վաճառքներում։</p>
+                </div>
+                <div class="card" onclick="switchPage('cardStudio')" style="cursor:pointer;">
+                    <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=400&q=80" class="img-card">
+                    <h3>🎨 Քարտերի Դիզայն</h3>
+                    <p style="color:var(--text-muted); font-size:13px;">Գեներացրեք գրավիչ ինֆոգրաֆիկա և բեջեր ապրանքների համար։</p>
+                </div>
+                <div class="card" onclick="switchPage('unitEcon')" style="cursor:pointer;">
+                    <img src="https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=400&q=80" class="img-card">
+                    <h3>📊 Յունիթ-Էկոնոմիկա</h3>
+                    <p style="color:var(--text-muted); font-size:13px;">Ճշգրիտ հաշվարկեք մաքուր շահույթը, ROI-ն և հարկերը։</p>
+                </div>
             </div>
-            <div class="grid-2">
-                <input type="number" id="orders" placeholder="Պատվերներ (Orders)">
-                <input type="number" id="buyouts" placeholder="Քավումներ / Выкуп (Buyouts)">
-            </div>
-            <button onclick="analyzeFunnel()">Վերլուծել Ձագարը և Գտնել Կորուստները</button>
-            <div id="funnelResult" class="result-box" style="display:none;"></div>
         </div>
 
-        <!-- 2. Card Infographics Mockup -->
-        <div class="card">
-            <h2>🎨 2. Ապրանքային Քարտի Դիզայն և Ինֆոգրաֆիկա</h2>
-            <input type="text" id="cardTitle" placeholder="Ապրանքի անուն (օր.՝ Կանացի Կաշվե Պայուսակ)">
-            <div class="grid-2">
-                <input type="text" id="cardBadge" placeholder="Բեջ (օր.՝ Хит продаж / 100% Кожа)">
-                <input type="text" id="cardFeature" placeholder="Գլխավոր առավելություն (օր.՝ Водонепроницаемый)">
+        <!-- PAGE 2: FUNNEL -->
+        <div id="funnel" class="page">
+            <div class="card">
+                <h2>📉 Վաճառքների Ձագար (Sales Funnel Leak Analytics)</h2>
+                <div class="grid-3">
+                    <input type="number" id="views" placeholder="Ցուցադրումներ (Views)">
+                    <input type="number" id="clicks" placeholder="Քարտի բացումներ (Clicks)">
+                    <input type="number" id="carts" placeholder="Զամբյուղ (Add to Cart)">
+                </div>
+                <div class="grid-2">
+                    <input type="number" id="orders" placeholder="Պատվերներ (Orders)">
+                    <input type="number" id="buyouts" placeholder="Քավումներ / Выкуп (Buyouts)">
+                </div>
+                <button class="action-btn" onclick="analyzeFunnel()">Վերլուծել Ձագարը</button>
+                <div id="funnelResult" class="result-box" style="display:none;"></div>
             </div>
-            <button onclick="generateCard()">Ստեղծել Քարտի Պրեմիում Նախադիտում</button>
-            <div id="cardResult" style="display:none;"></div>
         </div>
 
-        <!-- 3. Universal Unit Economics -->
-        <div class="card">
-            <h2>📊 3. Ունիվերսալ Յունիթ-Էկոնոմիկա</h2>
-            <input type="text" id="productTitle" placeholder="Ապրանքի անվանում">
-            <select id="platform">
-                <option value="Wildberries">Wildberries</option>
-                <option value="Ozon">Ozon</option>
-                <option value="Shopify / Website">Shopify / Online Store</option>
-                <option value="Amazon">Amazon</option>
-            </select>
-            <div class="grid-2">
-                <input type="number" id="price" placeholder="Վաճառքի գին">
-                <input type="number" id="cost" placeholder="Ապրանքի ինքնարժեք (COGS)">
+        <!-- PAGE 3: CARD STUDIO -->
+        <div id="cardStudio" class="page">
+            <div class="card">
+                <h2>🎨 Ապրանքային Քարտի Դիզայն և Ինֆոգրաֆիկա</h2>
+                <input type="text" id="cardTitle" placeholder="Ապրանքի անուն (օր.՝ Կանացի Կաշվե Պայուսակ)">
+                <div class="grid-2">
+                    <input type="text" id="cardBadge" placeholder="Բեջ (օր.՝ Хит продаж / 100% Кожа)">
+                    <input type="text" id="cardFeature" placeholder="Գլխավոր առավելություն (օր.՝ Водонепроницаемый)">
+                </div>
+                <button class="action-btn" onclick="generateCard()">Ստեղծել Քարտի Նախադիտում</button>
+                <div id="cardResult" style="display:none;"></div>
             </div>
-            <div class="grid-2">
-                <input type="number" id="commission" placeholder="Միջնորդավճար (%)">
-                <input type="number" id="logistics" placeholder="Լոգիստիկա">
-            </div>
-            <div class="grid-2">
-                <input type="number" id="adCost" placeholder="Գովազդ (%) (CAC / ДРР)">
-                <input type="number" id="tax" placeholder="Հարկ (%)">
-            </div>
-            <button onclick="calculate()">Հաշվարկել Մաքուր Շահույթը</button>
-            <div id="result" class="result-box" style="display:none;"></div>
-            <button id="saveBtn" class="btn-save" style="display:none; margin-top:12px;" onclick="saveCalculation()">💾 Պահպանել հիշողության մեջ</button>
         </div>
 
-        <!-- 4. Memory Bank -->
-        <div class="card">
-            <h2>🧠 4. Հիշողության Բանկ</h2>
-            <button onclick="loadHistory()" style="background: #3f326b;">🔄 Թարմացնել պատմությունը</button>
-            <div id="historyList" class="result-box">Սեղմեք թարմացնելու համար...</div>
+        <!-- PAGE 4: UNIT ECONOMICS -->
+        <div id="unitEcon" class="page">
+            <div class="card">
+                <h2>📊 Ունիվերսալ Յունիթ-Էկոնոմիկա</h2>
+                <input type="text" id="productTitle" placeholder="Ապրանքի անվանում">
+                <select id="platform">
+                    <option value="Wildberries">Wildberries</option>
+                    <option value="Ozon">Ozon</option>
+                    <option value="Shopify / Website">Shopify / Online Store</option>
+                    <option value="Amazon">Amazon</option>
+                </select>
+                <div class="grid-2">
+                    <input type="number" id="price" placeholder="Վաճառքի գին">
+                    <input type="number" id="cost" placeholder="Ապրանքի ինքնարժեք (COGS)">
+                </div>
+                <div class="grid-2">
+                    <input type="number" id="commission" placeholder="Միջնորդավճար (%)">
+                    <input type="number" id="logistics" placeholder="Լոգիստիկա">
+                </div>
+                <div class="grid-2">
+                    <input type="number" id="adCost" placeholder="Գովազդ (%) (CAC / ДРР)">
+                    <input type="number" id="tax" placeholder="Հարկ (%)">
+                </div>
+                <button class="action-btn" onclick="calculate()">Հաշվարկել Մաքուր Շահույթը</button>
+                <div id="result" class="result-box" style="display:none;"></div>
+                <button id="saveBtn" class="action-btn" style="display:none; background: linear-gradient(135deg, #059669, #047857);" onclick="saveCalculation()">💾 Պահպանել հիշողության մեջ</button>
+            </div>
         </div>
 
-        <!-- 5. Gemini AI Copilot -->
-        <div class="card">
-            <h2>🤖 5. Gemini AI E-Commerce & WB Խորհրդատու</h2>
-            <input type="password" id="geminiKey" placeholder="Gemini API Key (ըստ ցանկության)">
-            <textarea id="aiPrompt" placeholder="Հարցրեք վաճառքների, գովազդի կամ SEO-ի մասին..."></textarea>
-            <button onclick="askAI()">Ուղղել հարցը AI-ին</button>
-            <div id="aiResult" class="result-box" style="display:none;">Սպասում եմ հարցի...</div>
+        <!-- PAGE 5: HISTORY -->
+        <div id="history" class="page">
+            <div class="card">
+                <h2>🧠 Հիշողության Բանկ</h2>
+                <button class="action-btn" onclick="loadHistory()" style="background: #3f326b;">🔄 Թարմացնել պատմությունը</button>
+                <div id="historyList" class="result-box" style="margin-top:15px;">Սեղմեք թարմացնելու համար...</div>
+            </div>
         </div>
+
+        <!-- PAGE 6: AI COPILOT -->
+        <div id="aiCopilot" class="page">
+            <div class="card">
+                <h2>🤖 Gemini AI E-Commerce & WB Խորհրդատու</h2>
+                <input type="password" id="geminiKey" placeholder="Gemini API Key (ըստ ցանկության)">
+                <textarea id="aiPrompt" placeholder="Հարցրեք վաճառքների, գովազդի կամ SEO-ի մասին..."></textarea>
+                <button class="action-btn" onclick="askAI()">Ուղղել հարցը AI-ին</button>
+                <div id="aiResult" class="result-box" style="display:none;">Սպասում եմ հարցի...</div>
+            </div>
+        </div>
+
     </div>
 
     <script>
+        function switchPage(pageId) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            
+            document.getElementById(pageId).classList.add('active');
+            event.currentTarget.classList.add('active');
+        }
+
         let currentCalc = null;
 
         function analyzeFunnel() {
@@ -284,14 +324,14 @@ app.get('/', (req, res) => {
             let buyoutRate = ord > 0 ? ((buy / ord) * 100).toFixed(1) : 0;
 
             let advice = "";
-            if (ctr < 3) advice += "⚠️ Ցածր CTR (" + ctr + "%): Ապրանքի գլխավոր նկարը գրավիչ չէ։ Փոխեք ինֆոգրաֆիկան։\\n";
+            if (ctr < 3) advice += "⚠️ Ցածր CTR (" + ctr + "%): Ապրանքի գլխավոր նկարը գրավիչ չէ։\\n";
             if (clickToCart < 10) advice += "⚠️ Ցածր Զամբյուղ Լցնելու % (" + clickToCart + "%): Գինը բարձր է կամ քարտի մեջ չկան բավարար լուսանկարներ։\\n";
-            if (buyoutRate < 60) advice += "⚠️ Ցածր Քավում / Выкуп (" + buyoutRate + "%): Ապրանքի որակը կամ չափսային ցանցը չի համապատասխանում։\\n";
+            if (buyoutRate < 60) advice += "⚠️ Ցածր Քավում (" + buyoutRate + "%): Ապրանքի որակը չի համապատասխանում։\\n";
             if (!advice) advice = "✅ Ձեր ձագարի ցուցանիշները գտնվում են լավ տիրույթում։";
 
             let resDiv = document.getElementById('funnelResult');
             resDiv.style.display = 'block';
-            resDiv.innerHTML = "📊 Ձագարի Փուլային Կոնվերսիա:\\n• CTR (Դիտում ➔ Քլիք): " + ctr + "%\\n• Քլիք ➔ Զամբյուղ: " + clickToCart + "%\\n• Զամբյուղ ➔ Պատվեր: " + cartToOrder + "%\\n• Պատվեր ➔ Քավում (Выкуп): " + buyoutRate + "%\\n\\n🚨 Վերլուծություն:\\n" + advice;
+            resDiv.innerHTML = "📊 Ձագարի Փուլային Կոնվերսիա:\\n• CTR: " + ctr + "%\\n• Քլիք ➔ Զամբյուղ: " + clickToCart + "%\\n• Զամբյուղ ➔ Պատվեր: " + cartToOrder + "%\\n• Պատվեր ➔ Քավում: " + buyoutRate + "%\\n\\n🚨 Վերլուծություն:\\n" + advice;
         }
 
         function generateCard() {
@@ -301,7 +341,7 @@ app.get('/', (req, res) => {
 
             let resDiv = document.getElementById('cardResult');
             resDiv.style.display = 'block';
-            resDiv.innerHTML = '<div class="preview-box"><div class="badge-pill">' + badge + '</div><h3 style="margin:8px 0; font-size:22px;">' + title + '</h3><p style="font-size:14px; opacity:0.9; margin:4px 0;">⭐ 100% Օպտիմիզացված Ինֆոգրաֆիկա | ' + feature + '</p><div style="font-size:12px; margin-top:12px; color:#38bdf8;">✨ Պատրաստ է Canva / AI գեներացիայի համար</div></div>';
+            resDiv.innerHTML = '<div style="background:linear-gradient(135deg, #2e1065, #1e3a8a); padding:20px; border-radius:12px; text-align:center; margin-top:15px;"><span style="background:#ef4444; color:white; padding:4px 10px; border-radius:20px; font-size:12px; font-weight:700;">' + badge + '</span><h3 style="margin:10px 0;">' + title + '</h3><p style="font-size:14px; opacity:0.9;">⭐ ' + feature + '</p></div>';
         }
 
         function calculate() {
@@ -327,7 +367,7 @@ app.get('/', (req, res) => {
 
             let resDiv = document.getElementById('result');
             resDiv.style.display = 'block';
-            resDiv.innerHTML = "հարթակ: " + platform + " | Մաքուր շահույթ: " + netProfit.toFixed(2) + " | Մարժա: " + margin + "% | ROI: " + roi + "%";
+            resDiv.innerHTML = "Հարթակ: " + platform + " | Մաքուր շահույթ: " + netProfit.toFixed(2) + " | Մարժա: " + margin + "% | ROI: " + roi + "%";
             
             document.getElementById('saveBtn').style.display = 'block';
         }
@@ -342,7 +382,6 @@ app.get('/', (req, res) => {
                 });
                 const data = await res.json();
                 alert(data.message || 'Պահպանված է!');
-                loadHistory();
             } catch (err) {
                 alert('⚠️ Չհաջողվեց պահպանել։');
             }
@@ -358,10 +397,10 @@ app.get('/', (req, res) => {
                     return;
                 }
                 listDiv.innerHTML = data.map((item, index) => 
-                    '<div class="history-card"><div>' +
-                    '<b>#' + (index + 1) + ' - ' + item.title + '</b> <span style="color:#9ca3af;">(' + item.platform + ')</span><br>' +
-                    'Գինը՝ ' + item.price + ' | Շահույթ՝ <span style="color:#c084fc; font-weight:600;">' + item.netProfit + '</span> | ROI՝ <b>' + item.roi + '%</b>' +
-                    '</div><small style="color:#9ca3af;">' + item.date + '</small></div>'
+                    '<div style="background:#1e1938; padding:12px; margin-top:8px; border-radius:8px; border:1px solid #3f326b; font-size:13px;">' +
+                    '<b>#' + (index + 1) + ' - ' + item.title + '</b> (' + item.platform + ')<br>' +
+                    'Գինը՝ ' + item.price + ' | Շահույթ՝ <span style="color:#c084fc;">' + item.netProfit + '</span> | ROI՝ <b>' + item.roi + '%</b>' +
+                    '</div>'
                 ).join('');
             } catch (err) {
                 document.getElementById('historyList').innerHTML = '⚠️ Սխալ պատմությունը բեռնելիս։';
@@ -389,8 +428,6 @@ app.get('/', (req, res) => {
                 resDiv.innerHTML = '⚠️ Սխալ AI-ի հետ կապում։';
             }
         }
-
-        window.onload = loadHistory;
     </script>
 </body>
 </html>`);
@@ -400,7 +437,7 @@ app.post('/api/save', (req, res) => {
   const item = req.body;
   historyDB.unshift(item);
   if (historyDB.length > 20) historyDB.pop();
-  res.json({ success: true, message: 'Հաշվարկը պահպանվեց հիշողության մեջ! 🧠' });
+  res.json({ success: true, message: 'Հաշվարկը պահպանվեց! 🧠' });
 });
 
 app.get('/api/history', (req, res) => {
