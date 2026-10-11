@@ -1,183 +1,26 @@
-<!DOCTYPE html>
-<html lang="hy">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NOVESSA AI</title>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <style>
-    * {
-      box-sizing: border-box;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-    }
-    body {
-      background-color: #f4f6f9;
-      color: #333;
-      padding: 15px;
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-    }
-    header {
-      text-align: center;
-      padding-bottom: 12px;
-      border-bottom: 2px solid #e0e0e0;
-      margin-bottom: 15px;
-    }
-    header h1 {
-      font-size: 20px;
-      color: #0088cc;
-    }
-    header p {
-      font-size: 12px;
-      color: #666;
-    }
-    #chat-box {
-      flex: 1;
-      overflow-y: auto;
-      background: #ffffff;
-      border-radius: 12px;
-      padding: 12px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-      margin-bottom: 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-    .message {
-      max-width: 85%;
-      padding: 10px 14px;
-      border-radius: 14px;
-      font-size: 14px;
-      line-height: 1.4;
-      white-space: pre-wrap;
-    }
-    .user {
-      align-self: flex-end;
-      background-color: #0088cc;
-      color: #ffffff;
-      border-bottom-right-radius: 2px;
-    }
-    .ai {
-      align-self: flex-start;
-      background-color: #eef2f5;
-      color: #222;
-      border-bottom-left-radius: 2px;
-    }
-    .system-error {
-      align-self: center;
-      background-color: #ffebee;
-      color: #c62828;
-      font-size: 12px;
-      text-align: center;
-    }
-    .input-area {
-      display: flex;
-      gap: 8px;
-    }
-    input {
-      flex: 1;
-      padding: 12px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      font-size: 14px;
-      outline: none;
-    }
-    input:focus {
-      border-color: #0088cc;
-    }
-    button {
-      padding: 12px 18px;
-      background-color: #0088cc;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-weight: bold;
-      cursor: pointer;
-    }
-    button:disabled {
-      background-color: #b0bec5;
-    }
-  </style>
-</head>
-<body>
 
-  <header>
-    <h1>✨ NOVESSA AI</h1>
-    <p>Marketplace Assistant (Wildberries, Ozon)</p>
-  </header>
-
-  <div id="chat-box">
-    <div class="message ai">Բարև ձեզ: Ես NOVESSA AI օգնականն եմ: Ինչպե՞ս կարող եմ օգնել ձեզ այսօր:</div>
-  </div>
-
-  <div class="input-area">
-    <input type="text" id="user-input" placeholder="Գրեք ձեր հարցը..." onkeypress="handleKeyPress(event)">
-    <button id="send-btn" onclick="sendMessage()">Ուղարկել</button>
-  </div>
-
-  <script>
-    if (window.Telegram && window.Telegram.WebApp) {
-      window.Telegram.WebApp.ready();
-      window.Telegram.WebApp.expand();
-    }
-
-    async function sendMessage() {
-      const input = document.getElementById('user-input');
-      const btn = document.getElementById('send-btn');
-      const text = input.value.trim();
-
-      if (!text) return;
-
-      appendMessage(text, 'user');
-      input.value = '';
-      btn.disabled = true;
-
-      const loadingMsg = appendMessage('Մտածում եմ...', 'ai');
-
-      try {
-        const response = await fetch('/api/chat', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ message: text })
-        });
-
-        const data = await response.json();
-
-        if (response.ok && data.response) {
-          loadingMsg.innerText = data.response;
-        } else {
-          loadingMsg.innerText = "❌ AI-ն չկարողացավ պատասխանել: Խնդրում եմ փորձել կրկին:";
-          loadingMsg.classList.add('system-error');
-        }
-      } catch (err) {
-        console.error("Network Error:", err);
-        loadingMsg.innerText = "⚠️ Ցանցային սխալ: Խնդրում եմ ստուգել կապը կամ փորձել ավելի ուշ:";
-        loadingMsg.classList.add('system-error');
-      } finally {
-        btn.disabled = false;
-      }
-    }
-
-    function appendMessage(text, sender) {
-      const chatBox = document.getElementById('chat-box');
-      const msgDiv = document.createElement('div');
-      msgDiv.className = `message ${sender}`;
-      msgDiv.innerText = text;
-      chatBox.appendChild(msgDiv);
-      chatBox.scrollTop = chatBox.scrollHeight;
-      return msgDiv;
-    }
-
-    function handleKeyPress(e) {
-      if (e.key === 'Enter') {
-        sendMessage();
-      }
-    }
-  </script>
-</body>
-</html>
+Search within code
+ 
+‎package.json‎
++3
+-7
+Lines changed: 3 additions & 7 deletions
+Original file line number	Diff line number	Diff line change
+@@ -2,14 +2,10 @@
+  "name": "novessa-backend",
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.21.0",
+    "cors": "^2.8.5",
+    "express": "^4.19.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+    "express": "^4.19.2",
+    "node-telegram-bot-api": "^0.66.0"
+  }
+}
