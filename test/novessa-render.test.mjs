@@ -172,6 +172,30 @@ test('AI API uses server-side configuration and reports provider replies', async
   assert.equal(requestedUrl.includes('test-secret'), false);
 });
 
+test('Gemini UI key field is restored and sent transiently to the server endpoint', async () => {
+  assert.match(html, /id="geminiKey"/);
+  assert.match(uiScript, /apiKey: currentGeminiKey\(\)/);
+  assert.match(uiScript, /function currentGeminiKey\(\)/);
+
+  let requestedUrl = '';
+  let requestedHeaders = {};
+  const handlers = buildServer({}, async (url, options) => {
+    requestedUrl = String(url);
+    requestedHeaders = options.headers;
+    return {
+      ok: true, status: 200,
+      json: async () => ({ candidates: [{ content: { parts: [{ text: 'USER KEY RESPONSE' }] } }] })
+    };
+  });
+  const userProvidedKey = 'user-provided-test-key';
+  const response = await callRoute(handlers, 'POST', '/api/ai', { prompt: 'hello', apiKey: userProvidedKey });
+  assert.equal(response.statusCode, 200);
+  assert.equal(response.body.reply, 'USER KEY RESPONSE');
+  assert.equal(requestedHeaders['x-goog-api-key'], userProvidedKey);
+  assert.equal(requestedUrl.includes(userProvidedKey), false);
+  assert.equal(source.includes(userProvidedKey), false);
+});
+
 test('background removal reports missing configuration rather than fake success', async () => {
   const handlers = buildServer({});
   const response = await callRoute(handlers, 'POST', '/api/remove-background', {
