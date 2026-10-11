@@ -122,6 +122,32 @@ app.get('/', (req, res) => {
             box-shadow: 0 12px 35px rgba(12, 9, 22, 0.6);
         }
 
+        /* Home Image Cards */
+        .home-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 12px 35px rgba(12, 9, 22, 0.6);
+            display: flex;
+            flex-direction: column;
+        }
+        .home-card:hover {
+            border-color: var(--accent-purple);
+            transform: translateY(-3px);
+        }
+        .home-card img {
+            width: 100%;
+            height: 160px;
+            object-fit: cover;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .home-card-body {
+            padding: 20px;
+        }
+
         h2 { font-size: 20px; margin-top: 0; color: var(--text-main); }
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
         .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
@@ -253,17 +279,28 @@ app.get('/', (req, res) => {
             </div>
             
             <div class="grid-3">
-                <div class="card" onclick="switchPage('masterCalc')" style="cursor:pointer;">
-                    <h3>📊 Յունիթ & Export</h3>
-                    <p style="color:var(--text-muted); font-size:13px;">Հաշվարկեք շահույթը և արտահանեք իրական .xlsx կամ PDF հաշվետվություններ։</p>
+                <div class="home-card" onclick="switchPage('masterCalc')">
+                    <img src="https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=600&q=80" alt="Unit Economics">
+                    <div class="home-card-body">
+                        <h3 style="margin:0 0 8px 0; color:var(--text-main);">📊 Յունիթ, Լոգիստիկա & Պահեստ</h3>
+                        <p style="color:var(--text-muted); font-size:13px; margin:0;">Հաշվարկեք ինքնարժեքը, շահույթը և արտահանեք XLSX/PDF։</p>
+                    </div>
                 </div>
-                <div class="card" onclick="switchPage('stockPredictor')" style="cursor:pointer;">
-                    <h3>📦 Stock-Out Predictor</h3>
-                    <p style="color:var(--text-muted); font-size:13px;">Կանխատեսեք ապրանքի պահեստային մնացորդն ու վերապատվիրման օրը։</p>
+
+                <div class="home-card" onclick="switchPage('funnelAndAd')">
+                    <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=600&q=80" alt="Funnel">
+                    <div class="home-card-body">
+                        <h3 style="margin:0 0 8px 0; color:var(--text-main);">📉 Ձագար & AD Test (ДРР/ROAS)</h3>
+                        <p style="color:var(--text-muted); font-size:13px; margin:0;">Ստուգեք գովազդի արդյունավետությունն ու կոնվերսիան։</p>
+                    </div>
                 </div>
-                <div class="card" onclick="switchPage('cardStudio')" style="cursor:pointer;">
-                    <h3>🎨 Card Studio & Background</h3>
-                    <p style="color:var(--text-muted); font-size:13px;">Բեռնեք նկարը, հեռացրեք ֆոնը և ստեղծեք ինֆոգրաֆիկա։</p>
+
+                <div class="home-card" onclick="switchPage('cardStudio')">
+                    <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=600&q=80" alt="Card Studio">
+                    <div class="home-card-body">
+                        <h3 style="margin:0 0 8px 0; color:var(--text-main);">🎨 Card Studio & Infographics</h3>
+                        <p style="color:var(--text-muted); font-size:13px; margin:0;">Ստեղծեք պատրաստի WB/Ozon քարտեր՝ ինֆոգրաֆիկայով ու բեջերով։</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -451,7 +488,7 @@ app.get('/', (req, res) => {
         <div id="painSolver" class="page">
             <div class="card">
                 <h2>💡 Բիզնես-Ցավերի Դիագնոստիկ</h2>
-                <div class="pain-card" onclick="solvePain(1)"><b>1. 💸 «Գովազդի վրա շատ փող եմ ծախսում (ДРР), բայց վաճառք չկա»</b></div>
+                <div class="pain-card" onclick="solvePain(1)"><b>1. 💸 «Գովազդի վրա շատ փող եм ծախսում (ДРР), բայց վաճառք չկա»</b></div>
                 <div class="pain-card" onclick="solvePain(2)"><b>2. 👀 «Ապրանքը դիտում են, բայց զամբյուղ չեն դնում»</b></div>
                 <div class="pain-card" onclick="solvePain(3)"><b>3. 🔄 «Վերադարձները (Выкуп) շատ են, լոգիստիկան ուտում է շահույթս»</b></div>
                 <div id="painSolutionResult" class="result-box" style="display:none;"></div>
@@ -471,7 +508,7 @@ app.get('/', (req, res) => {
         <div id="aiCopilot" class="page">
             <div class="card">
                 <h2>🤖 Gemini AI E-Commerce Խորհրդատու</h2>
-                <input type="password" id="geminiKey" placeholder="Gemini API Key">
+                <input type="password" id="geminiKey" placeholder="Gemini API Key (ըստ ցանկության)">
                 <textarea id="aiPrompt" placeholder="Հարցրեք վաճառքների կամ SEO-ի մասին..."></textarea>
                 <button class="action-btn" onclick="askAI()">Ուղղել հարցը AI-ին</button>
                 <div id="aiResult" class="result-box" style="display:none;">Սպասում եմ հարցի...</div>
@@ -703,92 +740,4 @@ app.get('/', (req, res) => {
             resDiv.style.display = 'block';
             if (painId === 1) resDiv.innerHTML = "🎯 **Բուժում:** Կանգնեցրեք ավտոգովազդը, անցեք ֆիքսված հարցումներով գովազդի։";
             else if (painId === 2) resDiv.innerHTML = "🎯 **Բուժում:** Փոխեք գլխավոր ինֆոգրաֆիկան և ստուգեք մրցակիցների գները։";
-            else if (painId === 3) resDiv.innerHTML = "🎯 **Բուժում:** Ճշգրտեք չափսային ցանցը և ամրացրեք փաթեթավորումը։";
-        }
-
-        async function loadHistory() {
-            try {
-                const res = await fetch('/api/history');
-                const data = await res.json();
-                let listDiv = document.getElementById('historyList');
-                if (data.length === 0) {
-                    listDiv.innerHTML = 'Հիշողությունը դատարկ է։';
-                    return;
-                }
-                listDiv.innerHTML = data.map((item, index) => 
-                    '<div style="background:#1e1938; padding:12px; margin-top:8px; border-radius:8px; border:1px solid #3f326b; font-size:13px;">' +
-                    '<b>#' + (index + 1) + ' - ' + item.title + '</b> (' + item.platform + ')<br>' +
-                    'Գինը՝ ' + item.price + ' | Շահույթ՝ <span style="color:#c084fc;">' + item.netProfit + '</span> | ROI՝ <b>' + item.roi + '%</b>' +
-                    '</div>'
-                ).join('');
-            } catch (err) {
-                document.getElementById('historyList').innerHTML = '⚠️ Սխալ պատմությունը բեռնելիս։';
-            }
-        }
-
-        async function askAI() {
-            let prompt = document.getElementById('aiPrompt').value;
-            let apiKey = document.getElementById('geminiKey').value;
-            let resDiv = document.getElementById('aiResult');
-            
-            if(!prompt) { alert('Գրեք հարցը։'); return; }
-            resDiv.style.display = 'block';
-            resDiv.innerHTML = '🤖 Մշակվում է...';
-
-            try {
-                const response = await fetch('/api/ai', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ prompt, apiKey })
-                });
-                const data = await response.json();
-                resDiv.innerHTML = data.reply || 'Պատասխան չստացվեց։';
-            } catch (err) {
-                resDiv.innerHTML = '⚠️ Սխալ Gemini API հարցման ժամանակ։';
-            }
-        }
-    </script>
-</body>
-</html>`);
-});
-
-app.post('/api/save', (req, res) => {
-  const item = req.body;
-  historyDB.unshift(item);
-  if (historyDB.length > 20) historyDB.pop();
-  res.json({ success: true, message: 'Հաշվարկը պահպանվեց! 🧠' });
-});
-
-app.get('/api/history', (req, res) => {
-  res.json(historyDB);
-});
-
-app.post('/api/ai', async (req, res) => {
-  const { prompt, apiKey } = req.body;
-  const key = apiKey || process.env.GEMINI_API_KEY;
-
-  if (!key) {
-    return res.json({ 
-      reply: `[Demo AI Խորհուրդ]: Ձեր հարցն է՝ "${prompt}"\n\nE-Commerce խորհուրդ. Վաճառքի ձագարը և գովազդը կառավարելիս միշտ հետևեք ROAS-ին և ДРР-ին:` 
-    });
-  }
-
-  try {
-    const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }]
-      })
-    });
-    const data = await geminiRes.json();
-    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Պատասխան չստացվեց Gemini-ից:';
-    res.json({ reply });
-  } catch (error) {
-    res.json({ reply: '⚠️ Սխալ Gemini API հարցման ժամանակ:' });
-  }
-});
-
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
+            else if (painId === 3) resDiv.innerHTML = "🎯 **Բուժում:** Ճշգրտեք չափսային ցանցը և ամրացր
