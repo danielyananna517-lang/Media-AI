@@ -12,7 +12,7 @@ app.get('/', (req, res) => {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Novessa Pro Max | E-Commerce & WB Suite</title>
+    <title>Novessa Pro Max | E-Commerce Suite</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0f172a; color: #f8fafc; margin: 0; padding: 20px; }
         .container { max-width: 1000px; margin: 0 auto; background: #1e293b; padding: 30px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
@@ -29,19 +29,16 @@ app.get('/', (req, res) => {
         .result-box { margin-top: 12px; padding: 15px; background: #0f172a; border-radius: 6px; color: #38bdf8; font-weight: bold; white-space: pre-wrap; line-height: 1.6; }
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
-        
-        /* Funnel & Card Preview Styles */
-        .funnel-step { background: #1e293b; padding: 10px; margin: 5px 0; border-radius: 6px; border-left: 5px solid #0284c7; }
-        .card-preview { background: #0284c7; padding: 20px; border-radius: 10px; text-align: center; color: white; margin-top: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        .card-preview { background: #0284c7; padding: 20px; border-radius: 10px; text-align: center; color: white; margin-top: 10px; }
         .badge { background: #ef4444; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; display: inline-block; margin-bottom: 8px; }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>🚀 Novessa Pro Max</h1>
-        <div class="subtitle">E-Commerce & WB Pro Suite: Sales Funnel Analytics, Card Infographics & Gemini AI</div>
+        <div class="subtitle">E-Commerce & WB Pro Suite: Sales Funnel Analytics, Card Infographics & AI</div>
         
-        <!-- 1. Funnel Analytics (Որտե՞ղ են կորչում փողերը) -->
+        <!-- 1. Funnel Analytics -->
         <div class="section">
             <h2>📉 1. Վաճառքների Ձագար (Sales Funnel Leak Analytics)</h2>
             <div class="grid-3">
@@ -57,15 +54,15 @@ app.get('/', (req, res) => {
             <div id="funnelResult" class="result-box" style="display:none;"></div>
         </div>
 
-        <!-- 2. Card Design & Infographics Mockup -->
+        <!-- 2. Card Infographics Mockup -->
         <div class="section">
-            <h2>🎨 2. Ապրանքային Քարտի Դիզայն և Ինֆոգրաֆիկայի Գեներատոր</h2>
+            <h2>🎨 2. Ապրանքային Քարտի Դիզայն և Ինֆոգրաֆիկա</h2>
             <input type="text" id="cardTitle" placeholder="Ապրանքի անուն (օր.՝ Կանացի Կաշվե Պայուսակ)">
             <div class="grid-2">
                 <input type="text" id="cardBadge" placeholder="Բեջ (օր.՝ Хит продаж / 100% Кожа)">
                 <input type="text" id="cardFeature" placeholder="Գլխավոր առավելություն (օր.՝ Водонепроницаемый)">
             </div>
-            <button onclick="generateCard()">Ստեղծել Քարտի Նախադիտում (Infographic Card Preview)</button>
+            <button onclick="generateCard()">Ստեղծել Քարտի Նախադիտում</button>
             <div id="cardResult" style="display:none;"></div>
         </div>
 
@@ -96,14 +93,14 @@ app.get('/', (req, res) => {
             <button id="saveBtn" class="btn-save" style="display:none;" onclick="saveCalculation()">💾 Պահպանել հիշողության մեջ</button>
         </div>
 
-        <!-- 4. Memory / History -->
+        <!-- 4. Memory Bank -->
         <div class="section">
             <h2>🧠 4. Հիշողության Բանկ</h2>
             <button onclick="loadHistory()">🔄 Թարմացնել պատմությունը</button>
             <div id="historyList" class="result-box">Սեղմեք թարմացնելու համար...</div>
         </div>
 
-        <!-- 5. Gemini AI E-Commerce Copilot -->
+        <!-- 5. Gemini AI Copilot -->
         <div class="section">
             <h2>🤖 5. Gemini AI E-Commerce & WB Խորհրդատու</h2>
             <input type="password" id="geminiKey" placeholder="Gemini API Key (ըստ ցանկության)">
@@ -116,7 +113,6 @@ app.get('/', (req, res) => {
     <script>
         let currentCalc = null;
 
-        // 1. Funnel Analysis
         function analyzeFunnel() {
             let v = parseFloat(document.getElementById('views').value) || 0;
             let c = parseFloat(document.getElementById('clicks').value) || 0;
@@ -130,24 +126,16 @@ app.get('/', (req, res) => {
             let buyoutRate = ord > 0 ? ((buy / ord) * 100).toFixed(1) : 0;
 
             let advice = "";
-            if (ctr < 3) advice += "⚠️ **Ցածր CTR (\${ctr}%)**: Ապրանքի գլխավոր նկարը կամ վերնագիրը գրավիչ չէ։ Փոխեք ինֆոգրաֆիկան։\n";
-            if (clickToCart < 10) advice += "⚠️ **Ցածր Զամբյուղ Լցնելու % (\${clickToCart}%)**: Գինը բարձր է կամ քարտի մեջ չկան բավարար լուսանկարներ/ակնարկներ։\n";
-            if (buyoutRate < 60) advice += "⚠️ **Ցածր Քավում / Выкуп (\${buyoutRate}%)**: Ապրանքի որակը կամ չափսային ցանցը չի համապատասխանում նկարագրությանը։\n";
+            if (ctr < 3) advice += "⚠️ Ցածր CTR (" + ctr + "%): Ապրանքի գլխավոր նկարը գրավիչ չէ։ Փոխեք ինֆոգրաֆիկան։\\n";
+            if (clickToCart < 10) advice += "⚠️ Ցածր Զամբյուղ Լցնելու % (" + clickToCart + "%): Գինը բարձր է կամ քարտի մեջ չկան բավարար լուսանկարներ։\\n";
+            if (buyoutRate < 60) advice += "⚠️ Ցածր Քավում / Выкуп (" + buyoutRate + "%): Ապրանքի որակը կամ չափսային ցանցը չի համապատասխանում։\\n";
             if (!advice) advice = "✅ Ձեր ձագարի ցուցանիշները գտնվում են լավ տիրույթում։";
 
             let resDiv = document.getElementById('funnelResult');
             resDiv.style.display = 'block';
-            resDiv.innerHTML = \`📊 **Ձագարի Փուլային Կոնվերսիա:**
-• CTR (Դիտում ➔ Քլիք): \${ctr}%
-• Քլիք ➔ Զամբյուղ: \${clickToCart}%
-• Զամբյուղ ➔ Պատվեր: \${cartToOrder}%
-• Պատվեր ➔ Քավում (Выкуп): \${buyoutRate}%
-
-🚨 **Վերլուծություն և Փողերի Կորստի Աղբյուրը:**
-\${advice}\`;
+            resDiv.innerHTML = "📊 Ձագարի Փուլային Կոնվերսիա:\\n• CTR (Դիտում ➔ Քլիք): " + ctr + "%\\n• Քլիք ➔ Զամբյուղ: " + clickToCart + "%\\n• Զամբյուղ ➔ Պատվեր: " + cartToOrder + "%\\n• Պատվեր ➔ Քավում (Выкуп): " + buyoutRate + "%\\n\\n🚨 Վերլուծություն:\\n" + advice;
         }
 
-        // 2. Card Generator
         function generateCard() {
             let title = document.getElementById('cardTitle').value || 'Ապրանքի Անվանում';
             let badge = document.getElementById('cardBadge').value || 'ХИТ ПРОДАЖ';
@@ -155,19 +143,9 @@ app.get('/', (req, res) => {
 
             let resDiv = document.getElementById('cardResult');
             resDiv.style.display = 'block';
-            resDiv.innerHTML = \`
-                <div class="card-preview">
-                    <div class="badge">\${badge}</div>
-                    <h3 style="margin:5px 0; font-size:20px;">\${title}</h3>
-                    <p style="font-size:14px; opacity:0.9;">⭐ 100% Օպտիմիզացված Ինֆոգրաֆիկա | \${feature}</p>
-                    <div style="background:rgba(255,255,255,0.2); padding:10px; border-radius:6px; margin-top:10px; font-size:12px;">
-                        📸 AI Վիզուալ հայեցակարգը պատրաստ է WB / Ozon քարտի համար
-                    </div>
-                </div>
-            \`;
+            resDiv.innerHTML = '<div class="card-preview"><div class="badge">' + badge + '</div><h3 style="margin:5px 0;">' + title + '</h3><p style="font-size:14px;">⭐ 100% Օպտիմիզացված Ինֆոգրաֆիկա | ' + feature + '</p></div>';
         }
 
-        // 3. Calculator
         function calculate() {
             let title = document.getElementById('productTitle').value || 'Անհայտ ապրանք';
             let platform = document.getElementById('platform').value;
@@ -191,4 +169,113 @@ app.get('/', (req, res) => {
 
             let resDiv = document.getElementById('result');
             resDiv.style.display = 'block';
-            resDiv.
+            resDiv.innerHTML = "Հարթակ: " + platform + " | Մաքուր շահույթ: " + netProfit.toFixed(2) + " | Մարժա: " + margin + "% | ROI: " + roi + "%";
+            
+            document.getElementById('saveBtn').style.display = 'block';
+        }
+
+        async function saveCalculation() {
+            if (!currentCalc) return;
+            try {
+                const res = await fetch('/api/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(currentCalc)
+                });
+                const data = await res.json();
+                alert(data.message || 'Պահպանված է!');
+                loadHistory();
+            } catch (err) {
+                alert('⚠️ Չհաջողվեց պահպանել։');
+            }
+        }
+
+        async function loadHistory() {
+            try {
+                const res = await fetch('/api/history');
+                const data = await res.json();
+                let listDiv = document.getElementById('historyList');
+                if (data.length === 0) {
+                    listDiv.innerHTML = 'Հիշողությունը դատարկ է։';
+                    return;
+                }
+                listDiv.innerHTML = data.map((item, index) => 
+                    '<div style="background:#1e293b; padding:10px; margin-top:8px; border-radius:6px; border:1px solid #475569; font-size:13px;">' +
+                    '<b>#' + (index + 1) + ' - ' + item.title + '</b> (' + item.platform + ')<br>' +
+                    'Գինը՝ ' + item.price + ' | Շահույթ՝ <span style="color:#38bdf8;">' + item.netProfit + '</span> | ROI՝ <b>' + item.roi + '%</b><br>' +
+                    '<small style="color:#94a3b8;">' + item.date + '</small>' +
+                    '</div>'
+                ).join('');
+            } catch (err) {
+                document.getElementById('historyList').innerHTML = '⚠️ Սխալ պատմությունը բեռնելիս։';
+            }
+        }
+
+        async function askAI() {
+            let prompt = document.getElementById('aiPrompt').value;
+            let apiKey = document.getElementById('geminiKey').value;
+            let resDiv = document.getElementById('aiResult');
+            
+            if(!prompt) { alert('Գրեք հարցը։'); return; }
+            resDiv.style.display = 'block';
+            resDiv.innerHTML = '🤖 Մշակվում է...';
+
+            try {
+                const response = await fetch('/api/ai', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt, apiKey })
+                });
+                const data = await response.json();
+                resDiv.innerHTML = data.reply || 'Պատասխան չստացվեց։';
+            } catch (err) {
+                resDiv.innerHTML = '⚠️ Սխալ AI-ի հետ կապում։';
+            }
+        }
+
+        window.onload = loadHistory;
+    </script>
+</body>
+</html>`);
+});
+
+app.post('/api/save', (req, res) => {
+  const item = req.body;
+  historyDB.unshift(item);
+  if (historyDB.length > 20) historyDB.pop();
+  res.json({ success: true, message: 'Հաշվարկը պահպանվեց հիշողության մեջ! 🧠' });
+});
+
+app.get('/api/history', (req, res) => {
+  res.json(historyDB);
+});
+
+app.post('/api/ai', async (req, res) => {
+  const { prompt, apiKey } = req.body;
+  const key = apiKey || process.env.GEMINI_API_KEY;
+
+  if (!key) {
+    return res.json({ 
+      reply: `[Demo AI Խորհուրդ]: Ձեր հարցն է՝ "${prompt}"\n\nE-Commerce խորհուրդ. Վաճառքի ձագարը բարելավելու համար առաջին հերթին ուշադրություն դարձրեք CTR-ին և գլխավոր ինֆոգրաֆիկային:` 
+    });
+  }
+
+  try {
+    const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }]
+      })
+    });
+    const data = await geminiRes.json();
+    const reply = data.candidates?.[0]?.content?.[0]?.text || 'Պատասխան չստացվեց Gemini-ից:';
+    res.json({ reply });
+  } catch (error) {
+    res.json({ reply: '⚠️ Սխալ Gemini API հարցման ժամանակ:' });
+  }
+});
+
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});
