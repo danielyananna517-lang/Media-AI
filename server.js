@@ -5,7 +5,6 @@ const TelegramBot = require('node-telegram-bot-api');
 
 const app = express();
 
-// Allow CORS for all requests
 app.use(cors());
 app.use(express.json());
 
@@ -13,20 +12,19 @@ app.use(express.json());
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 
-// Initialize Gemini AI
+// Initialize Gemini AI with standard flash model
 let genAI = null;
 let model = null;
 if (GEMINI_API_KEY) {
-  genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-  model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-8b" });
+  genAI = new GoogleGenerativeAI(GEMINI_API_KEY.trim());
+  model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 }
 
-// Initialize Telegram Bot (Polling Mode)
+// Initialize Telegram Bot
 let bot = null;
 if (TELEGRAM_BOT_TOKEN) {
-  bot = new TelegramBot(TELEGRAM_BOT_TOKEN, { polling: true });
+  bot = new TelegramBot(TELEGRAM_BOT_TOKEN.trim(), { polling: true });
 
-  // Direct Telegram Chat Handler
   bot.on('message', async (msg) => {
     const chatId = msg.chat.id;
     const userText = msg.text;
@@ -34,7 +32,7 @@ if (TELEGRAM_BOT_TOKEN) {
     if (!userText || userText.startsWith('/')) return;
 
     if (!model) {
-      return bot.sendMessage(chatId, "⚠️ AI համակարգը դեռ ակտիվացված չէ։ Ստուգեք GEMINI_API_KEY-ը։");
+      return bot.sendMessage(chatId, "⚠️ AI համակարգը դեռ ակտիվացված չէ։ Ստուգեք GEMINI_API_KEY-ը Render-ում։");
     }
 
     try {
@@ -46,12 +44,13 @@ if (TELEGRAM_BOT_TOKEN) {
       bot.sendMessage(chatId, responseText);
     } catch (err) {
       console.error('Telegram AI Error:', err);
-      bot.sendMessage(chatId, "❌ Ներողություն, տեղի ունեցավ սխալ։ Խնդրում եմ փորձել ավելի ուշ։");
+      // Send actual error message to help debug directly in Telegram
+      const errorDetail = err.message || JSON.stringify(err);
+      bot.sendMessage(chatId, `❌ Gemini API Սխալ:\n${errorDetail.slice(0, 300)}`);
     }
   });
 }
 
-// Mini App API Endpoint for AI Chat
 app.post('/api/chat', async (req, res) => {
   try {
     const { message } = req.body;
@@ -66,11 +65,10 @@ app.post('/api/chat', async (req, res) => {
     res.json({ response: responseText });
   } catch (error) {
     console.error("API Chat Error:", error);
-    res.status(500).json({ error: "Failed to generate AI response" });
+    res.status(500).json({ error: error.message });
   }
 });
 
-// Root route to verify server status
 app.get('/', (req, res) => {
   res.send('NOVESSA AI Backend is running successfully! 🚀');
 });
