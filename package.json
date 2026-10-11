@@ -2,14 +2,12 @@
   "name": "novessa-backend",
   "version": "1.0.0",
   "type": "module",
-  "main": "server.js",
+  "main": "server.mjs",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.mjs"
   },
   "dependencies": {
     "express": "^4.18.2",
-    "multer": "^1.4.5-lts.1",
-    "cors": "^2.8.5",
-    "dotenv": "^16.3.1"
+    "cors": "^2.8.5"
   }
 }
