@@ -1,15 +1,14 @@
 {
-  "name": "novessa-backend",
+  "name": "media-ai",
   "version": "1.0.0",
-  "main": "server.js",
+  "description": "Novessa Pro Max Backend",
+  "main": "novessaProduction.mjs",
+  "type": "module",
   "scripts": {
-    "start": "node server.js"
+    "start": "node novessaProduction.mjs"
   },
   "dependencies": {
-    "@google/generative-ai": "^0.21.0",
-    "cors": "^2.8.5",
-    "express": "^4.19.2",
-    "node-telegram-bot-api": "^0.66.0"
+    "express": "^4.19.2"
   },
   "engines": {
     "node": ">=18.0.0"
