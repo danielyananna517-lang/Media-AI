@@ -475,6 +475,9 @@ app.get('/', (req, res) => {
         <div id="aiCopilot" class="page">
             <div class="card">
                 <h2>🤖 Gemini AI E-Commerce Խորհրդատու</h2>
+                <label for="geminiKey">Gemini API Key (պարտադիր չէ, եթե Render-ում արդեն կարգավորված է)</label>
+                <input type="password" id="geminiKey" autocomplete="off" spellcheck="false" placeholder="Մուտքագրեք Gemini API Key-ը">
+                <p style="font-size:12px;color:var(--text-muted);margin:0 0 12px;">Բանալին չի պահվում NOVESSA-ի տվյալներում․ այն փոխանցվում է միայն HTTPS հարցման ժամանակ։ Հանրային/օտար համակարգչում մի՛ մուտքագրեք։</p>
                 <textarea id="aiPrompt" placeholder="Հարցրեք վաճառքների կամ SEO-ի մասին..."></textarea>
                 <button class="action-btn" onclick="askAI()">Ուղղել հարցը AI-ին</button>
                 <div id="aiResult" class="result-box" style="display:none;">Սպասում եմ հարցի...</div>
@@ -821,6 +824,11 @@ app.get('/', (req, res) => {
             document.getElementById('cardPreviewArea').style.display = 'block';
         }
 
+        function currentGeminiKey() {
+            const field = document.getElementById('geminiKey');
+            return String(field?.value || '').trim();
+        }
+
         async function generateSEOText() {
             const input = String(document.getElementById('seoInput').value || '').trim().slice(0, 300);
             const resDiv = document.getElementById('seoResult');
@@ -836,7 +844,7 @@ app.get('/', (req, res) => {
                 const response = await fetch('/api/ai', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ prompt })
+                    body: JSON.stringify(currentGeminiKey() ? { prompt, apiKey: currentGeminiKey() } : { prompt })
                 });
                 const data = await response.json().catch(() => ({}));
                 if (!response.ok) {
@@ -917,7 +925,7 @@ app.get('/', (req, res) => {
                 const response = await fetch('/api/ai', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ prompt })
+                    body: JSON.stringify(currentGeminiKey() ? { prompt, apiKey: currentGeminiKey() } : { prompt })
                 });
                 const data = await response.json().catch(() => ({}));
                 if (!response.ok) {
@@ -1014,7 +1022,11 @@ app.post('/api/ai', async (req, res) => {
   if (!prompt) return res.status(400).json({ success: false, error: 'Հարցը պարտադիր է։' });
   if (prompt.length > 12000) return res.status(413).json({ success: false, error: 'Հարցը չափազանց երկար է։' });
 
-  const key = String(process.env.GEMINI_API_KEY || '').trim();
+  const requestKey = typeof req.body?.apiKey === 'string' ? req.body.apiKey.trim() : '';
+  if (requestKey.length > 512) {
+    return res.status(400).json({ success: false, code: 'AI_KEY_INVALID', error: 'Gemini API բանալու ձևաչափը անվավեր է։' });
+  }
+  const key = requestKey || String(process.env.GEMINI_API_KEY || '').trim();
   if (!key) {
     return res.status(503).json({
       success: false,
