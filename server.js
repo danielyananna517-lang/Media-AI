@@ -1,4 +1,4 @@
-import express from 'express';
+const express = require('express');
 
 const app = express();
 app.use(express.json({ limit: '15mb' }));
@@ -500,7 +500,6 @@ app.get('/', (req, res) => {
         let uploadedImgData = null;
         let currentCalc = null;
 
-        // 16. Image Upload & Background Processing Simulation
         function handleImageUpload(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -524,7 +523,6 @@ app.get('/', (req, res) => {
             reader.readAsDataURL(file);
         }
 
-        // Master Unit Economics Calculation
         function calculateMaster() {
             let title = document.getElementById('productTitle').value || 'Ապրանք';
             let platform = document.getElementById('platform').value;
@@ -568,13 +566,11 @@ app.get('/', (req, res) => {
             document.getElementById('exportPdfBtn').style.display = 'block';
         }
 
-        // 15. Excel Export (Multi-sheet .xlsx with SheetJS)
         function exportToExcel() {
             if (!currentCalc) { alert('Նախ կատարեք հաշվարկ։'); return; }
 
             const wb = XLSX.utils.book_new();
 
-            // Sheet 1: Unit Economics
             const unitData = [
                 ["Novessa Pro Max - Unit Economics Report"],
                 ["Ապրանք", currentCalc.title],
@@ -588,7 +584,6 @@ app.get('/', (req, res) => {
             const ws1 = XLSX.utils.aoa_to_sheet(unitData);
             XLSX.utils.book_append_sheet(wb, ws1, "Unit Economics");
 
-            // Sheet 2: Costs & Profit Breakdown
             const costData = [
                 ["Ծախսային մաս", "Գումար"],
                 ["Միջնորդավճար", currentCalc.commission],
@@ -603,7 +598,6 @@ app.get('/', (req, res) => {
             XLSX.writeFile(wb, currentCalc.title + "_Novessa_Report.xlsx");
         }
 
-        // 15. PDF Export (jsPDF)
         function exportToPDF() {
             if (!currentCalc) { alert('Նախ կատարեք հաշվարկ։'); return; }
             const { jsPDF } = window.jspdf;
@@ -628,7 +622,6 @@ app.get('/', (req, res) => {
             doc.save(currentCalc.title + "_Novessa_Report.pdf");
         }
 
-        // 17. Stock-Out Predictor Logic
         function calculateStockPredictor() {
             let sku = document.getElementById('stockSku').value || 'SKU-DEFAULT';
             let stock = parseFloat(document.getElementById('currentStock').value) || 0;
@@ -640,7 +633,7 @@ app.get('/', (req, res) => {
 
             let daysLeft = Math.floor(stock / dailySales);
             let reorderPoint = (dailySales * leadTime) + safetyStock;
-            let recommendedQty = (dailySales * 30) + safetyStock - stock; // 30 days projection
+            let recommendedQty = (dailySales * 30) + safetyStock - stock;
             if (recommendedQty < 0) recommendedQty = 0;
 
             let today = new Date();
@@ -695,4 +688,109 @@ app.get('/', (req, res) => {
             document.getElementById('wbFeature').innerText = "⭐ " + feature;
             
             let cardElem = document.getElementById('wbCard');
-            cardElem.style.backgroundImage = 'linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,
+            cardElem.style.backgroundImage = 'linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.7)), url(' + imgUrl + ')';
+
+            document.getElementById('cardPreviewArea').style.display = 'block';
+        }
+
+        function generateSEOText() {
+            let input = document.getElementById('seoInput').value || 'Ապրանք';
+            let resDiv = document.getElementById('seoResult');
+            resDiv.style.display = 'block';
+            resDiv.innerHTML = "📌 **SEO Վերնագիր:** " + input + " - Բարձր որակի 2026\\n\\n🏷️ **Keywords:** #" + input.replace(/\s+/g, '_') + " #wb_хит";
+        }
+
+        function solvePain(painId) {
+            let resDiv = document.getElementById('painSolutionResult');
+            resDiv.style.display = 'block';
+            if (painId === 1) resDiv.innerHTML = "🎯 **Բուժում:** Կանգնեցրեք ավտոգովազդը, անցեք ֆիքսված հարցումներով գովազդի։";
+            else if (painId === 2) resDiv.innerHTML = "🎯 **Բուժում:** Փոխեք գլխավոր ինֆոգրաֆիկան և ստուգեք մրցակիցների գները։";
+            else if (painId === 3) resDiv.innerHTML = "🎯 **Բուժում:** Ճշգրտեք չափսային ցանցը և ամրացրեք փաթեթավորումը։";
+        }
+
+        async function loadHistory() {
+            try {
+                const res = await fetch('/api/history');
+                const data = await res.json();
+                let listDiv = document.getElementById('historyList');
+                if (data.length === 0) {
+                    listDiv.innerHTML = 'Հիշողությունը դատարկ է։';
+                    return;
+                }
+                listDiv.innerHTML = data.map((item, index) => 
+                    '<div style="background:#1e1938; padding:12px; margin-top:8px; border-radius:8px; border:1px solid #3f326b; font-size:13px;">' +
+                    '<b>#' + (index + 1) + ' - ' + item.title + '</b> (' + item.platform + ')<br>' +
+                    'Գինը՝ ' + item.price + ' | Շահույթ՝ <span style="color:#c084fc;">' + item.netProfit + '</span> | ROI՝ <b>' + item.roi + '%</b>' +
+                    '</div>'
+                ).join('');
+            } catch (err) {
+                document.getElementById('historyList').innerHTML = '⚠️ Սխալ պատմությունը բեռնելիս։';
+            }
+        }
+
+        async function askAI() {
+            let prompt = document.getElementById('aiPrompt').value;
+            let apiKey = document.getElementById('geminiKey').value;
+            let resDiv = document.getElementById('aiResult');
+            
+            if(!prompt) { alert('Գրեք հարցը։'); return; }
+            resDiv.style.display = 'block';
+            resDiv.innerHTML = '🤖 Մշակվում է...';
+
+            try {
+                const response = await fetch('/api/ai', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt, apiKey })
+                });
+                const data = await response.json();
+                resDiv.innerHTML = data.reply || 'Պատասխան չստացվեց։';
+            } catch (err) {
+                resDiv.innerHTML = '⚠️ Սխալ Gemini API հարցման ժամանակ։';
+            }
+        }
+    </script>
+</body>
+</html>`);
+});
+
+app.post('/api/save', (req, res) => {
+  const item = req.body;
+  historyDB.unshift(item);
+  if (historyDB.length > 20) historyDB.pop();
+  res.json({ success: true, message: 'Հաշվարկը պահպանվեց! 🧠' });
+});
+
+app.get('/api/history', (req, res) => {
+  res.json(historyDB);
+});
+
+app.post('/api/ai', async (req, res) => {
+  const { prompt, apiKey } = req.body;
+  const key = apiKey || process.env.GEMINI_API_KEY;
+
+  if (!key) {
+    return res.json({ 
+      reply: `[Demo AI Խորհուրդ]: Ձեր հարցն է՝ "${prompt}"\n\nE-Commerce խորհուրդ. Վաճառքի ձագարը և գովազդը կառավարելիս միշտ հետևեք ROAS-ին և ДРР-ին:` 
+    });
+  }
+
+  try {
+    const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }]
+      })
+    });
+    const data = await geminiRes.json();
+    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Պատասխան չստացվեց Gemini-ից:';
+    res.json({ reply });
+  } catch (error) {
+    res.json({ reply: '⚠️ Սխալ Gemini API հարցման ժամանակ:' });
+  }
+});
+
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});
