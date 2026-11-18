@@ -1,31 +1,34 @@
-# Connect @Novessa_bot to NOVESSA AI
+# Connect BotConsol to NOVESSA AI
 
-This adds Telegram private-chat replies to the same Gemini-backed `/api/ai` endpoint used by the Mini App.
+This integration keeps BotConsol responsible for receiving and sending Telegram messages. BotConsol calls the protected NOVESSA AI endpoint inside its existing flow; the Telegram webhook does not move.
 
-## Render environment
+## Render environment variables
 
-On the existing `novessa-backend` Render service, set:
+On the existing NOVESSA Render service, set:
 
-- `GEMINI_API_KEY`: your Gemini API key (server-side only)
-- `TELEGRAM_BOT_TOKEN`: the token for `@Novessa_bot`
-- `TELEGRAM_WEBHOOK_SECRET`: a random 32–128 character value using letters, numbers, underscores, or hyphens
-- `TELEGRAM_WEBHOOK_BASE_URL`: `https://novessa-backend.onrender.com`
+- `GEMINI_API_KEY`: the key used by the existing server-side Gemini AI endpoint.
+- `BOTCONSOL_API_SECRET`: a new random secret. Keep it in Render and BotConsol's secure secret/header field only.
 
-Never commit these values or send them in Telegram messages.
+Do not commit either value or paste them into Telegram or a public flow message.
 
-## Activate
+## BotConsol flow
 
-1. Deploy this branch to the existing Render service.
-2. In the Render Shell, run `node scripts/set-telegram-webhook.mjs` once after the environment variables are saved.
-3. In Telegram, send `/start` to `@Novessa_bot`, then send a short question.
+Add an HTTP/API request step between the incoming message and the existing Send Message step:
 
-Registering this webhook replaces the bot's current Telegram webhook, so BotConsol will stop receiving updates for this bot. The code change alone does not change the current webhook.
+- Method: `POST`
+- URL: `https://novessa-backend.onrender.com/api/botconsol/ai`
+- Header: `Authorization: Bearer <BOTCONSOL_API_SECRET>`
+- Header: `Content-Type: application/json`
+- JSON body: `{"message":"<map the incoming Telegram message text here>"}`
 
-## Included behavior
+On success, map the response field `reply` to the existing Send Message step. If BotConsol only accepts `prompt` as the request field, the API accepts that too. Keep the current Telegram trigger and current reply step; insert the API call between them. The exact variable syntax depends on the BotConsol editor.
 
-- Checks Telegram's webhook secret header.
-- Uses the existing server-side `/api/ai` endpoint; no Gemini key is sent from Telegram or stored in the chat.
-- Responds to private text messages and `/start` or `/help`.
-- Splits long answers to fit Telegram's message limit.
-- Ignores groups and non-text updates, and limits each user to 10 questions per minute.
-- `/api/telegram/webhook` returns 503 until the bot token and webhook secret are configured.
+## Endpoint responses
+
+- Success: `{"success":true,"reply":"...","text":"..."}`
+- Missing Render secret: HTTP 503
+- Wrong/missing Authorization header: HTTP 401
+- Empty message: HTTP 400
+- Gemini/AI failure: HTTP 502 with a short Armenian message
+
+The endpoint never accepts a Gemini key from BotConsol. It uses `GEMINI_API_KEY` from Render. The endpoint is intended for short private chat text; it does not process attachments or group messages.
