@@ -1,6 +1,6 @@
 import express from 'express';
 import cors from 'cors';
-import { createTelegramWebhook } from './telegram-webhook.mjs';
+import { createBotConsolApi } from './botconsol-api.mjs';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -22,7 +22,7 @@ async function askNovessaAI(prompt) {
     return data.text.trim();
 }
 
-app.post('/api/telegram/webhook', createTelegramWebhook({ askAI: askNovessaAI }));
+app.post('/api/botconsol/ai', createBotConsolApi({ askAI: askNovessaAI }));
 
 
 let historyDB = [];
