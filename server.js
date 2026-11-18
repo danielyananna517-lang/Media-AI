@@ -1,11 +1,29 @@
 import express from 'express';
 import cors from 'cors';
+import { createTelegramWebhook } from './telegram-webhook.mjs';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json({ limit: '25mb' }));
+
+// Telegram webhook: Telegram messages are routed through the existing server-side Gemini endpoint.
+async function askNovessaAI(prompt) {
+    const response = await fetch(`http://127.0.0.1:${PORT}/api/ai`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || !data.success || typeof data.text !== 'string' || !data.text.trim()) {
+        throw new Error(data.error || 'AI պատասխան չստացվեց։');
+    }
+    return data.text.trim();
+}
+
+app.post('/api/telegram/webhook', createTelegramWebhook({ askAI: askNovessaAI }));
+
 
 let historyDB = [];
 
