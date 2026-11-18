@@ -418,7 +418,7 @@ app.get('/', (req, res) => {
                 const res = await fetch('/api/history');
                 const data = await res.json();
                 if (data.history && data.history.length > 0) {
-                    historyList.textContent = data.history.map((h, i) => `\${i+1}.\${h.title} - \${h.netProfit} ֏ (\${h.date})`).join('\\n');
+                    historyList.textContent = data.history.map((h, i) => \`\${i+1}.\${h.title} - \${h.netProfit} ֏ (\${h.date})\`).join('\\n');
                 } else {
                     historyList.textContent = '🧠 Հիշողության բանկում տվյալներ չկան։';
                 }
